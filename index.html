@@ -1,142 +1,2021 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Refund Request Portal</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hurobotics - AI Task Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&amp;family=Exo+2:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Exo 2', sans-serif; }
+    .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    
+    /* Neon glow effects */
+    .neon-border {
+      border: 2px solid transparent;
+      background: linear-gradient(#0a0a1a, #0a0a1a) padding-box,
+                  linear-gradient(135deg, #00f0ff, #8b5cf6, #06b6d4) border-box;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3), inset 0 0 20px rgba(139, 92, 246, 0.1);
+    }
+    
+    .neon-glow {
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.5), 0 0 60px rgba(139, 92, 246, 0.3);
+    }
+    
+    .neon-text {
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.8), 0 0 20px rgba(139, 92, 246, 0.6);
+    }
+    
+    .btn-neon {
+      background: linear-gradient(135deg, #00f0ff, #8b5cf6);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-neon:hover {
+      box-shadow: 0 0 40px rgba(0, 240, 255, 0.8), 0 0 60px rgba(139, 92, 246, 0.6);
+      transform: translateY(-2px);
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 0 40px rgba(0, 240, 255, 0.6);
+    }
+    
+    /* Particle background */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #00f0ff;
+      border-radius: 50%;
+      animation: float 15s infinite;
+      opacity: 0.6;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(100%) translateX(0); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { transform: translateY(-100%) translateX(100px); opacity: 0; }
+    }
+    
+    /* Circuit lines */
+    .circuit-bg {
+      background-image: 
+        linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0a0a1a; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(#00f0ff, #8b5cf6); border-radius: 4px; }
+    
+    /* Toast animation */
+    .toast-enter { animation: slideIn 0.3s ease; }
+    .toast-exit { animation: slideOut 0.3s ease; }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    /* Pulse animation */
+    @keyframes pulse-neon {
+      0%, 100% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.5); }
+      50% { box-shadow: 0 0 40px rgba(0, 240, 255, 0.8), 0 0 60px rgba(139, 92, 246, 0.6); }
+    }
+    
+    .pulse-animation { animation: pulse-neon 2s infinite; }
+    
+    /* Robot border */
+    .robot-border {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .robot-border::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 3px solid transparent;
+      background: url('robot.png') repeat;
+      background-size: 40px 40px;
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    /* TV Screen */
+    .tv-screen {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+      border: 4px solid;
+      border-image: linear-gradient(135deg, #00f0ff, #8b5cf6) 1;
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.3), inset 0 0 50px rgba(0, 0, 0, 0.8);
+    }
+    
+    .tv-scanlines::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.1) 0px,
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+    }
+    
+    /* Progress bar */
+    .progress-glow {
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.8);
+    }
+    
+    /* Mobile menu */
+    .mobile-menu {
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .mobile-menu.open {
+      transform: translateX(0);
+    }
+    
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #00f0ff, #8b5cf6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Badge styles */
+    .badge-pending { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .badge-approved { background: linear-gradient(135deg, #10b981, #059669); }
+    .badge-rejected { background: linear-gradient(135deg, #ef4444, #dc2626); }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-[#0a0a1a] text-gray-100 circuit-bg overflow-x-hidden"><!-- Particles Background -->
+  <div class="particles" id="particles"></div><!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div><!-- Main App Container -->
+  <div id="app" class="relative z-10 min-h-full"><!-- Landing Page -->
+   <div id="landing-page"><!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-40 bg-[#0a0a1a]/90 backdrop-blur-md border-b border-cyan-500/20">
+     <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+       <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center"><span class="text-xl">🤖</span>
+       </div><span class="font-orbitron text-xl font-bold gradient-text">HUROBOTICS</span>
+      </div>
+      <div class="hidden md:flex items-center gap-6"><a href="#how-it-works" class="hover:text-cyan-400 transition-colors">How It Works</a> <a href="#tasks" class="hover:text-cyan-400 transition-colors">Tasks</a> <a href="#benefits" class="hover:text-cyan-400 transition-colors">Benefits</a> <button onclick="showCountrySelection()" class="btn-neon px-6 py-2 rounded-full font-orbitron font-semibold text-white"> Get Started </button>
+      </div><button class="md:hidden text-2xl" onclick="toggleLandingMenu()">☰</button>
+     </div>
+    </nav><!-- Mobile Landing Menu -->
+    <div id="landing-mobile-menu" class="mobile-menu fixed top-0 left-0 w-64 h-full bg-[#0a0a1a] border-r border-cyan-500/30 z-50 pt-20 px-4"><button onclick="toggleLandingMenu()" class="absolute top-4 right-4 text-2xl text-cyan-400">✕</button>
+     <div class="flex flex-col gap-4"><a href="#how-it-works" class="py-2 hover:text-cyan-400 transition-colors" onclick="toggleLandingMenu()">How It Works</a> <a href="#tasks" class="py-2 hover:text-cyan-400 transition-colors" onclick="toggleLandingMenu()">Tasks</a> <a href="#benefits" class="py-2 hover:text-cyan-400 transition-colors" onclick="toggleLandingMenu()">Benefits</a> <button onclick="showCountrySelection(); toggleLandingMenu();" class="btn-neon px-6 py-3 rounded-full font-orbitron font-semibold text-white mt-4"> Get Started </button>
+     </div>
+    </div><!-- Hero Section -->
+    <section class="min-h-screen flex items-center justify-center px-4 pt-20">
+     <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+      <div class="text-center md:text-left">
+       <h1 class="font-orbitron text-4xl md:text-6xl font-bold mb-6 leading-tight"><span class="gradient-text neon-text" id="hero-headline">Earn by Completing AI Micro-Tasks</span></h1>
+       <p class="text-gray-400 text-lg mb-8">Join the future of AI training. Complete tasks, earn rewards, and help shape artificial intelligence.</p><button onclick="showCountrySelection()" class="btn-neon px-8 py-4 rounded-full font-orbitron font-bold text-lg text-white pulse-animation"> 🚀 Get Started Now </button>
+      </div>
+      <div class="relative"><!-- TV Screen with Video -->
+       <div class="tv-screen tv-scanlines relative rounded-lg p-2 aspect-video">
+        <video class="w-full h-full rounded object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+         <div class="w-full h-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center"><span class="text-6xl">🤖</span>
+         </div>
+        </video>
+        <div class="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded text-xs font-orbitron text-cyan-400">
+         LIVE FEED • AI OPERATIONS
+        </div>
+       </div><!-- Floating Elements -->
+       <div class="absolute -top-4 -right-4 w-20 h-20 neon-border rounded-lg flex items-center justify-center animate-bounce"><span class="text-3xl">💰</span>
+       </div>
+      </div>
+     </div>
+    </section><!-- How It Works -->
+    <section id="how-it-works" class="py-20 px-4">
+     <div class="max-w-6xl mx-auto">
+      <h2 class="font-orbitron text-3xl md:text-4xl font-bold text-center mb-16 gradient-text neon-text">How It Works</h2>
+      <div class="grid md:grid-cols-4 gap-6">
+       <div class="neon-border rounded-xl p-6 text-center card-hover transition-all duration-300 robot-border">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-3xl">
+         📝
+        </div>
+        <h3 class="font-orbitron text-xl font-bold mb-2 text-cyan-400">1. Sign Up</h3>
+        <p class="text-gray-400 text-sm">Create your account and verify your identity</p>
+       </div>
+       <div class="neon-border rounded-xl p-6 text-center card-hover transition-all duration-300 robot-border">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-3xl">
+         🎯
+        </div>
+        <h3 class="font-orbitron text-xl font-bold mb-2 text-cyan-400">2. Complete Tasks</h3>
+        <p class="text-gray-400 text-sm">Choose from various AI training tasks</p>
+       </div>
+       <div class="neon-border rounded-xl p-6 text-center card-hover transition-all duration-300 robot-border">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-3xl">
+         💵
+        </div>
+        <h3 class="font-orbitron text-xl font-bold mb-2 text-cyan-400">3. Get Paid</h3>
+        <p class="text-gray-400 text-sm">Receive payments directly to your wallet</p>
+       </div>
+       <div class="neon-border rounded-xl p-6 text-center card-hover transition-all duration-300 robot-border">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-3xl">
+         🚀
+        </div>
+        <h3 class="font-orbitron text-xl font-bold mb-2 text-cyan-400">4. Level Up</h3>
+        <p class="text-gray-400 text-sm">Unlock higher-paying tasks as you progress</p>
+       </div>
+      </div><!-- TV Screen -->
+      <div class="mt-12 max-w-md mx-auto">
+       <div class="tv-screen tv-scanlines relative rounded-lg p-2 aspect-video">
+        <video class="w-full h-full rounded object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+         <div class="w-full h-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center"><span class="text-4xl">📺</span>
+         </div>
+        </video>
+       </div>
+      </div>
+     </div>
+    </section><!-- Tasks Overview -->
+    <section id="tasks" class="py-20 px-4 bg-gradient-to-b from-transparent to-purple-900/10">
+     <div class="max-w-6xl mx-auto">
+      <h2 class="font-orbitron text-3xl md:text-4xl font-bold text-center mb-16 gradient-text neon-text">AI Task Categories</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+       <div class="neon-border rounded-xl p-6 card-hover transition-all duration-300 robot-border">
+        <div class="text-4xl mb-4">
+         📖
+        </div>
+        <h3 class="font-orbitron text-xl font-bold mb-2 text-cyan-400">Content Review</h3>
+        <p class="text-gray-400 text-sm mb-4">Review AI-generated content for accuracy and quality</p><span class="px-3 py-1 rounded-full text-xs bg-cyan-500/20 text-cyan-400 font-orbitron">Level 1</span>
+       </div>
+       <div class="neon-border rounded-xl p-6 card-hover transition-all duration-300 robot-border">
+        <div class="text-4xl mb-4">
+         ✍️
+        </div>
+        <h3 class="font-orbitron text-xl font-bold mb-2 text-purple-400">Text Rewriting</h3>
+        <p class="text-gray-400 text-sm mb-4">Improve and rewrite AI-generated text</p><span class="px-3 py-1 rounded-full text-xs bg-cyan-500/20 text-cyan-400 font-orbitron">Level 1</span>
+       </div>
+       <div class="neon-border rounded-xl p-6 card-hover transition-all duration-300 robot-border">
+        <div class="text-4xl mb-4">
+         🧪
+        </div>
+        <h3 class="font-orbitron text-xl font-bold mb-2 text-pink-400">Prompt Testing</h3>
+        <p class="text-gray-400 text-sm mb-4">Test and evaluate AI prompts for effectiveness</p><span class="px-3 py-1 rounded-full text-xs bg-purple-500/20 text-purple-400 font-orbitron">Level 2</span>
+       </div>
+       <div class="neon-border rounded-xl p-6 card-hover transition-all duration-300 robot-border">
+        <div class="text-4xl mb-4">
+         ⚖️
+        </div>
+        <h3 class="font-orbitron text-xl font-bold mb-2 text-yellow-400">Response Comparison</h3>
+        <p class="text-gray-400 text-sm mb-4">Compare and rate different AI responses</p><span class="px-3 py-1 rounded-full text-xs bg-purple-500/20 text-purple-400 font-orbitron">Level 2</span>
+       </div>
+       <div class="neon-border rounded-xl p-6 card-hover transition-all duration-300 robot-border">
+        <div class="text-4xl mb-4">
+         🔍
+        </div>
+        <h3 class="font-orbitron text-xl font-bold mb-2 text-green-400">Fact Checking</h3>
+        <p class="text-gray-400 text-sm mb-4">Verify the accuracy of AI-generated facts</p><span class="px-3 py-1 rounded-full text-xs bg-purple-500/20 text-purple-400 font-orbitron">Level 2</span>
+       </div>
+       <div class="neon-border rounded-xl p-6 card-hover transition-all duration-300 flex items-center justify-center robot-border">
+        <div class="text-center">
+         <div class="text-4xl mb-4">
+          🔮
+         </div>
+         <h3 class="font-orbitron text-lg font-bold text-gray-400">More Coming Soon</h3>
+        </div>
+       </div>
+      </div>
+     </div>
+    </section><!-- Benefits -->
+    <section id="benefits" class="py-20 px-4">
+     <div class="max-w-6xl mx-auto">
+      <h2 class="font-orbitron text-3xl md:text-4xl font-bold text-center mb-16 gradient-text neon-text">Why Choose Hurobotics?</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+       <div class="neon-border rounded-xl p-6 text-center card-hover transition-all duration-300">
+        <div class="text-4xl mb-4">
+         ⚡
+        </div>
+        <h3 class="font-orbitron font-bold mb-2 text-cyan-400">Fast Payments</h3>
+        <p class="text-gray-400 text-sm">Get paid quickly after task approval</p>
+       </div>
+       <div class="neon-border rounded-xl p-6 text-center card-hover transition-all duration-300">
+        <div class="text-4xl mb-4">
+         📱
+        </div>
+        <h3 class="font-orbitron font-bold mb-2 text-purple-400">Mobile Friendly</h3>
+        <p class="text-gray-400 text-sm">Work from anywhere on any device</p>
+       </div>
+       <div class="neon-border rounded-xl p-6 text-center card-hover transition-all duration-300">
+        <div class="text-4xl mb-4">
+         📚
+        </div>
+        <h3 class="font-orbitron font-bold mb-2 text-pink-400">Learn &amp; Earn</h3>
+        <p class="text-gray-400 text-sm">Gain AI knowledge while earning</p>
+       </div>
+       <div class="neon-border rounded-xl p-6 text-center card-hover transition-all duration-300">
+        <div class="text-4xl mb-4">
+         🔒
+        </div>
+        <h3 class="font-orbitron font-bold mb-2 text-green-400">Secure Platform</h3>
+        <p class="text-gray-400 text-sm">Your data and earnings are protected</p>
+       </div>
+      </div><!-- TV Screen -->
+      <div class="mt-12 max-w-lg mx-auto">
+       <div class="tv-screen tv-scanlines relative rounded-lg p-2 aspect-video">
+        <video class="w-full h-full rounded object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+         <div class="w-full h-full bg-gradient-to-br from-cyan-500/20 to-pink-500/20 flex items-center justify-center"><span class="text-4xl">🎬</span>
+         </div>
+        </video>
+       </div>
+      </div>
+     </div>
+    </section><!-- Testimonials -->
+    <section class="py-20 px-4 bg-gradient-to-b from-purple-900/10 to-transparent">
+     <div class="max-w-6xl mx-auto">
+      <h2 class="font-orbitron text-3xl md:text-4xl font-bold text-center mb-16 gradient-text neon-text">What Users Say</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+       <div class="neon-border rounded-xl p-6 card-hover transition-all duration-300">
+        <div class="flex items-center gap-3 mb-4">
+         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-xl">
+          👩
+         </div>
+         <div>
+          <h4 class="font-orbitron font-bold text-cyan-400">Sarah K.</h4>
+          <p class="text-xs text-gray-500">Kenya</p>
+         </div>
+        </div>
+        <p class="text-gray-400 text-sm">"Amazing platform! I've earned over $200 in my first month while learning about AI."</p>
+        <div class="mt-4 text-yellow-400">
+         ⭐⭐⭐⭐⭐
+        </div>
+       </div>
+       <div class="neon-border rounded-xl p-6 card-hover transition-all duration-300">
+        <div class="flex items-center gap-3 mb-4">
+         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-xl">
+          👨
+         </div>
+         <div>
+          <h4 class="font-orbitron font-bold text-purple-400">James M.</h4>
+          <p class="text-xs text-gray-500">Tanzania</p>
+         </div>
+        </div>
+        <p class="text-gray-400 text-sm">"The tasks are interesting and the payments are fast. Highly recommend!"</p>
+        <div class="mt-4 text-yellow-400">
+         ⭐⭐⭐⭐⭐
+        </div>
+       </div>
+       <div class="neon-border rounded-xl p-6 card-hover transition-all duration-300">
+        <div class="flex items-center gap-3 mb-4">
+         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-cyan-500 flex items-center justify-center text-xl">
+          👩
+         </div>
+         <div>
+          <h4 class="font-orbitron font-bold text-pink-400">Grace W.</h4>
+          <p class="text-xs text-gray-500">Uganda</p>
+         </div>
+        </div>
+        <p class="text-gray-400 text-sm">"I love how I can work from my phone. The interface is so futuristic!"</p>
+        <div class="mt-4 text-yellow-400">
+         ⭐⭐⭐⭐⭐
+        </div>
+       </div>
+      </div>
+     </div>
+    </section><!-- Footer -->
+    <footer class="py-12 px-4 border-t border-cyan-500/20">
+     <div class="max-w-6xl mx-auto">
+      <div class="grid md:grid-cols-4 gap-8">
+       <div>
+        <div class="flex items-center gap-2 mb-4">
+         <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center"><span class="text-lg">🤖</span>
+         </div><span class="font-orbitron font-bold gradient-text">HUROBOTICS</span>
+        </div>
+        <p class="text-gray-400 text-sm">The future of AI micro-task platforms.</p>
+       </div>
+       <div>
+        <h4 class="font-orbitron font-bold mb-4 text-cyan-400">Links</h4>
+        <div class="flex flex-col gap-2 text-sm text-gray-400"><a href="#" class="hover:text-cyan-400 transition-colors">About</a> <a href="#" class="hover:text-cyan-400 transition-colors">Contact</a> <a href="#" class="hover:text-cyan-400 transition-colors">FAQ</a>
+        </div>
+       </div>
+       <div>
+        <h4 class="font-orbitron font-bold mb-4 text-purple-400">Legal</h4>
+        <div class="flex flex-col gap-2 text-sm text-gray-400"><a href="#" class="hover:text-purple-400 transition-colors">Terms &amp; Conditions</a> <a href="#" class="hover:text-purple-400 transition-colors">Privacy Policy</a>
+        </div>
+       </div>
+       <div>
+        <h4 class="font-orbitron font-bold mb-4 text-pink-400">Social</h4>
+        <div class="flex gap-4 text-2xl"><a href="#" class="hover:scale-110 transition-transform">📘</a> <a href="#" class="hover:scale-110 transition-transform">🐦</a> <a href="#" class="hover:scale-110 transition-transform">📸</a> <a href="#" class="hover:scale-110 transition-transform">💼</a>
+        </div>
+       </div>
+      </div>
+      <div class="mt-8 pt-8 border-t border-cyan-500/10 text-center text-gray-500 text-sm">
+       © 2024 Hurobotics. All rights reserved.
+      </div>
+     </div>
+    </footer>
+   </div><!-- Country Selection Modal -->
+   <div id="country-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="neon-border rounded-2xl p-8 max-w-md w-full bg-[#0a0a1a] robot-border">
+     <h2 class="font-orbitron text-2xl font-bold text-center mb-6 gradient-text">Select Your Country</h2>
+     <p class="text-gray-400 text-sm text-center mb-6">Hurobotics is currently available in East African countries only.</p>
+     <div class="grid grid-cols-2 gap-3 mb-6" id="country-list"><button onclick="selectCountry('Kenya')" class="neon-border rounded-lg p-3 hover:bg-cyan-500/10 transition-all text-left"> <span class="text-2xl">🇰🇪</span> <span class="ml-2">Kenya</span> </button> <button onclick="selectCountry('Tanzania')" class="neon-border rounded-lg p-3 hover:bg-cyan-500/10 transition-all text-left"> <span class="text-2xl">🇹🇿</span> <span class="ml-2">Tanzania</span> </button> <button onclick="selectCountry('Uganda')" class="neon-border rounded-lg p-3 hover:bg-cyan-500/10 transition-all text-left"> <span class="text-2xl">🇺🇬</span> <span class="ml-2">Uganda</span> </button> <button onclick="selectCountry('Rwanda')" class="neon-border rounded-lg p-3 hover:bg-cyan-500/10 transition-all text-left"> <span class="text-2xl">🇷🇼</span> <span class="ml-2">Rwanda</span> </button> <button onclick="selectCountry('Ethiopia')" class="neon-border rounded-lg p-3 hover:bg-cyan-500/10 transition-all text-left"> <span class="text-2xl">🇪🇹</span> <span class="ml-2">Ethiopia</span> </button> <button onclick="selectCountry('South Sudan')" class="neon-border rounded-lg p-3 hover:bg-cyan-500/10 transition-all text-left"> <span class="text-2xl">🇸🇸</span> <span class="ml-2">South Sudan</span> </button>
+     </div><button onclick="hideCountrySelection()" class="w-full py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
+    </div>
+   </div><!-- Country Verification Modal -->
+   <div id="verification-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="neon-border rounded-2xl p-8 max-w-md w-full bg-[#0a0a1a] robot-border">
+     <h2 class="font-orbitron text-2xl font-bold text-center mb-6 gradient-text">Verify Your Country</h2>
+     <div class="text-center mb-6">
+      <div class="text-6xl mb-4" id="selected-country-flag">
+       🇰🇪
+      </div>
+      <p class="text-xl font-orbitron text-cyan-400" id="selected-country-name">Kenya</p>
+     </div>
+     <p class="text-gray-400 text-sm text-center mb-6">Please confirm this is your country of residence.</p>
+     <div class="flex gap-4"><button onclick="showCountrySelection()" class="flex-1 py-3 rounded-lg border border-gray-600 hover:border-cyan-400 transition-colors font-orbitron"> Change </button> <button onclick="confirmCountry()" class="flex-1 btn-neon py-3 rounded-lg font-orbitron font-bold text-white"> Confirm </button>
+     </div>
+    </div>
+   </div><!-- Registration Modal -->
+   <div id="registration-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="neon-border rounded-2xl p-8 max-w-md w-full bg-[#0a0a1a] my-8 robot-border">
+     <h2 class="font-orbitron text-2xl font-bold text-center mb-6 gradient-text">Create Account</h2>
+     <form id="registration-form" onsubmit="handleRegistration(event)">
+      <div class="space-y-4">
+       <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="reg-name">Full Name</label> <input type="text" id="reg-name" required class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" placeholder="Enter your full name">
+       </div>
+       <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="reg-email">Email</label> <input type="email" id="reg-email" required class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" placeholder="Enter your email">
+       </div>
+       <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="reg-phone">Phone Number</label> <input type="tel" id="reg-phone" required class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" placeholder="Enter phone number">
+       </div>
+       <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="reg-password">Password</label> <input type="password" id="reg-password" required class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" placeholder="Create a password">
+       </div>
+      </div><button type="submit" class="w-full btn-neon py-4 rounded-lg font-orbitron font-bold text-white mt-6"> 🚀 Create Account </button>
+     </form><button onclick="hideRegistration()" class="w-full py-2 text-gray-400 hover:text-white transition-colors mt-4">Cancel</button>
+    </div>
+   </div><!-- Payment Setup Modal -->
+   <div id="payment-setup-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="neon-border rounded-2xl p-8 max-w-md w-full bg-[#0a0a1a] my-8 robot-border">
+     <h2 class="font-orbitron text-2xl font-bold text-center mb-6 gradient-text">Payment Setup</h2>
+     <p class="text-gray-400 text-sm text-center mb-6">Set up your payment method to receive earnings</p>
+     <div id="payment-form-container">
+      <form id="payment-form" onsubmit="handlePaymentSetup(event)">
+       <div class="space-y-4">
+        <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="payment-method">Payment Method</label> <select id="payment-method" required class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors"> <option value="">Select payment method</option> <option value="mpesa">M-Pesa</option> <option value="bank">Bank Transfer</option> <option value="paypal">PayPal</option> </select>
+        </div>
+        <div id="mpesa-fields" class="hidden"><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="mpesa-number">M-Pesa Number</label> <input type="tel" id="mpesa-number" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" placeholder="e.g., 0712345678">
+        </div>
+        <div id="bank-fields" class="hidden space-y-4">
+         <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="bank-name">Bank Name</label> <input type="text" id="bank-name" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" placeholder="Enter bank name">
+         </div>
+         <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="account-number">Account Number</label> <input type="text" id="account-number" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" placeholder="Enter account number">
+         </div>
+        </div>
+        <div id="paypal-fields" class="hidden"><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="paypal-email">PayPal Email</label> <input type="email" id="paypal-email" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" placeholder="Enter PayPal email">
+        </div>
+       </div><button type="submit" class="w-full btn-neon py-4 rounded-lg font-orbitron font-bold text-white mt-6"> 💳 Save Payment Details </button>
+      </form>
+     </div>
+    </div>
+   </div><!-- M-Pesa Verification Modal -->
+   <div id="mpesa-verify-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="neon-border rounded-2xl p-8 max-w-md w-full bg-[#0a0a1a] my-8 robot-border">
+     <h2 class="font-orbitron text-2xl font-bold text-center mb-6 gradient-text">Verify M-Pesa Payment</h2>
+     <p class="text-gray-400 text-sm text-center mb-4">Paste your M-Pesa payment message (SMS) to verify</p>
+     <div class="bg-[#1a1a2e] border border-cyan-500/30 rounded-lg p-3 mb-4 text-xs text-gray-500">
+      <p>📱 Example: "MPESA01 24/01/24 12:34 PM Confirmed. You have received KES 364.00 from John Doe on 24/01/24 12:34 PM..."</p>
+     </div>
+     <form id="mpesa-verify-form" onsubmit="handleMpesaVerification(event)">
+      <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="mpesa-message">M-Pesa Message</label> <textarea id="mpesa-message" required rows="4" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors text-sm" placeholder="Paste your M-Pesa SMS here..."></textarea>
+      </div><button type="submit" class="w-full btn-neon py-4 rounded-lg font-orbitron font-bold text-white mt-6"> ✅ Verify Payment </button>
+     </form><button onclick="closeMpesaVerification()" class="w-full py-2 text-gray-400 hover:text-white transition-colors mt-4">Cancel</button>
+    </div>
+   </div><!-- Subscription Modal -->
+   <div id="subscription-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="neon-border rounded-2xl p-8 max-w-md w-full bg-[#0a0a1a] robot-border">
+     <h2 class="font-orbitron text-2xl font-bold text-center mb-6 gradient-text">Subscribe to Access Tasks</h2>
+     <div class="text-center mb-6">
+      <div class="text-6xl mb-4">
+       🔓
+      </div>
+      <p class="text-gray-400">To access Level 1 tasks, you need to subscribe</p>
+     </div>
+     <div class="neon-border rounded-xl p-6 mb-6">
+      <div class="text-center">
+       <h3 class="font-orbitron text-xl font-bold text-cyan-400">Level 1 Subscription</h3>
+       <div class="text-4xl font-bold my-4 gradient-text">
+        $2.80
+       </div>
+       <p class="text-gray-400 text-sm">KSH 364</p>
+      </div>
+      <ul class="mt-4 space-y-2 text-sm text-gray-300">
+       <li class="flex items-center gap-2">✅ Access to Content Review tasks</li>
+       <li class="flex items-center gap-2">✅ Access to Text Rewriting tasks</li>
+       <li class="flex items-center gap-2">✅ Earn up to $5 per task</li>
+       <li class="flex items-center gap-2">✅ Unlock Level 2 at 50 tasks</li>
+      </ul>
+     </div><a href="https://lipana.dev/pay/joblify-account-verification" target="_blank" rel="noopener noreferrer" class="block w-full btn-neon py-4 rounded-lg font-orbitron font-bold text-white text-center"> 💳 Subscribe Now </a> <button onclick="closeSubscriptionModal(); activateSubscription();" class="w-full py-3 text-cyan-400 hover:text-white transition-colors mt-4 font-orbitron text-sm"> I've completed payment ✓ </button> <button onclick="closeSubscriptionModal()" class="w-full py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
+    </div>
+   </div><!-- Task Details Modal -->
+   <div id="task-details-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="neon-border rounded-2xl p-8 max-w-lg w-full bg-[#0a0a1a] my-8 robot-border">
+     <div class="flex justify-between items-start mb-6">
+      <h2 class="font-orbitron text-2xl font-bold gradient-text" id="modal-task-title">Task Details</h2><button onclick="closeTaskModal()" class="text-2xl text-gray-400 hover:text-white">✕</button>
+     </div>
+     <div id="modal-task-content"></div>
+    </div>
+   </div><!-- Task Work Modal -->
+   <div id="task-work-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="neon-border rounded-2xl p-8 max-w-2xl w-full bg-[#0a0a1a] my-8 robot-border">
+     <div class="flex justify-between items-start mb-6">
+      <h2 class="font-orbitron text-2xl font-bold gradient-text">Complete Task</h2><button onclick="closeTaskWorkModal()" class="text-2xl text-gray-400 hover:text-white">✕</button>
+     </div>
+     <div class="space-y-6"><!-- Task Info -->
+      <div class="neon-border rounded-xl p-4">
+       <h3 class="font-orbitron font-bold text-cyan-400 mb-3" id="work-task-title">Task</h3>
+       <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <div>
+         <p class="text-gray-500">AI Model</p>
+         <p class="font-orbitron text-cyan-400" id="work-task-ai">GPT-4</p>
+        </div>
+        <div>
+         <p class="text-gray-500">Company</p>
+         <p class="font-orbitron text-purple-400" id="work-task-company">OpenAI</p>
+        </div>
+        <div>
+         <p class="text-gray-500">Payment</p>
+         <p class="font-orbitron text-green-400" id="work-task-payment">$5.00</p>
+        </div>
+        <div>
+         <p class="text-gray-500">Duration</p>
+         <p class="font-orbitron text-yellow-400" id="work-task-duration">30 min</p>
+        </div>
+       </div>
+      </div><!-- Task Instructions -->
+      <div class="bg-[#1a1a2e] rounded-xl p-6 border border-cyan-500/20">
+       <h3 class="font-orbitron font-bold text-cyan-400 mb-3">📋 Task Instructions</h3>
+       <div id="work-task-instructions" class="text-sm text-gray-300 space-y-2"><!-- Instructions will be inserted here -->
+       </div>
+      </div><!-- Task Requirements Checklist -->
+      <div class="bg-[#1a1a2e] rounded-xl p-6 border border-cyan-500/20">
+       <h3 class="font-orbitron font-bold text-cyan-400 mb-4">✅ Requirements Checklist</h3>
+       <div id="work-requirements-checklist" class="space-y-3"><!-- Requirements checkboxes will be inserted here -->
+       </div>
+      </div><!-- Work Area -->
+      <div class="bg-[#1a1a2e] rounded-xl p-6 border border-cyan-500/20">
+       <h3 class="font-orbitron font-bold text-cyan-400 mb-3">Your Work</h3><textarea id="task-work-textarea" rows="6" class="w-full bg-[#0a0a1a] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors text-sm" placeholder="Enter your work here..."></textarea>
+      </div><!-- Submit Button -->
+      <div id="work-submit-section"><button onclick="submitTaskWork()" class="w-full btn-neon py-4 rounded-lg font-orbitron font-bold text-white" id="submit-work-btn"> ✅ Submit Work </button>
+      </div>
+     </div>
+    </div>
+   </div><!-- Level Up Required Modal -->
+   <div id="level-up-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="neon-border rounded-2xl p-8 max-w-md w-full bg-[#0a0a1a] robot-border">
+     <div class="text-center">
+      <div class="text-6xl mb-4 animate-bounce">
+       🚀
+      </div>
+      <h2 class="font-orbitron text-2xl font-bold gradient-text mb-4">Level Up Required!</h2>
+      <p class="text-gray-400 mb-6">You've completed 10 Level 1 tasks! To continue earning and unlock higher-paying tasks, upgrade to Level 2.</p>
+      <div class="neon-border rounded-xl p-4 mb-6 bg-gradient-to-r from-purple-900/20 to-cyan-900/20">
+       <p class="text-sm text-gray-400 mb-2">Level 2 Upgrade</p>
+       <p class="font-orbitron text-3xl font-bold gradient-text">$2.80</p>
+       <p class="text-xs text-gray-500">KSH 364</p>
+      </div>
+      <div class="space-y-2 mb-6 text-left">
+       <p class="text-sm text-gray-300">✅ Unlock Prompt Testing tasks</p>
+       <p class="text-sm text-gray-300">✅ Unlock Response Comparison tasks</p>
+       <p class="text-sm text-gray-300">✅ Unlock Fact Checking tasks</p>
+       <p class="text-sm text-gray-300">✅ Earn up to $15 per task</p>
+      </div><a href="https://lipana.dev/pay/joblify-account-verification" target="_blank" rel="noopener noreferrer" class="block w-full btn-neon py-4 rounded-lg font-orbitron font-bold text-white mb-3"> 💳 Upgrade to Level 2 </a> <button onclick="closeLevelUpModal(); showMpesaVerificationForUpgrade();" class="w-full py-3 text-cyan-400 hover:text-white transition-colors font-orbitron text-sm"> I've paid ✓ </button>
+     </div>
+    </div>
+   </div><!-- Dashboard -->
+   <div id="dashboard" class="hidden min-h-full"><!-- Dashboard Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-40 bg-[#0a0a1a]/90 backdrop-blur-md border-b border-cyan-500/20">
+     <div class="px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center gap-4"><button onclick="toggleDashboardMenu()" class="text-2xl hover:text-cyan-400 transition-colors">☰</button>
+       <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center"><span class="text-sm">🤖</span>
+        </div><span class="font-orbitron text-lg font-bold gradient-text hidden sm:block">HUROBOTICS</span>
+       </div>
+      </div>
+      <div class="flex items-center gap-4">
+       <div class="neon-border rounded-lg px-4 py-2 flex items-center gap-2"><span class="text-cyan-400">💰</span> <span class="font-orbitron font-bold" id="nav-balance">$0.00</span>
+       </div>
+       <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center cursor-pointer" onclick="navigateTo('profile')"><span id="nav-avatar">👤</span>
+       </div>
+      </div>
+     </div>
+    </nav><!-- Side Menu -->
+    <div id="dashboard-menu" class="mobile-menu fixed top-0 left-0 w-64 h-full bg-[#0a0a1a] border-r border-cyan-500/30 z-50 pt-20 overflow-y-auto"><button onclick="toggleDashboardMenu()" class="absolute top-4 right-4 text-2xl text-cyan-400">✕</button>
+     <div class="px-4 pb-8">
+      <div class="mb-6 p-4 neon-border rounded-xl text-center">
+       <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-2xl mb-2"><span id="menu-avatar">👤</span>
+       </div>
+       <p class="font-orbitron font-bold" id="menu-username">User</p>
+       <p class="text-xs text-gray-400" id="menu-level">Level 1</p>
+      </div>
+      <nav class="space-y-2"><button onclick="navigateTo('dashboard'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="dashboard"> <span>📊</span> Dashboard </button> <button onclick="navigateTo('tasks'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="tasks"> <span>📋</span> Tasks </button> <button onclick="navigateTo('active-tasks'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="active-tasks"> <span>⚡</span> Active Tasks </button> <button onclick="navigateTo('task-history'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="task-history"> <span>📜</span> Task History </button> <button onclick="navigateTo('forex'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="forex"> <span>💱</span> Forex Zone </button> <button onclick="navigateTo('wallet'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="wallet"> <span>💰</span> Wallet </button> <button onclick="navigateTo('level'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="level"> <span>🎖️</span> Level </button> <button onclick="navigateTo('profile'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="profile"> <span>👤</span> Profile </button> <button onclick="navigateTo('refund'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="refund"> <span>↩️</span> Refund </button> <button onclick="navigateTo('app'); toggleDashboardMenu();" class="w-full text-left px-4 py-3 rounded-lg hover:bg-cyan-500/10 transition-colors flex items-center gap-3 menu-item" data-page="app"> <span>📱</span> App </button>
+       <div class="border-t border-cyan-500/20 my-4"></div><button onclick="handleLogout()" class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-500/10 transition-colors flex items-center gap-3 text-red-400"> <span>🚪</span> Logout </button>
+      </nav>
+     </div>
+    </div><!-- Dashboard Content -->
+    <div class="pt-20 px-4 pb-8"><!-- Dashboard Home -->
+     <div id="page-dashboard" class="dashboard-page max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Welcome Back!</h1><!-- Stats Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+       <div class="neon-border rounded-xl p-4 card-hover transition-all duration-300">
+        <div class="text-2xl mb-2">
+         💰
+        </div>
+        <p class="text-gray-400 text-sm">Total Earnings</p>
+        <p class="font-orbitron text-xl font-bold text-cyan-400" id="stat-earnings">$0.00</p>
+       </div>
+       <div class="neon-border rounded-xl p-4 card-hover transition-all duration-300">
+        <div class="text-2xl mb-2">
+         ✅
+        </div>
+        <p class="text-gray-400 text-sm">Tasks Completed</p>
+        <p class="font-orbitron text-xl font-bold text-green-400" id="stat-completed">0</p>
+       </div>
+       <div class="neon-border rounded-xl p-4 card-hover transition-all duration-300">
+        <div class="text-2xl mb-2">
+         ⏳
+        </div>
+        <p class="text-gray-400 text-sm">Pending Review</p>
+        <p class="font-orbitron text-xl font-bold text-yellow-400" id="stat-pending">0</p>
+       </div>
+       <div class="neon-border rounded-xl p-4 card-hover transition-all duration-300">
+        <div class="text-2xl mb-2">
+         🎖️
+        </div>
+        <p class="text-gray-400 text-sm">Current Level</p>
+        <p class="font-orbitron text-xl font-bold text-purple-400" id="stat-level">1</p>
+       </div>
+      </div><!-- Progress -->
+      <div class="neon-border rounded-xl p-6 mb-8 robot-border">
+       <h3 class="font-orbitron text-lg font-bold mb-4 text-cyan-400">Level Progress</h3>
+       <div class="flex justify-between text-sm mb-2"><span class="text-gray-400">Tasks to Level 2</span> <span class="font-orbitron" id="progress-text">0/50</span>
+       </div>
+       <div class="h-4 bg-[#1a1a2e] rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-cyan-400 to-purple-500 progress-glow transition-all duration-500" id="progress-bar" style="width: 0%"></div>
+       </div>
+      </div><!-- TV Screen -->
+      <div class="neon-border rounded-xl p-4 mb-8">
+       <div class="tv-screen tv-scanlines relative rounded-lg p-2 aspect-video">
+        <video class="w-full h-full rounded object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+         <div class="w-full h-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center"><span class="text-4xl">📺</span>
+         </div>
+        </video>
+        <div class="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded text-xs font-orbitron text-cyan-400">
+         SYSTEM STATUS • ONLINE
+        </div>
+       </div>
+      </div><!-- Quick Actions -->
+      <div class="grid md:grid-cols-2 gap-4"><button onclick="navigateTo('tasks')" class="neon-border rounded-xl p-6 card-hover transition-all duration-300 text-left">
+        <div class="flex items-center gap-4">
+         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-2xl">
+          📋
+         </div>
+         <div>
+          <h3 class="font-orbitron font-bold text-cyan-400">Browse Tasks</h3>
+          <p class="text-gray-400 text-sm">Find new tasks to complete</p>
+         </div>
+        </div></button> <button onclick="navigateTo('wallet')" class="neon-border rounded-xl p-6 card-hover transition-all duration-300 text-left">
+        <div class="flex items-center gap-4">
+         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-cyan-500 flex items-center justify-center text-2xl">
+          💵
+         </div>
+         <div>
+          <h3 class="font-orbitron font-bold text-green-400">Withdraw Funds</h3>
+          <p class="text-gray-400 text-sm">Transfer earnings to your account</p>
+         </div>
+        </div></button>
+      </div>
+     </div><!-- Tasks Page -->
+     <div id="page-tasks" class="dashboard-page hidden max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Available Tasks</h1><!-- Subscription Status -->
+      <div id="subscription-banner" class="neon-border rounded-xl p-6 mb-6 bg-gradient-to-r from-purple-900/20 to-cyan-900/20">
+       <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+         <h3 class="font-orbitron font-bold text-cyan-400 mb-2">���� Subscribe to Access Tasks</h3>
+         <p class="text-gray-400 text-sm">Subscribe for $2.80 (KSH 364) to unlock all Level 1 tasks</p>
+        </div><button onclick="showSubscriptionModal()" class="btn-neon px-6 py-3 rounded-full font-orbitron font-bold text-white whitespace-nowrap"> Subscribe Now </button>
+       </div>
+      </div><!-- Task Categories -->
+      <div class="flex flex-wrap gap-2 mb-6"><button onclick="filterTasks('all')" class="px-4 py-2 rounded-full neon-border text-sm font-orbitron task-filter active" data-filter="all">All Tasks</button> <button onclick="filterTasks('content-review')" class="px-4 py-2 rounded-full neon-border text-sm font-orbitron task-filter" data-filter="content-review">Content Review</button> <button onclick="filterTasks('text-rewriting')" class="px-4 py-2 rounded-full neon-border text-sm font-orbitron task-filter" data-filter="text-rewriting">Text Rewriting</button> <button onclick="filterTasks('prompt-testing')" class="px-4 py-2 rounded-full neon-border text-sm font-orbitron task-filter" data-filter="prompt-testing">Prompt Testing</button> <button onclick="filterTasks('response-comparison')" class="px-4 py-2 rounded-full neon-border text-sm font-orbitron task-filter" data-filter="response-comparison">Response Comparison</button> <button onclick="filterTasks('fact-checking')" class="px-4 py-2 rounded-full neon-border text-sm font-orbitron task-filter" data-filter="fact-checking">Fact Checking</button>
+      </div><!-- Tasks Grid -->
+      <div id="tasks-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"><!-- Tasks will be dynamically loaded -->
+      </div>
+     </div><!-- Active Tasks Page -->
+     <div id="page-active-tasks" class="dashboard-page hidden max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Active Tasks</h1>
+      <div id="active-tasks-list"><!-- Active tasks will be loaded here -->
+      </div>
+     </div><!-- Task History Page -->
+     <div id="page-task-history" class="dashboard-page hidden max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Task History</h1>
+      <div class="neon-border rounded-xl overflow-hidden">
+       <div class="overflow-x-auto">
+        <table class="w-full">
+         <thead class="bg-[#1a1a2e]">
+          <tr>
+           <th class="px-4 py-3 text-left text-sm font-orbitron text-cyan-400">Task</th>
+           <th class="px-4 py-3 text-left text-sm font-orbitron text-cyan-400">Amount</th>
+           <th class="px-4 py-3 text-left text-sm font-orbitron text-cyan-400">Date</th>
+           <th class="px-4 py-3 text-left text-sm font-orbitron text-cyan-400">Status</th>
+          </tr>
+         </thead>
+         <tbody id="history-table-body"><!-- History will be loaded here -->
+         </tbody>
+        </table>
+       </div>
+      </div>
+     </div><!-- Forex Zone Page -->
+     <div id="page-forex" class="dashboard-page hidden max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Forex Zone</h1><!-- Exchange Rates -->
+      <div class="neon-border rounded-xl p-6 mb-6 robot-border">
+       <h3 class="font-orbitron text-lg font-bold mb-4 text-cyan-400">📊 Live Exchange Rates</h3>
+       <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="exchange-rates">
+        <div class="bg-[#1a1a2e] rounded-lg p-4 text-center">
+         <p class="text-sm text-gray-400">USD/KES</p>
+         <p class="font-orbitron text-xl font-bold text-green-400">130.00</p>
+        </div>
+        <div class="bg-[#1a1a2e] rounded-lg p-4 text-center">
+         <p class="text-sm text-gray-400">EUR/KES</p>
+         <p class="font-orbitron text-xl font-bold text-cyan-400">141.50</p>
+        </div>
+        <div class="bg-[#1a1a2e] rounded-lg p-4 text-center">
+         <p class="text-sm text-gray-400">GBP/KES</p>
+         <p class="font-orbitron text-xl font-bold text-purple-400">164.25</p>
+        </div>
+        <div class="bg-[#1a1a2e] rounded-lg p-4 text-center">
+         <p class="text-sm text-gray-400">USD/TZS</p>
+         <p class="font-orbitron text-xl font-bold text-pink-400">2,500</p>
+        </div>
+       </div>
+      </div><!-- Currency Converter -->
+      <div class="neon-border rounded-xl p-6 robot-border">
+       <h3 class="font-orbitron text-lg font-bold mb-4 text-cyan-400">💱 Currency Converter</h3>
+       <div class="grid md:grid-cols-2 gap-4">
+        <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="forex-amount">Amount (KES)</label> <input type="number" id="forex-amount" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" placeholder="Enter amount in KES" oninput="convertCurrency()">
+        </div>
+        <div><label class="block text-sm text-gray-400 mb-2 font-orbitron" for="forex-currency">Convert To</label> <select id="forex-currency" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none transition-colors" onchange="convertCurrency()"> <option value="USD">US Dollar (USD)</option> <option value="EUR">Euro (EUR)</option> <option value="GBP">British Pound (GBP)</option> <option value="TZS">Tanzanian Shilling (TZS)</option> </select>
+        </div>
+       </div>
+       <div class="mt-6 p-4 bg-[#1a1a2e] rounded-lg text-center">
+        <p class="text-sm text-gray-400 mb-2">Converted Amount</p>
+        <p class="font-orbitron text-3xl font-bold gradient-text" id="converted-amount">$0.00</p>
+       </div>
+      </div><!-- TV Screen -->
+      <div class="mt-8">
+       <div class="tv-screen tv-scanlines relative rounded-lg p-2 aspect-video max-w-md mx-auto">
+        <video class="w-full h-full rounded object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+         <div class="w-full h-full bg-gradient-to-br from-green-500/20 to-cyan-500/20 flex items-center justify-center"><span class="text-4xl">💹</span>
+         </div>
+        </video>
+        <div class="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded text-xs font-orbitron text-green-400">
+         FOREX LIVE • MARKETS OPEN
+        </div>
+       </div>
+      </div>
+     </div><!-- Wallet Page -->
+     <div id="page-wallet" class="dashboard-page hidden max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Wallet</h1><!-- Balance Card -->
+      <div class="neon-border rounded-xl p-8 mb-6 bg-gradient-to-br from-cyan-900/20 to-purple-900/20 robot-border">
+       <div class="text-center">
+        <p class="text-gray-400 mb-2">Available Balance</p>
+        <p class="font-orbitron text-5xl font-bold gradient-text mb-4" id="wallet-balance">$0.00</p>
+        <p class="text-sm text-gray-400" id="wallet-balance-local">≈ KES 0.00</p>
+       </div>
+      </div><!-- Actions -->
+      <div class="grid md:grid-cols-2 gap-4 mb-6">
+       <div class="neon-border rounded-xl p-6">
+        <h3 class="font-orbitron font-bold text-cyan-400 mb-4">💸 Withdraw</h3>
+        <div class="space-y-4">
+         <div><label class="block text-sm text-gray-400 mb-2" for="withdraw-amount">Amount (USD)</label> <input type="number" id="withdraw-amount" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none" placeholder="Enter amount">
+         </div><button onclick="handleWithdraw()" class="w-full btn-neon py-3 rounded-lg font-orbitron font-bold text-white"> Withdraw </button>
+        </div>
+       </div>
+       <div class="neon-border rounded-xl p-6">
+        <h3 class="font-orbitron font-bold text-purple-400 mb-4">📊 Transaction Summary</h3>
+        <div class="space-y-3">
+         <div class="flex justify-between"><span class="text-gray-400">Total Earned</span> <span class="font-orbitron text-green-400" id="total-earned">$0.00</span>
+         </div>
+         <div class="flex justify-between"><span class="text-gray-400">Total Withdrawn</span> <span class="font-orbitron text-yellow-400" id="total-withdrawn">$0.00</span>
+         </div>
+         <div class="flex justify-between"><span class="text-gray-400">Pending</span> <span class="font-orbitron text-orange-400" id="pending-amount">$0.00</span>
+         </div>
+        </div>
+       </div>
+      </div><!-- Recent Transactions -->
+      <div class="neon-border rounded-xl p-6">
+       <h3 class="font-orbitron font-bold text-cyan-400 mb-4">📜 Recent Transactions</h3>
+       <div id="transactions-list" class="space-y-3"><!-- Transactions will be loaded here -->
+       </div>
+      </div>
+     </div><!-- Level Page -->
+     <div id="page-level" class="dashboard-page hidden max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Your Level</h1><!-- Current Level -->
+      <div class="neon-border rounded-xl p-8 mb-6 text-center robot-border">
+       <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center"><span class="font-orbitron text-4xl font-bold" id="current-level-display">1</span>
+       </div>
+       <h2 class="font-orbitron text-2xl font-bold gradient-text mb-2" id="level-title">Level 1 - Beginner</h2>
+       <p class="text-gray-400" id="level-description">Complete 50 tasks to reach Level 2</p>
+      </div><!-- Level Benefits -->
+      <div class="grid md:grid-cols-2 gap-6">
+       <div class="neon-border rounded-xl p-6">
+        <h3 class="font-orbitron font-bold text-cyan-400 mb-4">Level 1 Benefits</h3>
+        <ul class="space-y-2 text-sm">
+         <li class="flex items-center gap-2 text-gray-300">✅ Access to Content Review tasks</li>
+         <li class="flex items-center gap-2 text-gray-300">✅ Access to Text Rewriting tasks</li>
+         <li class="flex items-center gap-2 text-gray-300">✅ Earn up to $5 per task</li>
+        </ul>
+       </div>
+       <div class="neon-border rounded-xl p-6">
+        <h3 class="font-orbitron font-bold text-purple-400 mb-4">Level 2 Benefits</h3>
+        <ul class="space-y-2 text-sm">
+         <li class="flex items-center gap-2 text-gray-300" id="l2-benefit-1">🔒 All Level 1 tasks</li>
+         <li class="flex items-center gap-2 text-gray-300" id="l2-benefit-2">🔒 Prompt Testing tasks</li>
+         <li class="flex items-center gap-2 text-gray-300" id="l2-benefit-3">🔒 Response Comparison tasks</li>
+         <li class="flex items-center gap-2 text-gray-300" id="l2-benefit-4">🔒 Fact Checking tasks</li>
+         <li class="flex items-center gap-2 text-gray-300" id="l2-benefit-5">🔒 Earn up to $15 per task</li>
+        </ul>
+       </div>
+      </div><!-- TV Screen -->
+      <div class="mt-8">
+       <div class="tv-screen tv-scanlines relative rounded-lg p-2 aspect-video max-w-md mx-auto">
+        <video class="w-full h-full rounded object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+         <div class="w-full h-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center"><span class="text-4xl">🎖️</span>
+         </div>
+        </video>
+       </div>
+      </div>
+     </div><!-- Profile Page -->
+     <div id="page-profile" class="dashboard-page hidden max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Profile</h1>
+      <div class="neon-border rounded-xl p-6 mb-6 robot-border">
+       <div class="flex flex-col md:flex-row items-center gap-6">
+        <div class="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-4xl"><span id="profile-avatar">👤</span>
+        </div>
+        <div class="text-center md:text-left">
+         <h2 class="font-orbitron text-2xl font-bold" id="profile-name">User</h2>
+         <p class="text-gray-400" id="profile-email">user@email.com</p>
+         <p class="text-sm text-cyan-400 mt-2" id="profile-country">🌍 Kenya</p>
+        </div>
+       </div>
+      </div><!-- Profile Settings -->
+      <div class="neon-border rounded-xl p-6">
+       <h3 class="font-orbitron font-bold text-cyan-400 mb-6">Edit Profile</h3>
+       <form id="profile-form" onsubmit="handleProfileUpdate(event)">
+        <div class="grid md:grid-cols-2 gap-4">
+         <div><label class="block text-sm text-gray-400 mb-2" for="profile-name-input">Full Name</label> <input type="text" id="profile-name-input" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none">
+         </div>
+         <div><label class="block text-sm text-gray-400 mb-2" for="profile-phone-input">Phone</label> <input type="tel" id="profile-phone-input" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none">
+         </div>
+        </div><button type="submit" class="btn-neon px-6 py-3 rounded-lg font-orbitron font-bold text-white mt-6"> Save Changes </button>
+       </form>
+      </div>
+     </div><!-- Refund Page -->
+     <div id="page-refund" class="dashboard-page hidden max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Refund Request</h1>
+      <div class="neon-border rounded-xl p-6 robot-border">
+       <p class="text-gray-400 mb-6">If you need a refund for your subscription, please fill out the form below.</p>
+       <form id="refund-form" onsubmit="handleRefundRequest(event)">
+        <div class="space-y-4">
+         <div><label class="block text-sm text-gray-400 mb-2" for="refund-reason">Reason for Refund</label> <select id="refund-reason" required class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none"> <option value="">Select a reason</option> <option value="not-satisfied">Not satisfied with tasks</option> <option value="technical-issues">Technical issues</option> <option value="duplicate-payment">Duplicate payment</option> <option value="other">Other</option> </select>
+         </div>
+         <div><label class="block text-sm text-gray-400 mb-2" for="refund-details">Additional Details</label> <textarea id="refund-details" rows="4" class="w-full bg-[#1a1a2e] border border-cyan-500/30 rounded-lg px-4 py-3 focus:border-cyan-400 focus:outline-none" placeholder="Please describe your issue..."></textarea>
+         </div>
+        </div><button type="submit" class="btn-neon px-6 py-3 rounded-lg font-orbitron font-bold text-white mt-6"> Submit Refund Request </button>
+       </form>
+      </div>
+     </div><!-- App Page -->
+     <div id="page-app" class="dashboard-page hidden max-w-6xl mx-auto">
+      <h1 class="font-orbitron text-2xl md:text-3xl font-bold mb-6 gradient-text neon-text">Mobile App</h1>
+      <div class="neon-border rounded-xl p-8 text-center robot-border">
+       <div class="text-6xl mb-4">
+        📱
+       </div>
+       <h2 class="font-orbitron text-2xl font-bold gradient-text mb-4">Coming Soon!</h2>
+       <p class="text-gray-400 mb-6">Our mobile app is under development. Get notified when it's ready!</p>
+       <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <div class="neon-border rounded-xl p-4 flex items-center gap-3"><span class="text-3xl">🍎</span>
+         <div class="text-left">
+          <p class="text-xs text-gray-400">Coming to</p>
+          <p class="font-orbitron font-bold">App Store</p>
+         </div>
+        </div>
+        <div class="neon-border rounded-xl p-4 flex items-center gap-3"><span class="text-3xl">🤖</span>
+         <div class="text-left">
+          <p class="text-xs text-gray-400">Coming to</p>
+          <p class="font-orbitron font-bold">Play Store</p>
+         </div>
+        </div>
+       </div>
+      </div><!-- TV Screen -->
+      <div class="mt-8">
+       <div class="tv-screen tv-scanlines relative rounded-lg p-2 aspect-video max-w-md mx-auto">
+        <video class="w-full h-full rounded object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+         <div class="w-full h-full bg-gradient-to-br from-cyan-500/20 to-green-500/20 flex items-center justify-center"><span class="text-4xl">📲</span>
+         </div>
+        </video>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    // ============ Configuration ============
+    const defaultConfig = {
+      site_title: 'Hurobotics',
+      hero_headline: 'Earn by Completing AI Micro-Tasks'
+    };
 
-<style>
-:root {
-  --primary:#4f46e5;
-  --bg:#0f172a;
-  --card:#020617;
-  --text:#e5e7eb;
-  --success:#22c55e;
-}
-* { box-sizing:border-box; font-family:Arial, sans-serif; }
-body {
-  margin:0; background:var(--bg); color:var(--text);
-  display:flex; justify-content:center; align-items:center; min-height:100vh;
-}
-.container {
-  width:100%; max-width:420px; background:var(--card);
-  padding:25px; border-radius:12px; box-shadow:0 0 30px #000;
-}
-h2 { text-align:center; margin-bottom:20px; }
-input, textarea, button {
-  width:100%; padding:12px; margin-bottom:12px;
-  border-radius:8px; border:none;
-}
-input, textarea { background:#020617; color:white; border:1px solid #1e293b; }
-button {
-  background:var(--primary); color:white; font-weight:bold;
-  cursor:pointer;
-}
-button:hover { opacity:0.9; }
-.step { display:none; }
-.step.active { display:block; }
-.feedback {
-  background:rgba(34,197,94,.15);
-  color:var(--success);
-  padding:10px; border-radius:8px;
-  margin-bottom:12px; display:none;
-}
-.progress {
-  text-align:center; margin-bottom:10px; font-size:14px;
-  opacity:.8;
-}
-</style>
-</head>
+    let config = { ...defaultConfig };
 
-<body>
+    // ============ State Management ============
+    let appState = {
+      currentPage: 'landing',
+      selectedCountry: null,
+      user: null,
+      isSubscribed: false,
+      tasks: [],
+      activeTasks: [],
+      taskHistory: [],
+      transactions: []
+    };
 
-<div class="container">
+    // ============ Exchange Rates ============
+    const exchangeRates = {
+      USD: 130,
+      EUR: 141.5,
+      GBP: 164.25,
+      TZS: 0.052 // KES to TZS
+    };
 
-<!-- LOGIN -->
-<div class="step active" id="login">
-  <h2>Refund Login</h2>
-  <div class="feedback" id="loginMsg">Login successful</div>
-  <input id="loginEmail" placeholder="Email used" required>
-  <input id="loginPhone" placeholder="Phone used" required>
-  <button onclick="login()">Login</button>
-</div>
+    // ============ Sample Tasks Data ============
+    const allTasks = [
+      // Level 1 - Content Review (15 tasks)
+      { id: 1, name: 'GPT-4 Turbo', company: 'OpenAI', subject: 'Tech Article Review', payment: 2.50, duration: '15 min', category: 'content-review', level: 1 },
+      { id: 2, name: 'Claude 3', company: 'Anthropic', subject: 'Essay Quality Check', payment: 3.00, duration: '20 min', category: 'content-review', level: 1 },
+      { id: 3, name: 'Gemini Pro', company: 'Google', subject: 'Blog Post Review', payment: 2.75, duration: '18 min', category: 'content-review', level: 1 },
+      { id: 4, name: 'LLaMA 2', company: 'Meta', subject: 'News Summary Check', payment: 2.25, duration: '12 min', category: 'content-review', level: 1 },
+      { id: 5, name: 'Mistral 7B', company: 'Mistral AI', subject: 'Product Review Analysis', payment: 3.50, duration: '25 min', category: 'content-review', level: 1 },
+      { id: 6, name: 'GPT-4', company: 'OpenAI', subject: 'Scientific Abstract', payment: 4.00, duration: '30 min', category: 'content-review', level: 1 },
+      { id: 7, name: 'Claude 2', company: 'Anthropic', subject: 'Marketing Copy Review', payment: 2.50, duration: '15 min', category: 'content-review', level: 1 },
+      { id: 8, name: 'PaLM 2', company: 'Google', subject: 'Email Template Check', payment: 2.00, duration: '10 min', category: 'content-review', level: 1 },
+      { id: 9, name: 'Falcon 40B', company: 'TII', subject: 'Social Media Post Review', payment: 1.75, duration: '8 min', category: 'content-review', level: 1 },
+      { id: 10, name: 'Cohere Command', company: 'Cohere', subject: 'FAQ Content Review', payment: 2.25, duration: '12 min', category: 'content-review', level: 1 },
+      { id: 11, name: 'GPT-3.5', company: 'OpenAI', subject: 'Recipe Instructions', payment: 2.00, duration: '10 min', category: 'content-review', level: 1 },
+      { id: 12, name: 'Claude Instant', company: 'Anthropic', subject: 'Tutorial Review', payment: 3.25, duration: '22 min', category: 'content-review', level: 1 },
+      { id: 13, name: 'Gemini Nano', company: 'Google', subject: 'App Description Review', payment: 2.50, duration: '15 min', category: 'content-review', level: 1 },
+      { id: 14, name: 'LLaMA 3', company: 'Meta', subject: 'Policy Document Check', payment: 4.50, duration: '35 min', category: 'content-review', level: 1 },
+      { id: 15, name: 'Mixtral 8x7B', company: 'Mistral AI', subject: 'Legal Summary Review', payment: 5.00, duration: '40 min', category: 'content-review', level: 1 },
+      
+      // Level 1 - Text Rewriting (15 tasks)
+      { id: 16, name: 'GPT-4 Turbo', company: 'OpenAI', subject: 'Simplify Technical Doc', payment: 3.00, duration: '20 min', category: 'text-rewriting', level: 1 },
+      { id: 17, name: 'Claude 3', company: 'Anthropic', subject: 'Improve Blog Tone', payment: 2.75, duration: '18 min', category: 'text-rewriting', level: 1 },
+      { id: 18, name: 'Gemini Pro', company: 'Google', subject: 'Rewrite for Clarity', payment: 2.50, duration: '15 min', category: 'text-rewriting', level: 1 },
+      { id: 19, name: 'LLaMA 2', company: 'Meta', subject: 'Formal to Casual', payment: 2.25, duration: '12 min', category: 'text-rewriting', level: 1 },
+      { id: 20, name: 'Mistral 7B', company: 'Mistral AI', subject: 'Expand Short Text', payment: 3.50, duration: '25 min', category: 'text-rewriting', level: 1 },
+      { id: 21, name: 'GPT-4', company: 'OpenAI', subject: 'Academic Rewriting', payment: 4.25, duration: '32 min', category: 'text-rewriting', level: 1 },
+      { id: 22, name: 'Claude 2', company: 'Anthropic', subject: 'Concise Summary', payment: 2.50, duration: '15 min', category: 'text-rewriting', level: 1 },
+      { id: 23, name: 'PaLM 2', company: 'Google', subject: 'SEO Optimization', payment: 3.00, duration: '20 min', category: 'text-rewriting', level: 1 },
+      { id: 24, name: 'Falcon 40B', company: 'TII', subject: 'Headline Rewriting', payment: 1.50, duration: '8 min', category: 'text-rewriting', level: 1 },
+      { id: 25, name: 'Cohere Command', company: 'Cohere', subject: 'Email Tone Shift', payment: 2.00, duration: '10 min', category: 'text-rewriting', level: 1 },
+      { id: 26, name: 'GPT-3.5', company: 'OpenAI', subject: 'Paraphrase Article', payment: 2.75, duration: '18 min', category: 'text-rewriting', level: 1 },
+      { id: 27, name: 'Claude Instant', company: 'Anthropic', subject: 'Localization Edit', payment: 3.25, duration: '22 min', category: 'text-rewriting', level: 1 },
+      { id: 28, name: 'Gemini Nano', company: 'Google', subject: 'Bullet Points', payment: 1.75, duration: '10 min', category: 'text-rewriting', level: 1 },
+      { id: 29, name: 'LLaMA 3', company: 'Meta', subject: 'Creative Rewrite', payment: 4.00, duration: '30 min', category: 'text-rewriting', level: 1 },
+      { id: 30, name: 'Mixtral 8x7B', company: 'Mistral AI', subject: 'Technical Simplify', payment: 3.75, duration: '28 min', category: 'text-rewriting', level: 1 },
+      
+      // Level 2 - Prompt Testing (15 tasks)
+      { id: 31, name: 'GPT-4 Turbo', company: 'OpenAI', subject: 'Creative Prompt Test', payment: 6.00, duration: '35 min', category: 'prompt-testing', level: 2 },
+      { id: 32, name: 'Claude 3', company: 'Anthropic', subject: 'Code Generation Prompt', payment: 7.50, duration: '45 min', category: 'prompt-testing', level: 2 },
+      { id: 33, name: 'Gemini Pro', company: 'Google', subject: 'Multi-turn Dialogue', payment: 6.25, duration: '40 min', category: 'prompt-testing', level: 2 },
+      { id: 34, name: 'LLaMA 2', company: 'Meta', subject: 'Instruction Following', payment: 5.50, duration: '32 min', category: 'prompt-testing', level: 2 },
+      { id: 35, name: 'Mistral 7B', company: 'Mistral AI', subject: 'Chain-of-Thought', payment: 8.00, duration: '50 min', category: 'prompt-testing', level: 2 },
+      { id: 36, name: 'GPT-4', company: 'OpenAI', subject: 'Few-shot Learning', payment: 9.00, duration: '55 min', category: 'prompt-testing', level: 2 },
+      { id: 37, name: 'Claude 2', company: 'Anthropic', subject: 'Role-play Prompts', payment: 5.75, duration: '35 min', category: 'prompt-testing', level: 2 },
+      { id: 38, name: 'PaLM 2', company: 'Google', subject: 'Structured Output', payment: 6.50, duration: '42 min', category: 'prompt-testing', level: 2 },
+      { id: 39, name: 'Falcon 40B', company: 'TII', subject: 'Edge Case Testing', payment: 7.00, duration: '45 min', category: 'prompt-testing', level: 2 },
+      { id: 40, name: 'Cohere Command', company: 'Cohere', subject: 'Prompt Variations', payment: 5.25, duration: '30 min', category: 'prompt-testing', level: 2 },
+      { id: 41, name: 'GPT-3.5', company: 'OpenAI', subject: 'Temperature Testing', payment: 4.50, duration: '28 min', category: 'prompt-testing', level: 2 },
+      { id: 42, name: 'Claude Instant', company: 'Anthropic', subject: 'System Prompts', payment: 6.75, duration: '40 min', category: 'prompt-testing', level: 2 },
+      { id: 43, name: 'Gemini Nano', company: 'Google', subject: 'Mobile Prompts', payment: 5.00, duration: '30 min', category: 'prompt-testing', level: 2 },
+      { id: 44, name: 'LLaMA 3', company: 'Meta', subject: 'Long Context', payment: 10.00, duration: '60 min', category: 'prompt-testing', level: 2 },
+      { id: 45, name: 'Mixtral 8x7B', company: 'Mistral AI', subject: 'Mixture Testing', payment: 8.50, duration: '52 min', category: 'prompt-testing', level: 2 },
+      
+      // Level 2 - Response Comparison (15 tasks)
+      { id: 46, name: 'GPT-4 vs Claude', company: 'Multi', subject: 'Creative Writing', payment: 7.00, duration: '40 min', category: 'response-comparison', level: 2 },
+      { id: 47, name: 'Gemini vs GPT', company: 'Multi', subject: 'Code Quality', payment: 8.50, duration: '50 min', category: 'response-comparison', level: 2 },
+      { id: 48, name: 'Claude vs LLaMA', company: 'Multi', subject: 'Factual Accuracy', payment: 6.75, duration: '42 min', category: 'response-comparison', level: 2 },
+      { id: 49, name: 'Mistral vs Falcon', company: 'Multi', subject: 'Speed vs Quality', payment: 6.00, duration: '35 min', category: 'response-comparison', level: 2 },
+      { id: 50, name: 'GPT-4 vs GPT-3.5', company: 'OpenAI', subject: 'Version Compare', payment: 5.50, duration: '32 min', category: 'response-comparison', level: 2 },
+      { id: 51, name: 'Claude 3 vs 2', company: 'Anthropic', subject: 'Upgrade Analysis', payment: 6.25, duration: '38 min', category: 'response-comparison', level: 2 },
+      { id: 52, name: 'All Models', company: 'Multi', subject: 'Math Problems', payment: 9.00, duration: '55 min', category: 'response-comparison', level: 2 },
+      { id: 53, name: 'Top 3 Models', company: 'Multi', subject: 'Summarization', payment: 7.50, duration: '45 min', category: 'response-comparison', level: 2 },
+      { id: 54, name: 'Open Source', company: 'Multi', subject: 'OS Model Compare', payment: 6.50, duration: '40 min', category: 'response-comparison', level: 2 },
+      { id: 55, name: 'Proprietary', company: 'Multi', subject: 'Premium Compare', payment: 8.00, duration: '48 min', category: 'response-comparison', level: 2 },
+      { id: 56, name: 'Small Models', company: 'Multi', subject: 'Efficiency Test', payment: 5.25, duration: '30 min', category: 'response-comparison', level: 2 },
+      { id: 57, name: 'Large Models', company: 'Multi', subject: 'Capability Test', payment: 10.50, duration: '65 min', category: 'response-comparison', level: 2 },
+      { id: 58, name: 'Multilingual', company: 'Multi', subject: 'Language Support', payment: 7.75, duration: '46 min', category: 'response-comparison', level: 2 },
+      { id: 59, name: 'Reasoning', company: 'Multi', subject: 'Logic Problems', payment: 9.50, duration: '58 min', category: 'response-comparison', level: 2 },
+      { id: 60, name: 'Safety', company: 'Multi', subject: 'Safety Compare', payment: 8.25, duration: '50 min', category: 'response-comparison', level: 2 },
+      
+      // Level 2 - Fact Checking (15 tasks)
+      { id: 61, name: 'GPT-4 Turbo', company: 'OpenAI', subject: 'Historical Facts', payment: 6.50, duration: '38 min', category: 'fact-checking', level: 2 },
+      { id: 62, name: 'Claude 3', company: 'Anthropic', subject: 'Scientific Claims', payment: 7.25, duration: '44 min', category: 'fact-checking', level: 2 },
+      { id: 63, name: 'Gemini Pro', company: 'Google', subject: 'Current Events', payment: 5.75, duration: '35 min', category: 'fact-checking', level: 2 },
+      { id: 64, name: 'LLaMA 2', company: 'Meta', subject: 'Geographic Data', payment: 5.50, duration: '32 min', category: 'fact-checking', level: 2 },
+      { id: 65, name: 'Mistral 7B', company: 'Mistral AI', subject: 'Statistical Facts', payment: 6.00, duration: '36 min', category: 'fact-checking', level: 2 },
+      { id: 66, name: 'GPT-4', company: 'OpenAI', subject: 'Medical Info', payment: 9.00, duration: '55 min', category: 'fact-checking', level: 2 },
+      { id: 67, name: 'Claude 2', company: 'Anthropic', subject: 'Legal Facts', payment: 8.00, duration: '48 min', category: 'fact-checking', level: 2 },
+      { id: 68, name: 'PaLM 2', company: 'Google', subject: 'Tech Specs', payment: 5.25, duration: '30 min', category: 'fact-checking', level: 2 },
+      { id: 69, name: 'Falcon 40B', company: 'TII', subject: 'News Verification', payment: 6.75, duration: '40 min', category: 'fact-checking', level: 2 },
+      { id: 70, name: 'Cohere Command', company: 'Cohere', subject: 'Quote Accuracy', payment: 4.75, duration: '28 min', category: 'fact-checking', level: 2 },
+      { id: 71, name: 'GPT-3.5', company: 'OpenAI', subject: 'Date Verification', payment: 4.50, duration: '26 min', category: 'fact-checking', level: 2 },
+      { id: 72, name: 'Claude Instant', company: 'Anthropic', subject: 'Source Check', payment: 6.25, duration: '38 min', category: 'fact-checking', level: 2 },
+      { id: 73, name: 'Gemini Nano', company: 'Google', subject: 'Simple Facts', payment: 4.00, duration: '24 min', category: 'fact-checking', level: 2 },
+      { id: 74, name: 'LLaMA 3', company: 'Meta', subject: 'Complex Claims', payment: 10.00, duration: '60 min', category: 'fact-checking', level: 2 },
+      { id: 75, name: 'Mixtral 8x7B', company: 'Mistral AI', subject: 'Cross-reference', payment: 8.50, duration: '52 min', category: 'fact-checking', level: 2 }
+    ];
 
-<form
-  class="step"
-  id="form"
-  action="https://api.web3forms.com/submit"
-  method="POST">
+    // ============ Country Flags ============
+    const countryFlags = {
+      'Kenya': '🇰🇪',
+      'Tanzania': '🇹🇿',
+      'Uganda': '🇺🇬',
+      'Rwanda': '🇷🇼',
+      'Ethiopia': '🇪🇹',
+      'South Sudan': '🇸🇸'
+    };
 
-<input type="hidden" name="access_key" value="741555bd-85f5-47b0-91ce-c54b65af9109">
-<input type="hidden" name="to_email" value="londonmarkv@gmail.com">
+    // ============ Initialize App ============
+    function initApp() {
+      loadFromStorage();
+      createParticles();
+      
+      if (appState.user) {
+        showDashboard();
+      } else {
+        showLanding();
+      }
+      
+      // Initialize Element SDK
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange: async (newConfig) => {
+            config = { ...defaultConfig, ...newConfig };
+            updateUI();
+          },
+          mapToCapabilities: () => ({
+            recolorables: [],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (cfg) => new Map([
+            ['site_title', cfg.site_title || defaultConfig.site_title],
+            ['hero_headline', cfg.hero_headline || defaultConfig.hero_headline]
+          ])
+        });
+      }
+    }
 
-<!-- STEP 1 -->
-<div class="step" id="s1">
-  <div class="progress">Step 1 of 5</div>
-  <div class="feedback">Details saved</div>
-  <input name="Full Name" placeholder="Full Name" required>
-  <input name="Email" placeholder="Email" required>
-  <button type="button" onclick="next(1)">Continue</button>
-</div>
+    function updateUI() {
+      const headline = document.getElementById('hero-headline');
+      if (headline) {
+        headline.textContent = config.hero_headline || defaultConfig.hero_headline;
+      }
+    }
 
-<!-- STEP 2 -->
-<div class="step" id="s2">
-  <div class="progress">Step 2 of 5</div>
-  <div class="feedback">Transaction recorded</div>
-  <input name="Transaction Code" placeholder="MPesa Transaction Code" required>
-  <input name="Amount" placeholder="Amount Sent" required>
-  <button type="button" onclick="next(2)">Continue</button>
-</div>
+    // ============ Storage Functions ============
+    function saveToStorage() {
+      localStorage.setItem('hurobotics_state', JSON.stringify(appState));
+    }
 
-<!-- STEP 3 -->
-<div class="step" id="s3">
-  <div class="progress">Step 3 of 5</div>
-  <div class="feedback">Reason noted</div>
-  <textarea name="Refund Reason" placeholder="Why are you requesting a refund?" required></textarea>
-  <button type="button" onclick="next(3)">Continue</button>
-</div>
+    function loadFromStorage() {
+      const saved = localStorage.getItem('hurobotics_state');
+      if (saved) {
+        appState = { ...appState, ...JSON.parse(saved) };
+      }
+    }
 
-<!-- STEP 4 -->
-<div class="step" id="s4">
-  <div class="progress">Step 4 of 5</div>
-  <div class="feedback">MPesa message captured</div>
-  <textarea name="MPesa Message" placeholder="Paste full MPesa confirmation message" required></textarea>
-  <button type="button" onclick="next(4)">Continue</button>
-</div>
+    // ============ Particle Animation ============
+    function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 15 + 's';
+        particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+        container.appendChild(particle);
+      }
+    }
 
-<!-- STEP 5 -->
-<div class="step" id="s5">
-  <div class="progress">Step 5 of 5</div>
-  <div class="feedback">Ready to submit</div>
-  <p>Please confirm all details before submission.</p>
-  <button type="submit">Submit Refund Request</button>
-</div>
+    // ============ Toast Notifications ============
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'from-green-500/20 to-cyan-500/20' : 
+                      type === 'error' ? 'from-red-500/20 to-pink-500/20' : 
+                      'from-yellow-500/20 to-orange-500/20';
+      const borderColor = type === 'success' ? 'border-green-500' : 
+                          type === 'error' ? 'border-red-500' : 
+                          'border-yellow-500';
+      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+      
+      toast.className = `toast-enter neon-border rounded-lg px-4 py-3 bg-gradient-to-r ${bgColor} border ${borderColor} flex items-center gap-2 min-w-[280px]`;
+      toast.innerHTML = `<span>${icon}</span><span class="text-sm">${message}</span>`;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.className = toast.className.replace('toast-enter', 'toast-exit');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
 
-</form>
+    // ============ Navigation Functions ============
+    function showLanding() {
+      document.getElementById('landing-page').classList.remove('hidden');
+      document.getElementById('dashboard').classList.add('hidden');
+      appState.currentPage = 'landing';
+    }
 
-</div>
+    function showDashboard() {
+      document.getElementById('landing-page').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      appState.currentPage = 'dashboard';
+      updateDashboardData();
+      navigateTo('dashboard');
+    }
 
-<script>
-function login(){
-  if(loginEmail.value && loginPhone.value){
-    document.getElementById("loginMsg").style.display="block";
-    setTimeout(()=>{
-      document.getElementById("login").classList.remove("active");
-      document.getElementById("form").classList.add("active");
-      document.getElementById("s1").classList.add("active");
-    },800);
-  }
-}
+    function navigateTo(page) {
+      document.querySelectorAll('.dashboard-page').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`page-${page}`).classList.remove('hidden');
+      
+      document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('bg-cyan-500/20', 'text-cyan-400');
+        if (item.dataset.page === page) {
+          item.classList.add('bg-cyan-500/20', 'text-cyan-400');
+        }
+      });
+      
+      if (page === 'tasks') {
+        loadTasks();
+        updateSubscriptionBanner();
+      } else if (page === 'active-tasks') {
+        loadActiveTasks();
+      } else if (page === 'task-history') {
+        loadTaskHistory();
+      } else if (page === 'wallet') {
+        loadWallet();
+      } else if (page === 'profile') {
+        loadProfile();
+      } else if (page === 'level') {
+        loadLevel();
+      }
+    }
 
-function next(n){
-  const step = document.getElementById("s"+n);
-  step.querySelector(".feedback").style.display="block";
-  setTimeout(()=>{
-    step.classList.remove("active");
-    document.getElementById("s"+(n+1)).classList.add("active");
-  },700);
-}
-</script>
+    function toggleLandingMenu() {
+      document.getElementById('landing-mobile-menu').classList.toggle('open');
+    }
 
-</body>
+    function toggleDashboardMenu() {
+      document.getElementById('dashboard-menu').classList.toggle('open');
+    }
+
+    // ============ Country Selection ============
+    function showCountrySelection() {
+      document.getElementById('country-modal').classList.remove('hidden');
+      document.getElementById('verification-modal').classList.add('hidden');
+    }
+
+    function hideCountrySelection() {
+      document.getElementById('country-modal').classList.add('hidden');
+    }
+
+    function selectCountry(country) {
+      appState.selectedCountry = country;
+      document.getElementById('selected-country-flag').textContent = countryFlags[country];
+      document.getElementById('selected-country-name').textContent = country;
+      document.getElementById('country-modal').classList.add('hidden');
+      document.getElementById('verification-modal').classList.remove('hidden');
+    }
+
+    function confirmCountry() {
+      document.getElementById('verification-modal').classList.add('hidden');
+      document.getElementById('registration-modal').classList.remove('hidden');
+    }
+
+    // ============ Registration ============
+    function hideRegistration() {
+      document.getElementById('registration-modal').classList.add('hidden');
+    }
+
+    function handleRegistration(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value;
+      const email = document.getElementById('reg-email').value;
+      const phone = document.getElementById('reg-phone').value;
+      
+      appState.user = {
+        name,
+        email,
+        phone,
+        country: appState.selectedCountry,
+        balance: 0,
+        totalEarned: 0,
+        totalWithdrawn: 0,
+        level: 1,
+        tasksCompleted: 0,
+        createdAt: new Date().toISOString()
+      };
+      
+      saveToStorage();
+      document.getElementById('registration-modal').classList.add('hidden');
+      document.getElementById('payment-setup-modal').classList.remove('hidden');
+      showToast('Account created successfully!');
+    }
+
+    // ============ Payment Setup ============
+    function handlePaymentSetup(e) {
+      e.preventDefault();
+      const method = document.getElementById('payment-method').value;
+      
+      appState.user.paymentMethod = method;
+      if (method === 'mpesa') {
+        appState.user.mpesaNumber = document.getElementById('mpesa-number').value;
+        document.getElementById('payment-form-container').innerHTML = `
+          <div class="space-y-4">
+            <div class="text-center mb-6">
+              <div class="text-5xl mb-3">📱</div>
+              <p class="text-gray-400">Please complete your M-Pesa payment</p>
+            </div>
+            <div class="bg-[#1a1a2e] border border-cyan-500/20 rounded-lg p-4 text-center">
+              <p class="text-sm text-gray-400 mb-2">Send KES 364 to:</p>
+              <p class="font-orbitron text-2xl font-bold text-cyan-400">Paybill: 123456</p>
+              <p class="text-sm text-gray-400 mt-2">Account: HURO${appState.user.mpesaNumber}</p>
+            </div>
+            <button onclick="showMpesaVerificationForm()" class="w-full btn-neon py-4 rounded-lg font-orbitron font-bold text-white">
+              ✅ I've Made Payment
+            </button>
+          </div>
+        `;
+      } else if (method === 'bank') {
+        appState.user.bankName = document.getElementById('bank-name').value;
+        appState.user.accountNumber = document.getElementById('account-number').value;
+        saveToStorage();
+        document.getElementById('payment-setup-modal').classList.add('hidden');
+        showToast('Payment method saved! Please complete bank transfer.');
+        showDashboard();
+      } else if (method === 'paypal') {
+        appState.user.paypalEmail = document.getElementById('paypal-email').value;
+        saveToStorage();
+        document.getElementById('payment-setup-modal').classList.add('hidden');
+        showToast('Payment method saved! Please complete PayPal payment.');
+        showDashboard();
+      }
+    }
+
+    function showMpesaVerificationForm() {
+      document.getElementById('payment-setup-modal').classList.add('hidden');
+      document.getElementById('mpesa-verify-modal').classList.remove('hidden');
+    }
+
+    function closeMpesaVerification() {
+      document.getElementById('mpesa-verify-modal').classList.add('hidden');
+    }
+
+    function handleMpesaVerification(e) {
+      e.preventDefault();
+      const message = document.getElementById('mpesa-message').value;
+      
+      // Simple verification - check if message contains KES 364 or similar
+      if (message.includes('364') || message.includes('Confirmed')) {
+        appState.user.paymentVerified = true;
+        saveToStorage();
+        document.getElementById('mpesa-verify-modal').classList.add('hidden');
+        showToast('✅ Payment verified successfully!');
+        showDashboard();
+      } else {
+        showToast('❌ Could not verify payment. Please check your message and try again.', 'error');
+      }
+    }
+
+    function showMpesaVerificationForUpgrade() {
+      document.getElementById('mpesa-verify-modal').classList.remove('hidden');
+      document.getElementById('mpesa-message').value = '';
+      document.getElementById('mpesa-verify-form').onsubmit = function(e) {
+        e.preventDefault();
+        const message = document.getElementById('mpesa-message').value;
+        
+        if (message.includes('364') || message.includes('Confirmed')) {
+          appState.user.level = 2;
+          appState.user.tasksCompleted = 0; // Reset for next level
+          saveToStorage();
+          document.getElementById('mpesa-verify-modal').classList.add('hidden');
+          showToast('🎉 Level 2 unlocked!');
+          updateDashboardData();
+          loadTasks();
+        } else {
+          showToast('❌ Could not verify payment.', 'error');
+        }
+      };
+    }
+
+    // Payment method toggle
+    document.getElementById('payment-method')?.addEventListener('change', function() {
+      const method = this.value;
+      if (method === 'mpesa') {
+        document.getElementById('mpesa-fields').classList.remove('hidden');
+      } else {
+        document.getElementById('mpesa-fields').classList.add('hidden');
+      }
+      document.getElementById('bank-fields').classList.toggle('hidden', method !== 'bank');
+      document.getElementById('paypal-fields').classList.toggle('hidden', method !== 'paypal');
+    });
+
+    // ============ Subscription ============
+    function showSubscriptionModal() {
+      document.getElementById('subscription-modal').classList.remove('hidden');
+    }
+
+    function closeSubscriptionModal() {
+      document.getElementById('subscription-modal').classList.add('hidden');
+    }
+
+    function activateSubscription() {
+      appState.isSubscribed = true;
+      saveToStorage();
+      showToast('Subscription activated! You now have access to tasks.');
+      updateSubscriptionBanner();
+      loadTasks();
+    }
+
+    function updateSubscriptionBanner() {
+      const banner = document.getElementById('subscription-banner');
+      if (appState.isSubscribed) {
+        banner.classList.add('hidden');
+      } else {
+        banner.classList.remove('hidden');
+      }
+    }
+
+    // ============ Dashboard Data ============
+    function updateDashboardData() {
+      if (!appState.user) return;
+      
+      // Update nav
+      document.getElementById('nav-balance').textContent = `$${appState.user.balance.toFixed(2)}`;
+      document.getElementById('nav-avatar').textContent = appState.user.name?.charAt(0) || '👤';
+      
+      // Update menu
+      document.getElementById('menu-username').textContent = appState.user.name;
+      document.getElementById('menu-level').textContent = `Level ${appState.user.level}`;
+      document.getElementById('menu-avatar').textContent = appState.user.name?.charAt(0) || '👤';
+      
+      // Update stats
+      document.getElementById('stat-earnings').textContent = `$${appState.user.totalEarned.toFixed(2)}`;
+      document.getElementById('stat-completed').textContent = appState.user.tasksCompleted;
+      document.getElementById('stat-pending').textContent = appState.taskHistory.filter(t => t.status === 'pending').length;
+      document.getElementById('stat-level').textContent = appState.user.level;
+      
+      // Update progress
+      const progress = (appState.user.tasksCompleted / 50) * 100;
+      document.getElementById('progress-bar').style.width = Math.min(progress, 100) + '%';
+      document.getElementById('progress-text').textContent = `${appState.user.tasksCompleted}/50`;
+    }
+
+    // ============ Tasks ============
+    function loadTasks() {
+      const grid = document.getElementById('tasks-grid');
+      const userLevel = appState.user?.level || 1;
+      
+      let tasksToShow = allTasks.filter(task => {
+        if (!appState.isSubscribed) return false;
+        return task.level <= userLevel;
+      });
+      
+      const currentFilter = document.querySelector('.task-filter.active')?.dataset.filter || 'all';
+      if (currentFilter !== 'all') {
+        tasksToShow = tasksToShow.filter(t => t.category === currentFilter);
+      }
+      
+      if (!appState.isSubscribed) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <div class="text-6xl mb-4">🔒</div>
+            <p class="text-gray-400">Subscribe to access tasks</p>
+          </div>
+        `;
+        return;
+      }
+      
+      if (tasksToShow.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <div class="text-6xl mb-4">📋</div>
+            <p class="text-gray-400">No tasks available in this category</p>
+          </div>
+        `;
+        return;
+      }
+      
+      grid.innerHTML = tasksToShow.map(task => `
+        <div class="neon-border rounded-xl p-4 card-hover transition-all duration-300 robot-border" data-category="${task.category}">
+          <div class="flex justify-between items-start mb-3">
+            <span class="px-2 py-1 rounded text-xs bg-${task.level === 1 ? 'cyan' : 'purple'}-500/20 text-${task.level === 1 ? 'cyan' : 'purple'}-400 font-orbitron">
+              Level ${task.level}
+            </span>
+            <span class="font-orbitron text-lg font-bold text-green-400">$${task.payment.toFixed(2)}</span>
+          </div>
+          <h3 class="font-orbitron font-bold text-cyan-400 mb-1">${task.name}</h3>
+          <p class="text-sm text-gray-400 mb-1">${task.company}</p>
+          <p class="text-sm text-gray-300 mb-3">${task.subject}</p>
+          <div class="flex items-center gap-2 text-xs text-gray-500 mb-4">
+            <span>⏱️ ${task.duration}</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="viewTaskDetails(${task.id})" class="flex-1 py-2 rounded-lg border border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 transition-colors text-sm font-orbitron">
+              View Details
+            </button>
+            <button onclick="acceptTask(${task.id})" class="flex-1 btn-neon py-2 rounded-lg text-white text-sm font-orbitron">
+              Accept
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterTasks(category) {
+      document.querySelectorAll('.task-filter').forEach(btn => {
+        btn.classList.remove('active', 'bg-cyan-500/20', 'text-cyan-400');
+        if (btn.dataset.filter === category) {
+          btn.classList.add('active', 'bg-cyan-500/20', 'text-cyan-400');
+        }
+      });
+      loadTasks();
+    }
+
+    function viewTaskDetails(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      document.getElementById('modal-task-title').textContent = task.subject;
+      document.getElementById('modal-task-content').innerHTML = `
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-[#1a1a2e] rounded-lg p-4">
+              <p class="text-sm text-gray-400 mb-1">AI Model</p>
+              <p class="font-orbitron font-bold text-cyan-400">${task.name}</p>
+            </div>
+            <div class="bg-[#1a1a2e] rounded-lg p-4">
+              <p class="text-sm text-gray-400 mb-1">Company</p>
+              <p class="font-orbitron font-bold text-purple-400">${task.company}</p>
+            </div>
+            <div class="bg-[#1a1a2e] rounded-lg p-4">
+              <p class="text-sm text-gray-400 mb-1">Payment</p>
+              <p class="font-orbitron font-bold text-green-400">$${task.payment.toFixed(2)}</p>
+            </div>
+            <div class="bg-[#1a1a2e] rounded-lg p-4">
+              <p class="text-sm text-gray-400 mb-1">Duration</p>
+              <p class="font-orbitron font-bold text-yellow-400">${task.duration}</p>
+            </div>
+          </div>
+          <div class="bg-[#1a1a2e] rounded-lg p-4">
+            <p class="text-sm text-gray-400 mb-2">Task Description</p>
+            <p class="text-gray-300">You will be ${task.category.replace('-', ' ')} content generated by ${task.name}. This task involves evaluating the quality, accuracy, and relevance of the AI output.</p>
+          </div>
+          <div class="bg-[#1a1a2e] rounded-lg p-4">
+            <p class="text-sm text-gray-400 mb-2">Requirements</p>
+            <ul class="text-sm text-gray-300 space-y-1">
+              <li>• Good understanding of English</li>
+              <li>• Attention to detail</li>
+              <li>• Honest and objective evaluation</li>
+            </ul>
+          </div>
+          <button onclick="acceptTask(${task.id}); closeTaskModal();" class="w-full btn-neon py-3 rounded-lg font-orbitron font-bold text-white">
+            Accept This Task
+          </button>
+        </div>
+      `;
+      document.getElementById('task-details-modal').classList.remove('hidden');
+    }
+
+    function closeTaskModal() {
+      document.getElementById('task-details-modal').classList.add('hidden');
+    }
+
+    function acceptTask(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      if (appState.activeTasks.find(t => t.id === taskId)) {
+        showToast('Task already in progress!', 'warning');
+        return;
+      }
+      
+      // Check if user needs to upgrade after 10 tasks on Level 1
+      if (appState.user.level === 1 && appState.user.tasksCompleted >= 10) {
+        closeTaskModal();
+        document.getElementById('level-up-modal').classList.remove('hidden');
+        return;
+      }
+      
+      // Show task work modal instead
+      showTaskWorkModal(taskId);
+      closeTaskModal();
+    }
+
+    function showTaskWorkModal(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      // Store current task being worked on
+      appState.currentTaskInProgress = {
+        ...task,
+        acceptedAt: new Date().toISOString(),
+        status: 'in-progress'
+      };
+
+      // Generate task instructions based on category
+      let instructions = [];
+      let requirements = [];
+
+      if (task.category === 'content-review') {
+        instructions = [
+          `1. Review the AI-generated content provided by ${task.name}`,
+          '2. Check for accuracy and relevance',
+          '3. Evaluate the quality of the writing',
+          '4. Identify any errors or inconsistencies',
+          '5. Provide constructive feedback'
+        ];
+        requirements = [
+          'Content is grammatically correct',
+          'Information is accurate',
+          'Length meets requirements',
+          'Tone is appropriate'
+        ];
+      } else if (task.category === 'text-rewriting') {
+        instructions = [
+          'You will be provided with a text to rewrite',
+          'Improve clarity and readability',
+          'Maintain the original meaning',
+          'Enhance the writing style',
+          'Submit your improved version'
+        ];
+        requirements = [
+          'Text is rewritten clearly',
+          'Original meaning preserved',
+          'Improved quality visible',
+          'Professional tone maintained'
+        ];
+      } else if (task.category === 'prompt-testing') {
+        instructions = [
+          'Test the provided prompt with the AI model',
+          'Evaluate the quality of responses',
+          'Check for consistency',
+          'Test edge cases and variations',
+          'Document your findings'
+        ];
+        requirements = [
+          'Multiple test cases tried',
+          'Responses evaluated fairly',
+          'Findings documented',
+          'Feedback is constructive'
+        ];
+      } else if (task.category === 'response-comparison') {
+        instructions = [
+          `Compare responses from different AI models for the same prompt`,
+          'Evaluate quality differences',
+          'Consider accuracy and relevance',
+          'Provide objective assessment',
+          'Document your comparison'
+        ];
+        requirements = [
+          'Fair comparison provided',
+          'Quality assessed objectively',
+          'Differences documented',
+          'Reasoning is clear'
+        ];
+      } else if (task.category === 'fact-checking') {
+        instructions = [
+          'Verify facts in the provided content',
+          'Use reliable sources',
+          'Identify any inaccuracies',
+          'Document your findings',
+          'Provide correction if needed'
+        ];
+        requirements = [
+          'Facts verified thoroughly',
+          'Sources cited',
+          'Inaccuracies identified',
+          'Corrections are accurate'
+        ];
+      }
+
+      // Update modal
+      document.getElementById('work-task-title').textContent = task.subject;
+      document.getElementById('work-task-ai').textContent = task.name;
+      document.getElementById('work-task-company').textContent = task.company;
+      document.getElementById('work-task-payment').textContent = `$${task.payment.toFixed(2)}`;
+      document.getElementById('work-task-duration').textContent = task.duration;
+
+      // Add instructions
+      const instructionsDiv = document.getElementById('work-task-instructions');
+      instructionsDiv.innerHTML = instructions.map(inst => `<p>• ${inst}</p>`).join('');
+
+      // Add requirements checklist
+      const checklistDiv = document.getElementById('work-requirements-checklist');
+      checklistDiv.innerHTML = requirements.map((req, idx) => `
+        <label class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-cyan-500/10 transition-colors">
+          <input type="checkbox" class="requirement-checkbox w-4 h-4" data-req="${idx}">
+          <span class="text-sm text-gray-300">${req}</span>
+        </label>
+      `).join('');
+
+      // Clear work area
+      document.getElementById('task-work-textarea').value = '';
+
+      // Show modal
+      document.getElementById('task-work-modal').classList.remove('hidden');
+    }
+
+    function closeTaskWorkModal() {
+      document.getElementById('task-work-modal').classList.add('hidden');
+      appState.currentTaskInProgress = null;
+    }
+
+    function submitTaskWork() {
+      const work = document.getElementById('task-work-textarea').value.trim();
+      
+      if (!work || work.length < 20) {
+        showToast('Please provide detailed work (at least 20 characters)', 'error');
+        return;
+      }
+
+      // Check if requirements are checked
+      const checkboxes = document.querySelectorAll('.requirement-checkbox');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+
+      if (!allChecked) {
+        showToast('Please confirm all requirements are met', 'error');
+        return;
+      }
+
+      if (!appState.currentTaskInProgress) return;
+
+      const task = appState.currentTaskInProgress;
+
+      // Add to active tasks
+      appState.activeTasks.push(task);
+
+      // Close modal
+      closeTaskWorkModal();
+
+      saveToStorage();
+      showToast(`✅ Task submitted! Pending review...`);
+
+      // Simulate approval
+      setTimeout(() => {
+        const activeTask = appState.activeTasks.find(t => t.id === task.id);
+        if (activeTask) {
+          activeTask.status = 'completed';
+          
+          // Move to history with approved status
+          const historyTask = {
+            ...activeTask,
+            completedAt: new Date().toISOString(),
+            status: 'approved',
+            submittedWork: work
+          };
+          
+          appState.taskHistory.unshift(historyTask);
+          appState.activeTasks = appState.activeTasks.filter(t => t.id !== task.id);
+          
+          // Update user stats
+          appState.user.tasksCompleted++;
+          appState.user.balance += task.payment;
+          appState.user.totalEarned += task.payment;
+          
+          // Check for level up
+          if (appState.user.level === 1 && appState.user.tasksCompleted >= 10) {
+            // Will show level up modal on next task
+          }
+          
+          saveToStorage();
+          updateDashboardData();
+          showToast(`✅ Task approved! +$${task.payment.toFixed(2)}`);
+        }
+      }, 3000);
+    }
+
+    function closeLevelUpModal() {
+      document.getElementById('level-up-modal').classList.add('hidden');
+    }
+
+    // ============ Active Tasks ============
+    function loadActiveTasks() {
+      const list = document.getElementById('active-tasks-list');
+      
+      if (appState.activeTasks.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-12">
+            <div class="text-6xl mb-4">📋</div>
+            <p class="text-gray-400 mb-4">No active tasks</p>
+            <button onclick="navigateTo('tasks')" class="btn-neon px-6 py-3 rounded-full font-orbitron text-white">
+              Browse Tasks
+            </button>
+          </div>
+        `;
+        return;
+      }
+      
+      list.innerHTML = appState.activeTasks.map(task => `
+        <div class="neon-border rounded-xl p-6 mb-4 robot-border">
+          <div class="flex flex-col md:flex-row justify-between gap-4">
+            <div>
+              <h3 class="font-orbitron font-bold text-cyan-400 mb-1">${task.subject}</h3>
+              <p class="text-sm text-gray-400">${task.name} • ${task.company}</p>
+              <p class="text-sm text-gray-500 mt-2">Started: ${new Date(task.acceptedAt).toLocaleDateString()}</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              <span class="font-orbitron text-xl font-bold text-green-400">$${task.payment.toFixed(2)}</span>
+              <button onclick="completeTask(${task.id})" class="btn-neon px-6 py-2 rounded-lg font-orbitron text-white text-sm">
+                Mark Complete
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function completeTask(taskId) {
+      const taskIndex = appState.activeTasks.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) return;
+      
+      const task = appState.activeTasks[taskIndex];
+      
+      // Add to history
+      appState.taskHistory.unshift({
+        ...task,
+        completedAt: new Date().toISOString(),
+        status: 'pending'
+      });
+      
+      // Remove from active
+      appState.activeTasks.splice(taskIndex, 1);
+      
+      // Update user stats
+      appState.user.tasksCompleted++;
+      
+      // Check for level up
+      if (appState.user.tasksCompleted >= 50 && appState.user.level === 1) {
+        appState.user.level = 2;
+        showToast('🎉 Congratulations! You reached Level 2!', 'success');
+      }
+      
+      saveToStorage();
+      updateDashboardData();
+      loadActiveTasks();
+      showToast('Task submitted for review!');
+      
+      // Simulate approval after 3 seconds
+      setTimeout(() => {
+        const historyTask = appState.taskHistory.find(t => t.id === taskId && t.status === 'pending');
+        if (historyTask) {
+          historyTask.status = 'approved';
+          appState.user.balance += task.payment;
+          appState.user.totalEarned += task.payment;
+          saveToStorage();
+          updateDashboardData();
+          showToast(`Task approved! +$${task.payment.toFixed(2)}`);
+        }
+      }, 3000);
+    }
+
+    // ============ Task History ============
+    function loadTaskHistory() {
+      const tbody = document.getElementById('history-table-body');
+      
+      if (appState.taskHistory.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="px-4 py-8 text-center text-gray-400">No task history yet</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = appState.taskHistory.map(task => `
+        <tr class="border-b border-cyan-500/10 hover:bg-cyan-500/5">
+          <td class="px-4 py-3">
+            <p class="font-semibold">${task.subject}</p>
+            <p class="text-xs text-gray-500">${task.name}</p>
+          </td>
+          <td class="px-4 py-3 font-orbitron text-green-400">$${task.payment.toFixed(2)}</td>
+          <td class="px-4 py-3 text-sm text-gray-400">${new Date(task.completedAt).toLocaleDateString()}</td>
+          <td class="px-4 py-3">
+            <span class="px-3 py-1 rounded-full text-xs font-orbitron badge-${task.status}">
+              ${task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ============ Forex ============
+    function convertCurrency() {
+      const amount = parseFloat(document.getElementById('forex-amount').value) || 0;
+      const currency = document.getElementById('forex-currency').value;
+      
+      let converted;
+      let symbol;
+      
+      switch (currency) {
+        case 'USD':
+          converted = amount / exchangeRates.USD;
+          symbol = '$';
+          break;
+        case 'EUR':
+          converted = amount / exchangeRates.EUR;
+          symbol = '€';
+          break;
+        case 'GBP':
+          converted = amount / exchangeRates.GBP;
+          symbol = '£';
+          break;
+        case 'TZS':
+          converted = amount / exchangeRates.TZS;
+          symbol = 'TZS ';
+          break;
+      }
+      
+      document.getElementById('converted-amount').textContent = `${symbol}${converted.toFixed(2)}`;
+    }
+
+    // ============ Wallet ============
+    function loadWallet() {
+      if (!appState.user) return;
+      
+      document.getElementById('wallet-balance').textContent = `$${appState.user.balance.toFixed(2)}`;
+      document.getElementById('wallet-balance-local').textContent = `≈ KES ${(appState.user.balance * exchangeRates.USD).toFixed(2)}`;
+      document.getElementById('total-earned').textContent = `$${appState.user.totalEarned.toFixed(2)}`;
+      document.getElementById('total-withdrawn').textContent = `$${appState.user.totalWithdrawn.toFixed(2)}`;
+      
+      const pending = appState.taskHistory.filter(t => t.status === 'pending').reduce((sum, t) => sum + t.payment, 0);
+      document.getElementById('pending-amount').textContent = `$${pending.toFixed(2)}`;
+      
+      // Load transactions
+      const txList = document.getElementById('transactions-list');
+      if (appState.transactions.length === 0) {
+        txList.innerHTML = '<p class="text-gray-400 text-center py-4">No transactions yet</p>';
+      } else {
+        txList.innerHTML = appState.transactions.map(tx => `
+          <div class="flex justify-between items-center p-3 bg-[#1a1a2e] rounded-lg">
+            <div>
+              <p class="font-semibold">${tx.type}</p>
+              <p class="text-xs text-gray-500">${new Date(tx.date).toLocaleDateString()}</p>
+            </div>
+            <span class="font-orbitron ${tx.amount > 0 ? 'text-green-400' : 'text-red-400'}">
+              ${tx.amount > 0 ? '+' : ''}$${Math.abs(tx.amount).toFixed(2)}
+            </span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function handleWithdraw() {
+      const amount = parseFloat(document.getElementById('withdraw-amount').value);
+      
+      if (!amount || amount <= 0) {
+        showToast('Please enter a valid amount', 'error');
+        return;
+      }
+      
+      if (amount > appState.user.balance) {
+        showToast('Insufficient balance', 'error');
+        return;
+      }
+      
+      appState.user.balance -= amount;
+      appState.user.totalWithdrawn += amount;
+      appState.transactions.unshift({
+        type: 'Withdrawal',
+        amount: -amount,
+        date: new Date().toISOString()
+      });
+      
+      saveToStorage();
+      updateDashboardData();
+      loadWallet();
+      document.getElementById('withdraw-amount').value = '';
+      showToast(`Withdrawal of $${amount.toFixed(2)} initiated!`);
+    }
+
+    // ============ Level ============
+    function loadLevel() {
+      if (!appState.user) return;
+      
+      document.getElementById('current-level-display').textContent = appState.user.level;
+      
+      if (appState.user.level >= 2) {
+        document.getElementById('level-title').textContent = 'Level 2 - Expert';
+        document.getElementById('level-description').textContent = 'You have unlocked all tasks!';
+        
+        ['l2-benefit-1', 'l2-benefit-2', 'l2-benefit-3', 'l2-benefit-4', 'l2-benefit-5'].forEach(id => {
+          const el = document.getElementById(id);
+          el.innerHTML = el.innerHTML.replace('🔒', '✅');
+        });
+      }
+    }
+
+    // ============ Profile ============
+    function loadProfile() {
+      if (!appState.user) return;
+      
+      document.getElementById('profile-avatar').textContent = appState.user.name?.charAt(0) || '👤';
+      document.getElementById('profile-name').textContent = appState.user.name;
+      document.getElementById('profile-email').textContent = appState.user.email;
+      document.getElementById('profile-country').textContent = `${countryFlags[appState.user.country]} ${appState.user.country}`;
+      document.getElementById('profile-name-input').value = appState.user.name;
+      document.getElementById('profile-phone-input').value = appState.user.phone;
+    }
+
+    function handleProfileUpdate(e) {
+      e.preventDefault();
+      appState.user.name = document.getElementById('profile-name-input').value;
+      appState.user.phone = document.getElementById('profile-phone-input').value;
+      saveToStorage();
+      updateDashboardData();
+      loadProfile();
+      showToast('Profile updated successfully!');
+    }
+
+    // ============ Refund ============
+    function handleRefundRequest(e) {
+      e.preventDefault();
+      showToast('Refund request submitted. We will contact you within 48 hours.');
+      document.getElementById('refund-form').reset();
+    }
+
+    // ============ Logout ============
+    function handleLogout() {
+      appState = {
+        currentPage: 'landing',
+        selectedCountry: null,
+        user: null,
+        isSubscribed: false,
+        tasks: [],
+        activeTasks: [],
+        taskHistory: [],
+        transactions: []
+      };
+      localStorage.removeItem('hurobotics_state');
+      showLanding();
+      showToast('Logged out successfully');
+    }
+
+    // ============ Initialize ============
+    initApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c78eba2b71fb281',t:'MTc3MDAyNzI1NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
