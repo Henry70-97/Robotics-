@@ -208,8 +208,26 @@
   <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full gradient-bg text-white overflow-x-hidden"><!-- Particle Background -->
-  <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div><!-- Main App Container -->
-  <div id="app" class="relative z-10 min-h-full"></div>
+  <div id="particles" class="fixed inset-0 pointer-events-none z-0"></div><!-- Animated Video Border -->
+  <div class="fixed inset-0 pointer-events-none z-[5]"><!-- Top Border -->
+   <div class="absolute top-0 left-0 right-0 h-8 overflow-hidden">
+    <video class="w-full h-full object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+    </video>
+   </div><!-- Bottom Border -->
+   <div class="absolute bottom-0 left-0 right-0 h-8 overflow-hidden">
+    <video class="w-full h-full object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+    </video>
+   </div><!-- Left Border -->
+   <div class="absolute top-8 bottom-8 left-0 w-8 overflow-hidden">
+    <video class="w-full h-full object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+    </video>
+   </div><!-- Right Border -->
+   <div class="absolute top-8 bottom-8 right-0 w-8 overflow-hidden">
+    <video class="w-full h-full object-cover" autoplay muted loop playsinline><source src="video.mp4" type="video/mp4">
+    </video>
+   </div>
+  </div><!-- Main App Container -->
+  <div id="app" class="relative z-10 min-h-full p-2"></div>
   <script>
     // Create particle background
     function createParticles() {
@@ -273,60 +291,89 @@
     
     // Task data
     const taskCategories = {
-      'future_of_ai': Array.from({length: 20}, (_, i) => ({
-        id: `future-ai-${i + 1}`,
-        category: 'Future of AI',
-        name: `AI Impact Analysis ${i + 1}`,
-        company: ['TechCorp AI', 'NeuralNet Inc', 'DeepMind Labs', 'OpenAI Research', 'FutureAI Institute'][i % 5],
-        subject: ['Healthcare Transformation', 'Education Revolution', 'Transportation Future', 'Climate Solutions', 'Space Exploration'][i % 5],
-        payment: 5,
-        duration: '2 hours',
-        level: 1,
-        pages: 1,
-        question: `Write a comprehensive essay (200 words minimum) about how AI will transform ${['healthcare delivery and patient care', 'education systems and learning methods', 'transportation and urban mobility', 'climate change solutions and sustainability', 'space exploration and colonization'][i % 5]} in the next decade. Include specific examples, potential challenges, and ethical considerations.`
-      })),
-      'hurobotics_opinion': Array.from({length: 20}, (_, i) => ({
-        id: `opinion-${i + 1}`,
-        category: 'Hurobotics Opinion',
-        name: `Sci-Fi Future Opinion ${i + 1}`,
-        company: ['Hurobotics Research', 'Future Vision Labs', 'SciFi Analytics', 'Tomorrow Institute', 'Quantum Insights'][i % 5],
-        subject: ['Virtual Reality Worlds', 'AI Companions', 'Mind Uploading', 'Time Travel Ethics', 'Robot Rights'][i % 5],
-        payment: 0.5,
-        duration: '1.5 hours',
-        level: 1,
-        minWords: 300,
-        caseStudy: [
-          'In the movie "Ready Player One", people spend most of their lives in a virtual reality world called the OASIS, escaping harsh reality. Society has become dependent on VR for entertainment, work, and social interaction. Analyze the implications of this lifestyle.',
-          'In "Her", a man develops a romantic relationship with an AI operating system named Samantha. The AI demonstrates emotions, creativity, and consciousness. Discuss the psychological and social implications of human-AI relationships.',
-          'In "Altered Carbon", consciousness can be digitized and transferred between bodies. Death becomes optional for those who can afford it. Examine the societal implications of immortality through mind uploading.',
-          'In "Looper", time travel is used by criminal organizations to dispose of targets by sending them to the past. The movie explores paradoxes and consequences. Analyze the ethical dilemmas of time travel technology.',
-          'In "Blade Runner", replicants (bioengineered humans) perform dangerous work but are denied basic rights. They seek recognition as sentient beings. Discuss the moral considerations of creating conscious artificial beings.'
-        ][i % 5]
-      })),
-      'ai_training': Array.from({length: 15}, (_, i) => ({
-        id: `training-${i + 1}`,
-        category: 'AI Training',
-        name: `Dataset Labeling ${i + 1}`,
-        company: ['Google AI', 'Amazon ML', 'Microsoft Azure', 'IBM Watson', 'Meta AI'][i % 5],
-        subject: 'Image Classification',
-        payment: 0.02,
-        duration: '30 minutes',
-        level: 1,
-        itemCount: 100,
-        description: 'Label 100 images for AI training. Categorize images as specified and ensure accuracy.'
-      })),
-      'fact_checking': Array.from({length: 15}, (_, i) => ({
-        id: `fact-${i + 1}`,
-        category: 'Fact Checking',
-        name: `AI Claims Verification ${i + 1}`,
-        company: ['FactCheck AI', 'TruthNet', 'Verify Labs', 'Accuracy First', 'InfoGuard'][i % 5],
-        subject: 'Technology Claims',
-        payment: 3,
-        duration: '1 hour',
-        level: 1,
-        claims: 10,
-        description: 'Verify 10 claims about AI technology. Research and provide sources for each claim verification.'
-      }))
+      'future_of_ai': Array.from({length: 20}, (_, i) => {
+        const subjects = [
+          { topic: 'Healthcare Transformation', payment: 8.50, keywords: ['diagnosis', 'treatment', 'precision medicine', 'patient outcomes', 'medical imaging'] },
+          { topic: 'Education Revolution', payment: 7.25, keywords: ['personalized learning', 'adaptive systems', 'accessibility', 'teaching methods', 'student engagement'] },
+          { topic: 'Transportation Future', payment: 9.00, keywords: ['autonomous vehicles', 'traffic optimization', 'safety systems', 'urban planning', 'sustainability'] },
+          { topic: 'Climate Solutions', payment: 10.50, keywords: ['carbon emissions', 'renewable energy', 'climate modeling', 'environmental monitoring', 'sustainability'] },
+          { topic: 'Space Exploration', payment: 12.00, keywords: ['robotics', 'data analysis', 'mission planning', 'space stations', 'extraterrestrial life'] }
+        ];
+        const subj = subjects[i % 5];
+        return {
+          id: `future-ai-${i + 1}`,
+          category: 'Future of AI',
+          name: `AI Impact Analysis ${i + 1}`,
+          company: ['TechCorp AI', 'NeuralNet Inc', 'DeepMind Labs', 'OpenAI Research', 'FutureAI Institute'][i % 5],
+          subject: subj.topic,
+          payment: subj.payment,
+          duration: '2 hours',
+          level: 1,
+          minWords: 200,
+          keywords: subj.keywords,
+          question: `Write a comprehensive essay (200 words minimum) about how AI will transform ${['healthcare delivery and patient care', 'education systems and learning methods', 'transportation and urban mobility', 'climate change solutions and sustainability', 'space exploration and colonization'][i % 5]} in the next decade. Include specific examples, potential challenges, and ethical considerations.\n\n⚠️ REQUIRED KEYWORDS: Your essay must include these keywords: ${subj.keywords.join(', ')}`
+        };
+      }),
+      'hurobotics_opinion': Array.from({length: 20}, (_, i) => {
+        const topics = [
+          { subject: 'Virtual Reality Worlds', payment: 6.75, keywords: ['immersion', 'escapism', 'social interaction', 'addiction', 'virtual economy'], caseStudy: 'In the movie "Ready Player One", people spend most of their lives in a virtual reality world called the OASIS, escaping harsh reality. Society has become dependent on VR for entertainment, work, and social interaction. Analyze the implications of this lifestyle.' },
+          { subject: 'AI Companions', payment: 8.25, keywords: ['consciousness', 'emotions', 'relationships', 'empathy', 'authenticity'], caseStudy: 'In "Her", a man develops a romantic relationship with an AI operating system named Samantha. The AI demonstrates emotions, creativity, and consciousness. Discuss the psychological and social implications of human-AI relationships.' },
+          { subject: 'Mind Uploading', payment: 11.00, keywords: ['consciousness', 'identity', 'immortality', 'ethics', 'inequality'], caseStudy: 'In "Altered Carbon", consciousness can be digitized and transferred between bodies. Death becomes optional for those who can afford it. Examine the societal implications of immortality through mind uploading.' },
+          { subject: 'Time Travel Ethics', payment: 9.50, keywords: ['paradox', 'causality', 'consequences', 'moral responsibility', 'free will'], caseStudy: 'In "Looper", time travel is used by criminal organizations to dispose of targets by sending them to the past. The movie explores paradoxes and consequences. Analyze the ethical dilemmas of time travel technology.' },
+          { subject: 'Robot Rights', payment: 7.80, keywords: ['sentience', 'consciousness', 'autonomy', 'personhood', 'moral status'], caseStudy: 'In "Blade Runner", replicants (bioengineered humans) perform dangerous work but are denied basic rights. They seek recognition as sentient beings. Discuss the moral considerations of creating conscious artificial beings.' }
+        ];
+        const topic = topics[i % 5];
+        return {
+          id: `opinion-${i + 1}`,
+          category: 'Hurobotics Opinion',
+          name: `Sci-Fi Future Opinion ${i + 1}`,
+          company: ['Hurobotics Research', 'Future Vision Labs', 'SciFi Analytics', 'Tomorrow Institute', 'Quantum Insights'][i % 5],
+          subject: topic.subject,
+          payment: topic.payment,
+          duration: '1.5 hours',
+          level: 1,
+          minWords: 300,
+          keywords: topic.keywords,
+          caseStudy: topic.caseStudy,
+          question: `Write your analysis (300 words minimum) incorporating all required keywords.\n\n⚠️ REQUIRED KEYWORDS: ${topic.keywords.join(', ')}`
+        };
+      }),
+      'ai_training': Array.from({length: 15}, (_, i) => {
+        const payments = [5.50, 6.25, 7.00, 8.75, 9.50];
+        const itemCounts = [100, 150, 200, 250, 300];
+        const idx = i % 5;
+        return {
+          id: `training-${i + 1}`,
+          category: 'AI Training',
+          name: `Dataset Labeling ${i + 1}`,
+          company: ['Google AI', 'Amazon ML', 'Microsoft Azure', 'IBM Watson', 'Meta AI'][idx],
+          subject: 'Image Classification',
+          payment: payments[idx],
+          duration: '45 minutes',
+          level: 1,
+          itemCount: itemCounts[idx],
+          keywords: ['accuracy', 'consistency', 'attention to detail'],
+          description: `Label ${itemCounts[idx]} images for AI training. Categorize images as specified and ensure accuracy.\n\n⚠️ QUALITY REQUIREMENTS: Maintain accuracy, consistency, and attention to detail throughout.`
+        };
+      }),
+      'fact_checking': Array.from({length: 15}, (_, i) => {
+        const payments = [10.00, 12.50, 15.00, 18.00, 20.00];
+        const claimCounts = [10, 12, 15, 18, 20];
+        const idx = i % 5;
+        return {
+          id: `fact-${i + 1}`,
+          category: 'Fact Checking',
+          name: `AI Claims Verification ${i + 1}`,
+          company: ['FactCheck AI', 'TruthNet', 'Verify Labs', 'Accuracy First', 'InfoGuard'][idx],
+          subject: 'Technology Claims',
+          payment: payments[idx],
+          duration: '1.5 hours',
+          level: 1,
+          claims: claimCounts[idx],
+          keywords: ['evidence', 'credible sources', 'verification', 'accuracy'],
+          description: `Verify ${claimCounts[idx]} claims about AI technology. Research and provide sources for each claim verification.\n\n⚠️ REQUIREMENTS: Provide evidence from credible sources with proper verification and accuracy checks.`
+        };
+      })
     };
     
     // Forex rates (mock data - in production would fetch from API)
@@ -607,7 +654,7 @@
                   <select id="country" required class="w-full bg-black/50 border-2 border-cyan-500/50 rounded-lg px-4 py-3 text-white">
                     <option value="">-- Choose Country --</option>
                     <option value="Kenya">🇰🇪 Kenya</option>
-                    <option value="Uganda">🇺🇬 Uganda</option>
+                    <option value="Uganda">🇺���� Uganda</option>
                     <option value="Tanzania">🇹🇿 Tanzania</option>
                     <option value="Nigeria">🇳🇬 Nigeria</option>
                     <option value="South Africa">🇿🇦 South Africa</option>
@@ -824,7 +871,7 @@
               <!-- Quick Actions -->
               <div class="grid md:grid-cols-3 gap-6 mb-8">
                 <button onclick="renderPage('tasks')" class="neon-border card-gradient rounded-xl p-8 hover:scale-105 transition-transform text-left">
-                  <div class="text-5xl mb-4">🎯</div>
+                  <div class="text-5xl mb-4">��</div>
                   <h3 class="text-2xl font-bold orbitron text-cyan-300 mb-2">BROWSE TASKS</h3>
                   <p class="text-gray-400">Find new AI tasks to complete</p>
                 </button>
@@ -927,17 +974,13 @@
                             <div class="flex items-center justify-between">
                               <div>
                                 <p class="text-2xl font-bold orbitron text-green-400">
-                                  ${task.minWords ? `$${(task.minWords * task.payment).toFixed(2)}` : 
-                                    task.pages ? `$${(task.pages * task.payment).toFixed(2)}` : 
-                                    `$${task.payment.toFixed(2)}`}
+                                  $${task.payment.toFixed(2)}
                                 </p>
                                 <p class="text-xs text-gray-400">USD</p>
                               </div>
                               <div class="text-right">
                                 <p class="text-2xl font-bold orbitron text-cyan-400">
-                                  ${task.minWords ? `KSH ${(task.minWords * task.payment * 130).toFixed(2)}` : 
-                                    task.pages ? `KSH ${(task.pages * task.payment * 130).toFixed(2)}` : 
-                                    `KSH ${(task.payment * 130).toFixed(2)}`}
+                                  KSH ${(task.payment * 130).toFixed(2)}
                                 </p>
                                 <p class="text-xs text-gray-400">Kenyan Shillings</p>
                               </div>
@@ -1032,25 +1075,19 @@
                     <div class="grid grid-cols-2 gap-4 mb-3">
                       <div>
                         <div class="text-3xl font-bold orbitron text-green-400 mb-1">
-                          ${task.minWords ? `$${(task.minWords * task.payment).toFixed(2)}` : 
-                            task.pages ? `$${(task.pages * task.payment).toFixed(2)}` : 
-                            `$${task.payment.toFixed(2)}`}
+                          $${task.payment.toFixed(2)}
                         </div>
                         <p class="text-xs text-gray-300">USD</p>
                       </div>
                       <div>
                         <div class="text-3xl font-bold orbitron text-cyan-400 mb-1">
-                          ${task.minWords ? `${(task.minWords * task.payment * 130).toFixed(0)}` : 
-                            task.pages ? `${(task.pages * task.payment * 130).toFixed(0)}` : 
-                            `${(task.payment * 130).toFixed(0)}`}
+                          ${(task.payment * 130).toFixed(0)}
                         </div>
                         <p class="text-xs text-gray-300">KSH</p>
                       </div>
                     </div>
                     <p class="text-sm text-gray-300">
-                      ${task.minWords ? `$${task.payment} per word (min ${task.minWords} words)` : 
-                        task.pages ? `$${task.payment} per page (${task.pages} page${task.pages > 1 ? 's' : ''})` : 
-                        'Fixed payment'}
+                      Fixed payment per task
                     </p>
                   </div>
                 </div>
@@ -1064,6 +1101,23 @@
                     <div class="mt-4 pt-4 border-t border-purple-500/50">
                       <h4 class="text-purple-300 font-bold mb-2">CASE STUDY:</h4>
                       <p class="text-gray-300">${task.caseStudy}</p>
+                    </div>
+                  ` : ''}
+                  ${task.keywords ? `
+                    <div class="mt-4 pt-4 border-t border-purple-500/50">
+                      <h4 class="text-orange-400 font-bold orbitron mb-3 flex items-center gap-2">
+                        <span class="text-2xl">🔑</span> REQUIRED KEYWORDS
+                      </h4>
+                      <div class="flex flex-wrap gap-2">
+                        ${task.keywords.map(kw => `
+                          <span class="px-3 py-1 rounded-full bg-orange-500/30 border border-orange-500 text-orange-300 text-sm font-bold">
+                            ${kw}
+                          </span>
+                        `).join('')}
+                      </div>
+                      <p class="text-xs text-orange-300 mt-3">
+                        ⚠️ Your submission must include ALL these keywords to be approved
+                      </p>
                     </div>
                   ` : ''}
                 </div>
@@ -1973,7 +2027,7 @@
                 { page: 'wallet', icon: '💰', label: 'WALLET' },
                 { page: 'transactions', icon: '💳', label: 'TRANSACTIONS' },
                 { page: 'level', icon: '🏆', label: 'LEVEL' },
-                { page: 'profile', icon: '👤', label: 'PROFILE' },
+                { page: 'profile', icon: '���', label: 'PROFILE' },
                 { page: 'support', icon: '💬', label: 'SUPPORT' },
                 { page: 'refund', icon: '💸', label: 'REFUND' },
                 { page: 'app', icon: '📱', label: 'APP' }
@@ -2390,10 +2444,11 @@ Setup Date: ${new Date().toLocaleString()}
     
     function simulateAIReview(activeTask, submission, fileName) {
       const steps = [
-        { progress: 20, status: 'Checking word count and format...' },
-        { progress: 40, status: 'Analyzing content quality...' },
-        { progress: 60, status: 'Verifying accuracy and relevance...' },
-        { progress: 80, status: 'Calculating final score...' },
+        { progress: 15, status: 'Checking word count and format...' },
+        { progress: 30, status: 'Verifying required keywords...' },
+        { progress: 50, status: 'Analyzing content quality...' },
+        { progress: 70, status: 'Verifying accuracy and relevance...' },
+        { progress: 85, status: 'Calculating final score...' },
         { progress: 100, status: 'Review complete!' }
       ];
       
@@ -2406,6 +2461,27 @@ Setup Date: ${new Date().toLocaleString()}
         } else {
           clearInterval(progressInterval);
           
+          // Check for required keywords
+          const submissionLC = submission.toLowerCase();
+          let missingKeywords = [];
+          let foundKeywords = [];
+          
+          if (activeTask.keywords && activeTask.keywords.length > 0) {
+            activeTask.keywords.forEach(keyword => {
+              if (submissionLC.includes(keyword.toLowerCase())) {
+                foundKeywords.push(keyword);
+              } else {
+                missingKeywords.push(keyword);
+              }
+            });
+          }
+          
+          // Reject if keywords are missing
+          if (missingKeywords.length > 0) {
+            showRejectionModal(activeTask, submission, fileName, missingKeywords, foundKeywords);
+            return;
+          }
+          
           // Calculate scores with realistic variation (50-100 range)
           const wordCount = submission.trim().split(/\s+/).length;
           const qualityScore = Math.floor(Math.random() * 50) + 50; // 50-100
@@ -2416,7 +2492,7 @@ Setup Date: ${new Date().toLocaleString()}
           // Calculate payment based on score
           let basePayment = 0;
           if (activeTask.minWords) {
-            basePayment = wordCount * activeTask.payment;
+            basePayment = activeTask.payment;
           } else if (activeTask.pages) {
             basePayment = activeTask.pages * activeTask.payment;
           } else {
@@ -2435,30 +2511,30 @@ Setup Date: ${new Date().toLocaleString()}
           let feedback;
           if (overallScore >= 90) {
             const excellentFeedbacks = [
-              'Exceptional work! Your submission demonstrates outstanding understanding and exemplary articulation. The analysis is exceptionally thorough and expertly structured.',
-              'Outstanding effort! The content is comprehensive, meticulously researched, and provides invaluable insights. Truly exceptional work!',
-              'Superb submission! The depth of analysis and meticulous attention to detail are highly commendable. Excellent job!'
+              'Exceptional work! Your submission demonstrates outstanding understanding and exemplary articulation. The analysis is exceptionally thorough and expertly structured. All required keywords were properly incorporated.',
+              'Outstanding effort! The content is comprehensive, meticulously researched, and provides invaluable insights. All keywords integrated seamlessly. Truly exceptional work!',
+              'Superb submission! The depth of analysis and meticulous attention to detail are highly commendable. Perfect keyword integration. Excellent job!'
             ];
             feedback = excellentFeedbacks[Math.floor(Math.random() * excellentFeedbacks.length)];
           } else if (overallScore >= 80) {
             const goodFeedbacks = [
-              'Great work! Your submission meets all requirements with high quality. The arguments are logical and well-supported.',
-              'Impressive submission! The analysis is solid and demonstrates good critical thinking skills. Well done!',
-              'Good job! The content is comprehensive and well-structured. Keep up the great work!'
+              'Great work! Your submission meets all requirements with high quality. The arguments are logical and well-supported. All keywords properly included.',
+              'Impressive submission! The analysis is solid and demonstrates good critical thinking skills. Keywords well integrated. Well done!',
+              'Good job! The content is comprehensive and well-structured. All requirements met including keywords. Keep up the great work!'
             ];
             feedback = goodFeedbacks[Math.floor(Math.random() * goodFeedbacks.length)];
           } else if (overallScore >= 70) {
             const satisfactoryFeedbacks = [
-              'Satisfactory work. Your submission meets basic requirements but could benefit from deeper analysis and better structure.',
-              'Decent effort. The content covers the topic adequately, though more detail and refinement would improve the quality.',
-              'Acceptable submission. The work is on the right track but needs more development and stronger supporting evidence.'
+              'Satisfactory work. Your submission meets basic requirements but could benefit from deeper analysis and better structure. Keywords present but integration could be improved.',
+              'Decent effort. The content covers the topic adequately, though more detail and refinement would improve the quality. Keywords included as required.',
+              'Acceptable submission. The work is on the right track but needs more development and stronger supporting evidence. Keywords detected.'
             ];
             feedback = satisfactoryFeedbacks[Math.floor(Math.random() * satisfactoryFeedbacks.length)];
           } else {
             const needsImprovementFeedbacks = [
-              'Needs improvement. The submission lacks depth and clarity. Please review the requirements and provide more comprehensive analysis.',
-              'Below expectations. The content requires significant enhancement in quality, structure, and detail. Consider revising your approach.',
-              'Requires revision. The submission does not adequately address the requirements. More effort and attention to detail are needed.'
+              'Needs improvement. The submission lacks depth and clarity. Please review the requirements and provide more comprehensive analysis. Keywords present but poorly integrated.',
+              'Below expectations. The content requires significant enhancement in quality, structure, and detail. Keywords need better integration. Consider revising your approach.',
+              'Requires revision. The submission does not adequately address the requirements. More effort and attention to detail are needed. Keywords detected but usage is minimal.'
             ];
             feedback = needsImprovementFeedbacks[Math.floor(Math.random() * needsImprovementFeedbacks.length)];
           }
@@ -2506,7 +2582,8 @@ Setup Date: ${new Date().toLocaleString()}
                 accuracyScore,
                 completenessScore,
                 feedback,
-                wordCount
+                wordCount,
+                keywordsFound: foundKeywords
               }
             });
             
@@ -2518,7 +2595,7 @@ Setup Date: ${new Date().toLocaleString()}
             // Level up check
             if (currentUser.tasksCompleted % 10 === 0) {
               currentUser.level = (currentUser.level || 1) + 1;
-              showToast(`🎉 Level Up! You are now Level ${currentUser.level}!`, 'success');
+              showToast(`�� Level Up! You are now Level ${currentUser.level}!`, 'success');
             }
             
             // Add transaction
@@ -2538,6 +2615,97 @@ Setup Date: ${new Date().toLocaleString()}
           }, 500);
         }
       }, 800);
+    }
+    
+    function showRejectionModal(activeTask, submission, fileName, missingKeywords, foundKeywords) {
+      // Close review modal
+      document.querySelector('.fixed.inset-0').remove();
+      
+      // Show rejection modal
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto';
+      modal.innerHTML = `
+        <div class="neon-border card-gradient rounded-2xl p-8 max-w-2xl w-full my-8">
+          <div class="text-center mb-6">
+            <div class="text-8xl mb-4">❌</div>
+            <h2 class="text-4xl font-bold orbitron text-red-400 mb-2">TASK REJECTED</h2>
+            <p class="text-gray-300">Missing required keywords</p>
+          </div>
+          
+          <div class="bg-red-500/20 border-2 border-red-500 rounded-lg p-6 mb-6">
+            <h3 class="text-red-400 font-bold orbitron mb-4 flex items-center gap-2">
+              <span class="text-2xl">⚠️</span> MISSING KEYWORDS
+            </h3>
+            <div class="flex flex-wrap gap-2 mb-4">
+              ${missingKeywords.map(kw => `
+                <span class="px-3 py-2 rounded-full bg-red-500/30 border-2 border-red-500 text-red-300 font-bold">
+                  ❌ ${kw}
+                </span>
+              `).join('')}
+            </div>
+            <p class="text-gray-300 text-sm">
+              Your submission is missing ${missingKeywords.length} required keyword${missingKeywords.length > 1 ? 's' : ''}. 
+              All keywords must be included for your work to be approved.
+            </p>
+          </div>
+          
+          ${foundKeywords.length > 0 ? `
+            <div class="bg-green-500/20 border-2 border-green-500 rounded-lg p-6 mb-6">
+              <h3 class="text-green-400 font-bold orbitron mb-4 flex items-center gap-2">
+                <span class="text-2xl">✓</span> FOUND KEYWORDS
+              </h3>
+              <div class="flex flex-wrap gap-2">
+                ${foundKeywords.map(kw => `
+                  <span class="px-3 py-2 rounded-full bg-green-500/30 border-2 border-green-500 text-green-300 font-bold">
+                    ✓ ${kw}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          
+          <div class="bg-cyan-500/20 border-2 border-cyan-500 rounded-lg p-6 mb-6">
+            <h3 class="text-cyan-300 font-bold orbitron mb-3 flex items-center gap-2">
+              <span class="text-xl">💡</span> WHAT TO DO NEXT
+            </h3>
+            <ul class="space-y-2 text-sm text-gray-300">
+              <li>✓ Review the required keywords for this task</li>
+              <li>✓ Revise your work to include ALL missing keywords</li>
+              <li>✓ Ensure keywords are used naturally in context</li>
+              <li>✓ Resubmit your improved work</li>
+            </ul>
+          </div>
+          
+          <div class="flex gap-4">
+            <button onclick="this.parentElement.parentElement.parentElement.remove(); renderPage('active-tasks');" class="flex-1 bg-gray-600 hover:bg-gray-700 px-6 py-4 rounded-lg orbitron font-bold">
+              BACK TO ACTIVE TASKS
+            </button>
+            <button onclick="this.parentElement.parentElement.parentElement.remove(); submitTask('${activeTask.id}');" class="flex-1 btn-neon px-6 py-4 rounded-lg orbitron font-bold">
+              REVISE & RESUBMIT
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      // Save as rejected in history
+      currentUser.taskHistory = currentUser.taskHistory || [];
+      currentUser.taskHistory.push({
+        ...activeTask,
+        submittedAt: new Date().toISOString(),
+        submission: submission,
+        fileName: fileName,
+        status: 'rejected',
+        payment: 0,
+        review: {
+          reason: 'Missing required keywords',
+          missingKeywords: missingKeywords,
+          foundKeywords: foundKeywords
+        }
+      });
+      
+      saveUser(currentUser);
+      showToast('⚠️ Task rejected due to missing keywords', 'error');
     }
     
     function animateScore(elementId, targetScore) {
@@ -2727,7 +2895,7 @@ Setup Date: ${new Date().toLocaleString()}
               <p class="text-5xl font-bold orbitron text-cyan-400">$4.50</p>
               <p class="text-xs text-gray-400 mt-2">Lifetime Access • Unlimited Withdrawals</p>
             </div>
-            <p class="text-sm text-green-400 font-bold">✓ Pay once, withdraw forever!</p>
+            <p class="text-sm text-green-400 font-bold">�� Pay once, withdraw forever!</p>
           </div>
           
           <div class="bg-cyan-500/20 border-2 border-cyan-500 rounded-lg p-4 mb-6">
@@ -3316,5 +3484,5 @@ Request Date: ${new Date().toLocaleString()}
     // Initialize app
     initApp();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c843adb22fc9bfc',t:'MTc3MDE0NTg0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c84f939d3479bfc',t:'MTc3MDE1MzY0MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
