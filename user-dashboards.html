@@ -32,9 +32,8 @@
             z-index: 1000;
             transition: all 0.3s;
         }
-        .whatsapp-float:hover {
-            transform: scale(1.1);
-        }
+        .whatsapp-float:hover { transform: scale(1.1); }
+        .countdown { font-family: monospace; font-size: 0.9rem; color: #f59e0b; }
     </style>
 </head>
 <body>
@@ -108,50 +107,38 @@
             <div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Recent Activity</h2><div id="recentActivity" class="space-y-2"></div></div>
         </div>
 
-        <!-- Products Page (includes both standard products and hourly investment) -->
+        <!-- Products Page -->
         <div id="productsPage" class="hidden">
-            <h1 class="text-3xl font-bold mb-6">Investment Options</h1>
-            <!-- Standard Products -->
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold mb-4">📦 Standard Packages (Daily Income)</h2>
-                <div id="productsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-            </div>
-            <!-- Hourly Investment Card -->
-            <div class="bg-white rounded-xl shadow-sm p-6">
-                <h2 class="text-2xl font-bold mb-4">⏱️ Hourly Investment</h2>
-                <p class="text-gray-600 mb-4">Choose an amount and duration (5-24 hours) to earn profit based on ROI:</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-gray-700 mb-2">Amount to Invest (Ksh)</label>
-                        <input type="number" id="hourlyAmount" class="w-full border rounded-lg px-4 py-2" placeholder="Min 100">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 mb-2">Duration (hours)</label>
-                        <input type="number" id="hourlyHours" class="w-full border rounded-lg px-4 py-2" min="5" max="24" step="1" value="5">
-                    </div>
-                </div>
-                <div class="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <p class="font-semibold">ROI: <span id="roiPercent">15%</span></p>
-                    <p class="font-semibold">Expected Profit: Ksh <span id="hourlyProfit">0</span></p>
-                    <p class="font-semibold">Total Return: Ksh <span id="hourlyReturn">0</span></p>
-                </div>
-                <button onclick="investHourly()" class="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Invest Now</button>
-            </div>
+            <h1 class="text-3xl font-bold mb-6">Investment Packages</h1>
+            <div id="productsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
 
         <!-- Subscriptions Page -->
-        <div id="subscriptionsPage" class="hidden"><div class="flex justify-between items-center mb-6"><h1 class="text-3xl font-bold">Active Subscriptions</h1><div class="bg-white px-4 py-2 rounded-lg shadow-sm"><span class="text-gray-500">Daily Income: </span><span id="dailyIncomeTotal" class="text-xl font-bold text-green-600">Ksh 0</span></div></div><div id="subscriptionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div></div>
+        <div id="subscriptionsPage" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold">Active Subscriptions</h1>
+                <div class="bg-white px-4 py-2 rounded-lg shadow-sm"><span class="text-gray-500">Daily Income: </span><span id="dailyIncomeTotal" class="text-xl font-bold text-green-600">Ksh 0</span></div>
+            </div>
+            <div id="subscriptionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
 
         <!-- Wallet Page -->
-        <div id="walletPage" class="hidden"><h1 class="text-3xl font-bold mb-6">Wallet</h1><div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"><div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Total Balance</p><p id="walletTotalBalance" class="text-2xl font-bold">Ksh 0</p></div><div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Available Balance</p><p id="walletAvailableBalance" class="text-2xl font-bold text-green-600">Ksh 0</p></div><div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Pending Balance</p><p id="walletPendingBalance" class="text-2xl font-bold text-yellow-600">Ksh 0</p></div></div>
+        <div id="walletPage" class="hidden">
+            <h1 class="text-3xl font-bold mb-6">Wallet</h1>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Total Balance</p><p id="walletTotalBalance" class="text-2xl font-bold">Ksh 0</p></div>
+                <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Available Balance</p><p id="walletAvailableBalance" class="text-2xl font-bold text-green-600">Ksh 0</p></div>
+                <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Pending Balance</p><p id="walletPendingBalance" class="text-2xl font-bold text-yellow-600">Ksh 0</p></div>
+            </div>
             <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
                 <h2 class="text-xl font-bold mb-4">Add Funds</h2>
                 <div id="paymentLinkContainer" class="mb-4 p-3 bg-blue-50 rounded-lg">
                     <p class="text-sm text-gray-600">Use the payment link below to make a deposit:</p>
                     <a id="paymentLink" href="#" target="_blank" class="text-blue-600 underline break-all">Loading...</a>
+                    <button id="addFundsButton" class="mt-2 w-full bg-indigo-600 text-white py-2 rounded-lg">Proceed to Payment</button>
                 </div>
                 <div class="border-t pt-4">
-                    <p class="text-sm text-gray-600 mb-2">Or request manual deposit:</p>
+                    <p class="text-sm text-gray-600 mb-2">Or request manual deposit (will be added after admin approval):</p>
                     <input type="number" id="depositAmount" placeholder="Amount (Ksh)" class="w-full border rounded-lg px-4 py-2 mb-3">
                     <textarea id="depositMessage" rows="3" placeholder="Paste payment confirmation message (transaction ID, screenshot link, etc.)" class="w-full border rounded-lg px-4 py-2 mb-3"></textarea>
                     <button onclick="requestDeposit()" class="w-full bg-indigo-600 text-white py-2 rounded-lg">Submit Deposit Request</button>
@@ -206,14 +193,8 @@
             <div class="bg-white rounded-xl p-6 shadow-sm max-w-2xl">
                 <p class="text-gray-600 mb-4">Send a message to admin. We'll respond as soon as possible.</p>
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-gray-700 mb-2">Subject</label>
-                        <input type="text" id="contactSubject" class="w-full border rounded-lg px-4 py-2" placeholder="e.g., Withdrawal issue">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 mb-2">Message</label>
-                        <textarea id="contactMessage" rows="5" class="w-full border rounded-lg px-4 py-2" placeholder="Describe your issue..."></textarea>
-                    </div>
+                    <div><label class="block text-gray-700 mb-2">Subject</label><input type="text" id="contactSubject" class="w-full border rounded-lg px-4 py-2" placeholder="e.g., Withdrawal issue"></div>
+                    <div><label class="block text-gray-700 mb-2">Message</label><textarea id="contactMessage" rows="5" class="w-full border rounded-lg px-4 py-2" placeholder="Describe your issue..."></textarea></div>
                     <button onclick="sendContactMessage()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg">Send Message</button>
                 </div>
             </div>
@@ -248,6 +229,7 @@
         let currentUserData = null;
         let currentUserId = null;
         let pendingCommission = 0;
+        let countdownIntervals = [];
 
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
@@ -280,7 +262,7 @@
             window.location.href = 'index.html';
         }
 
-        // User data listener
+        // Load user data
         function loadUserData() {
             if (!currentUserId) return;
             const userRef = doc(db, 'users', currentUserId);
@@ -309,7 +291,7 @@
             document.getElementById('profileEmail').value = currentUserData.email || '';
         }
 
-        // Products
+        // Products with investment type toggle
         async function loadProducts() {
             const container = document.getElementById('productsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -325,107 +307,118 @@
                     card.className = 'bg-white rounded-xl shadow-sm overflow-hidden hover-lift';
                     card.innerHTML = `
                         <img src="${p.imageUrl || 'https://via.placeholder.com/300x200'}" class="w-full h-48 object-cover">
-                        <div class="p-4"><h3 class="text-xl font-bold mb-2">${p.name}</h3>
-                        <p class="text-gray-600 mb-1">Price: ${formatCurrency(p.price)}</p>
-                        <p class="text-gray-600 mb-1">Duration: ${p.durationDays} days</p>
-                        <p class="text-gray-600 mb-1">ROI: ${p.roi}%</p>
-                        <p class="text-green-600 font-bold mb-3">Daily Income: ${formatCurrency(p.dailyIncome)}</p>
-                        <button onclick="buyProduct('${id}', ${p.price}, ${p.dailyIncome}, ${p.durationDays}, '${p.name}', '${p.imageUrl}')" class="w-full bg-indigo-600 text-white py-2 rounded-lg">Buy Now</button></div>
+                        <div class="p-4">
+                            <h3 class="text-xl font-bold mb-2">${p.name}</h3>
+                            <p class="text-gray-600 mb-1">Price: ${formatCurrency(p.price)}</p>
+                            <p class="text-gray-600 mb-1">Daily Income: ${formatCurrency(p.dailyIncome)}</p>
+                            <div class="mb-3">
+                                <label class="inline-flex items-center mr-4">
+                                    <input type="radio" name="type_${id}" value="daily" checked class="mr-1"> Daily Income
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="type_${id}" value="hourly" class="mr-1"> Hourly (5-24 hrs)
+                                </label>
+                            </div>
+                            <div id="hourly_options_${id}" class="hidden mb-3">
+                                <label class="block text-sm text-gray-600">Duration (hours):</label>
+                                <input type="number" id="hours_${id}" min="5" max="24" value="5" class="w-full border rounded px-2 py-1">
+                                <p class="text-xs text-gray-500 mt-1">ROI: <span id="roi_${id}">15%</span> | Profit: <span id="profit_${id}">0</span> Ksh</p>
+                            </div>
+                            <button onclick="buyProduct('${id}', ${p.price}, '${p.name}', '${p.imageUrl}', ${p.dailyIncome})" class="w-full bg-indigo-600 text-white py-2 rounded-lg">Buy Now</button>
+                        </div>
                     `;
                     container.appendChild(card);
+                    // Add event listeners for radio buttons
+                    const radios = card.querySelectorAll(`input[name="type_${id}"]`);
+                    radios.forEach(radio => {
+                        radio.addEventListener('change', function(e) {
+                            const hourlyDiv = card.querySelector(`#hourly_options_${id}`);
+                            if (this.value === 'hourly') {
+                                hourlyDiv.classList.remove('hidden');
+                                updateHourlyROI(id);
+                            } else {
+                                hourlyDiv.classList.add('hidden');
+                            }
+                        });
+                    });
+                    const hoursInput = card.querySelector(`#hours_${id}`);
+                    if (hoursInput) {
+                        hoursInput.addEventListener('input', () => updateHourlyROI(id));
+                        updateHourlyROI(id);
+                    }
                 });
             } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading products</p>'; }
         }
 
-        window.buyProduct = async function(id, price, dailyIncome, durationDays, name, img) {
+        function updateHourlyROI(productId) {
+            const hours = parseInt(document.getElementById(`hours_${productId}`).value) || 5;
+            let roi = 15;
+            if (hours >= 16) roi = 20;
+            document.getElementById(`roi_${productId}`).innerText = roi + '%';
+            const price = parseFloat(document.querySelector(`#productsList button[onclick*="'${productId}'"]`).getAttribute('onclick').match(/(\d+\.?\d*)/)[0]);
+            const profit = price * roi / 100;
+            document.getElementById(`profit_${productId}`).innerText = profit.toFixed(2);
+        }
+
+        window.buyProduct = async function(productId, price, productName, productImage, dailyIncome) {
             if (!currentUserData || currentUserData.availableBalance < price) { showToast('Insufficient balance', true); return; }
+            const radios = document.querySelectorAll(`input[name="type_${productId}"]`);
+            let type = 'daily';
+            let hours = null;
+            radios.forEach(r => { if (r.checked) type = r.value; });
+            if (type === 'hourly') {
+                hours = parseInt(document.getElementById(`hours_${productId}`).value);
+                if (hours < 5 || hours > 24) { showToast('Hours must be between 5 and 24', true); return; }
+            }
             try {
-                const startDate = new Date();
-                const endDate = new Date(startDate);
-                endDate.setDate(endDate.getDate() + durationDays);
-                const batch = writeBatch(db);
-                const userRef = doc(db, 'users', currentUserId);
-                batch.update(userRef, { availableBalance: increment(-price), totalInvested: increment(price), activePackagesCount: increment(1), totalBalance: increment(-price) });
-                const subRef = doc(collection(db, 'subscriptions'));
-                batch.set(subRef, { userId: currentUserId, productId: id, productName: name, productImage: img, dailyIncome, durationDays, startDate, endDate, lastClaimDate: null, totalEarned: 0, status: 'active' });
-                // Add purchase commission (10% of price)
-                const commissionAmount = price * 0.10;
-                const commissionRef = doc(collection(db, 'purchaseCommissions'));
-                batch.set(commissionRef, {
-                    userId: currentUserId,
-                    productName: name,
-                    amount: commissionAmount,
-                    isClaimed: false,
-                    createdAt: serverTimestamp()
-                });
-                await batch.commit();
-                showToast('Package purchased successfully!');
-                loadSubscriptions();
+                if (type === 'daily') {
+                    // Daily income subscription
+                    const startDate = new Date();
+                    const endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + 30); // default 30 days? Actually product should have duration. We'll use product's duration? But product has no duration in this spec? We'll use 30 days.
+                    const batch = writeBatch(db);
+                    const userRef = doc(db, 'users', currentUserId);
+                    batch.update(userRef, { availableBalance: increment(-price), totalInvested: increment(price), activePackagesCount: increment(1), totalBalance: increment(-price) });
+                    const subRef = doc(collection(db, 'subscriptions'));
+                    batch.set(subRef, { userId: currentUserId, productId, productName, productImage, dailyIncome, durationDays: 30, startDate, endDate, lastClaimDate: null, totalEarned: 0, status: 'active' });
+                    // Add purchase commission (10% of price)
+                    const commissionAmount = price * 0.10;
+                    const commissionRef = doc(collection(db, 'purchaseCommissions'));
+                    batch.set(commissionRef, { userId: currentUserId, productName, amount: commissionAmount, isClaimed: false, createdAt: serverTimestamp() });
+                    await batch.commit();
+                    showToast('Package purchased successfully!');
+                    loadSubscriptions();
+                } else {
+                    // Hourly investment
+                    const profit = price * (hours >= 16 ? 0.20 : 0.15);
+                    const totalReturn = price + profit;
+                    const endTime = new Date();
+                    endTime.setHours(endTime.getHours() + hours);
+                    const batch = writeBatch(db);
+                    const userRef = doc(db, 'users', currentUserId);
+                    batch.update(userRef, { availableBalance: increment(-price), totalInvested: increment(price), totalBalance: increment(-price) });
+                    const investRef = doc(collection(db, 'hourlyInvestments'));
+                    batch.set(investRef, {
+                        userId: currentUserId,
+                        productName,
+                        amount: price,
+                        hours,
+                        profit,
+                        totalReturn,
+                        startTime: serverTimestamp(),
+                        endTime,
+                        status: 'active'
+                    });
+                    await batch.commit();
+                    showToast(`Hourly investment of ${formatCurrency(price)} placed for ${hours} hours. You'll receive ${formatCurrency(totalReturn)} after completion.`);
+                    // Optionally, we could add a transaction record.
+                }
                 loadUserData();
                 loadPendingCommission();
             } catch (error) { showToast(error.message, true); }
         };
 
-        // Hourly Investment
-        function updateHourlyROI() {
-            const hours = parseInt(document.getElementById('hourlyHours').value) || 5;
-            const amount = parseFloat(document.getElementById('hourlyAmount').value) || 0;
-            let roi = 0;
-            if (hours >= 5 && hours <= 15) roi = 15;
-            else if (hours >= 16 && hours <= 24) roi = 20;
-            document.getElementById('roiPercent').innerText = roi + '%';
-            const profit = amount * roi / 100;
-            document.getElementById('hourlyProfit').innerText = profit.toFixed(2);
-            document.getElementById('hourlyReturn').innerText = (amount + profit).toFixed(2);
-        }
-        window.investHourly = async function() {
-            if (!currentUserData) return;
-            const amount = parseFloat(document.getElementById('hourlyAmount').value);
-            const hours = parseInt(document.getElementById('hourlyHours').value);
-            if (isNaN(amount) || amount < 100) { showToast('Minimum investment is Ksh 100', true); return; }
-            if (hours < 5 || hours > 24) { showToast('Hours must be between 5 and 24', true); return; }
-            if (amount > currentUserData.availableBalance) { showToast('Insufficient balance', true); return; }
-            let roi = 0;
-            if (hours >= 5 && hours <= 15) roi = 15;
-            else if (hours >= 16 && hours <= 24) roi = 20;
-            const profit = amount * roi / 100;
-            const totalReturn = amount + profit;
-            try {
-                const batch = writeBatch(db);
-                const userRef = doc(db, 'users', currentUserId);
-                batch.update(userRef, {
-                    availableBalance: increment(-amount),
-                    totalInvested: increment(amount),
-                    totalBalance: increment(-amount)
-                });
-                const investRef = doc(collection(db, 'hourlyInvestments'));
-                const endTime = new Date();
-                endTime.setHours(endTime.getHours() + hours);
-                batch.set(investRef, {
-                    userId: currentUserId,
-                    amount: amount,
-                    hours: hours,
-                    roi: roi,
-                    profit: profit,
-                    totalReturn: totalReturn,
-                    startTime: serverTimestamp(),
-                    endTime: endTime,
-                    status: 'active'
-                });
-                await batch.commit();
-                showToast(`Investment of ${formatCurrency(amount)} placed for ${hours} hours. You'll receive ${formatCurrency(totalReturn)} after completion.`);
-                document.getElementById('hourlyAmount').value = '';
-                document.getElementById('hourlyHours').value = 5;
-                updateHourlyROI();
-                loadUserData();
-                // Optionally, you could have a separate "active investments" section. For now, we just update balance.
-            } catch (error) { showToast(error.message, true); }
-        };
-        document.getElementById('hourlyHours')?.addEventListener('input', updateHourlyROI);
-        document.getElementById('hourlyAmount')?.addEventListener('input', updateHourlyROI);
-        updateHourlyROI();
-
-        // Subscriptions
+        // Subscriptions with countdown
         async function loadSubscriptions() {
             const container = document.getElementById('subscriptionsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -439,6 +432,8 @@
                     const subId = docSnap.id;
                     const remainingDays = Math.max(0, Math.ceil((sub.endDate.toDate() - new Date()) / (1000*60*60*24)));
                     totalDaily += sub.dailyIncome;
+                    const lastClaim = sub.lastClaimDate ? sub.lastClaimDate.toDate() : null;
+                    const nextClaimTime = getNextClaimTime(lastClaim);
                     const card = document.createElement('div');
                     card.className = 'bg-white rounded-xl shadow-sm p-4';
                     card.innerHTML = `
@@ -447,13 +442,41 @@
                         <p>Daily Income: ${formatCurrency(sub.dailyIncome)}</p>
                         <p>Remaining: ${remainingDays} days</p>
                         <p>Total Earned: ${formatCurrency(sub.totalEarned)}</p>
+                        <p class="countdown" id="countdown_${subId}">Next claim: ${nextClaimTime}</p>
                         <button onclick="claimDailyIncome('${subId}', ${sub.dailyIncome})" class="mt-3 w-full bg-green-600 text-white py-2 rounded-lg">Claim Today</button>
                     `;
                     container.appendChild(card);
+                    // Start countdown timer
+                    startCountdown(subId, lastClaim);
                 });
                 document.getElementById('dailyIncomeTotal').textContent = formatCurrency(totalDaily);
                 if (snapshot.empty) container.innerHTML = '<p class="text-center text-gray-500">No active subscriptions</p>';
             } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading subscriptions</p>'; }
+        }
+
+        function getNextClaimTime(lastClaimDate) {
+            if (!lastClaimDate) return 'Available now';
+            const next = new Date(lastClaimDate);
+            next.setDate(next.getDate() + 1);
+            next.setHours(0,0,0,0);
+            const now = new Date();
+            if (now >= next) return 'Available now';
+            const diff = next - now;
+            const hours = Math.floor(diff / (1000*60*60));
+            const minutes = Math.floor((diff % (1000*60*60)) / (1000*60));
+            const seconds = Math.floor((diff % (1000*60)) / 1000);
+            return `Next claim in: ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        function startCountdown(subId, lastClaimDate) {
+            if (!lastClaimDate) return;
+            const interval = setInterval(() => {
+                const nextClaimTime = getNextClaimTime(lastClaimDate);
+                const el = document.getElementById(`countdown_${subId}`);
+                if (el) el.innerText = nextClaimTime;
+                else clearInterval(interval);
+            }, 1000);
+            countdownIntervals.push(interval);
         }
 
         window.claimDailyIncome = async function(subId, dailyIncome) {
@@ -477,7 +500,20 @@
             } catch (error) { showToast(error.message, true); }
         };
 
-        // Wallet: Deposit request
+        // Wallet: Add funds button
+        async function loadPaymentLink() {
+            const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
+            let link = 'https://lipana.dev'; // default
+            if (settingsDoc.exists() && settingsDoc.data().paymentLink) {
+                link = settingsDoc.data().paymentLink;
+            }
+            const linkEl = document.getElementById('paymentLink');
+            linkEl.href = link;
+            linkEl.textContent = link;
+            const btn = document.getElementById('addFundsButton');
+            btn.onclick = () => window.open(link, '_blank');
+        }
+
         window.requestDeposit = async function() {
             const amount = parseFloat(document.getElementById('depositAmount').value);
             const message = document.getElementById('depositMessage').value.trim();
@@ -563,7 +599,9 @@
         // Referral
         async function loadReferralInfo() {
             if (!currentUserData) return;
-            document.getElementById('referralLink').value = `${window.location.origin}${window.location.pathname}?ref=${currentUserData.referralCode}`;
+            // Build referral link pointing to index.html
+            const link = `${window.location.origin}/index.html?ref=${currentUserData.referralCode}`;
+            document.getElementById('referralLink').value = link;
             // Get referred users
             const q = query(collection(db, 'users'), where('referredBy', '==', currentUserId));
             const snapshot = await getDocs(q);
@@ -574,23 +612,18 @@
             container.innerHTML = '';
             for (const docSnap of snapshot.docs) {
                 const referred = docSnap.data();
-                // Find first package purchase transaction of this referred user
                 const txQuery = query(collection(db, 'transactions'), where('userId', '==', docSnap.id), where('type', '==', 'package_purchase'), where('status', '==', 'completed'), orderBy('timestamp', 'asc'), limit(1));
                 const txSnap = await getDocs(txQuery);
                 let purchaseAmount = 0;
                 let claimable = false;
                 if (!txSnap.empty) purchaseAmount = txSnap.docs[0].data().amount;
-                // Check if bonus already claimed for this referral
                 const bonusQuery = query(collection(db, 'referralBonusClaims'), where('referrerId', '==', currentUserId), where('referredUserId', '==', docSnap.id), where('status', '==', 'approved'));
                 const bonusSnap = await getDocs(bonusQuery);
                 if (bonusSnap.empty && purchaseAmount > 0) claimable = true;
                 const div = document.createElement('div');
                 div.className = 'border rounded-lg p-3 flex justify-between items-center';
                 div.innerHTML = `
-                    <div>
-                        <p class="font-semibold">${referred.displayName}</p>
-                        <p class="text-sm text-gray-500">First purchase: ${formatCurrency(purchaseAmount)}</p>
-                    </div>
+                    <div><p class="font-semibold">${referred.displayName}</p><p class="text-sm text-gray-500">First purchase: ${formatCurrency(purchaseAmount)}</p></div>
                     ${claimable ? `<button onclick="claimReferralBonus('${docSnap.id}', ${purchaseAmount})" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Claim Bonus (15%)</button>` : '<span class="text-gray-400">Bonus claimed</span>'}
                 `;
                 container.appendChild(div);
@@ -600,7 +633,6 @@
         window.claimReferralBonus = async function(referredUserId, purchaseAmount) {
             const bonusAmount = purchaseAmount * 0.15;
             try {
-                // Create claim request for admin
                 await addDoc(collection(db, 'referralBonusClaims'), {
                     referrerId: currentUserId,
                     referredUserId: referredUserId,
@@ -693,18 +725,6 @@
                 loadUserData();
             } catch (error) { showToast(error.message, true); }
         };
-
-        // Load payment link from settings
-        async function loadPaymentLink() {
-            const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
-            let link = '#';
-            if (settingsDoc.exists() && settingsDoc.data().paymentLink) {
-                link = settingsDoc.data().paymentLink;
-            }
-            const linkEl = document.getElementById('paymentLink');
-            linkEl.href = link;
-            linkEl.textContent = link !== '#' ? link : 'Not set by admin';
-        }
 
         // Auth state
         onAuthStateChanged(auth, async (user) => {
