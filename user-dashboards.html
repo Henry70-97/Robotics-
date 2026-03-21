@@ -2,347 +2,450 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>UrbanPay • User Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase Modular SDK -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* custom smooth transitions */
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%);
+            z-index: 1000;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .overlay {
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .nav-item.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .nav-item.active i {
+            color: white;
+        }
+        .tab-btn.active {
+            border-bottom: 2px solid #4f46e5;
+            color: #4f46e5;
+        }
+        .section {
+            display: none;
+        }
+        .section.active-section {
+            display: block;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 280px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+
+    <!-- Mobile Overlay -->
+    <div id="sidebarOverlay" class="overlay fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+
+    <!-- Sidebar (Hamburger Menu) -->
+    <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 flex flex-col">
+        <div class="p-5 border-b flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-indigo-700">UrbanPay</h2>
+            <button id="closeSidebarBtn" class="text-gray-500 hover:text-gray-800 text-xl"><i class="fas fa-times"></i></button>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1 px-3">
+                <li><button data-section="invest" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50 transition"><i class="fas fa-chart-line w-5"></i> Invest</button></li>
+                <li><button data-section="addfunds" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50"><i class="fas fa-plus-circle w-5"></i> Add Funds</button></li>
+                <li><button data-section="withdrawals" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50"><i class="fas fa-money-bill-wave w-5"></i> Withdrawals</button></li>
+                <li><button data-section="transactions" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50"><i class="fas fa-exchange-alt w-5"></i> Transactions</button></li>
+                <li><button data-section="contact" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50"><i class="fas fa-envelope w-5"></i> Contact</button></li>
+                <li><button data-section="invite" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50"><i class="fas fa-user-friends w-5"></i> Invite</button></li>
+                <li><button data-section="myaccount" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50"><i class="fas fa-user-circle w-5"></i> My Account</button></li>
+                <li><button data-section="team" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-gray-700 hover:bg-indigo-50"><i class="fas fa-users w-5"></i> Team</button></li>
+            </ul>
+        </nav>
+        <div class="p-4 border-t">
+            <button onclick="logout()" class="w-full bg-red-50 text-red-600 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-red-100"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="min-h-screen">
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <button id="hamburgerBtn" class="text-gray-600 text-2xl focus:outline-none"><i class="fas fa-bars"></i></button>
+                    <h1 class="text-xl font-bold text-indigo-700 hidden sm:block">UrbanPay Dashboard</h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-xs text-gray-500">Balance</p>
+                        <p id="topBalance" class="font-bold text-gray-800">$0.00</p>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold"><i class="fas fa-user"></i></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Container with dynamic sections -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div id="messageBox" class="mb-4"></div>
+
+            <!-- INVEST SECTION -->
+            <div id="investSection" class="section active-section">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"><h2 class="text-gray-500">Current Balance</h2><p id="balance" class="text-3xl font-bold">$0.00</p></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"><h2 class="text-gray-500">Total Invested</h2><p id="totalInvested" class="text-3xl font-bold">$0.00</p></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100"><h2 class="text-gray-500">Total Profit</h2><p id="totalProfit" class="text-3xl font-bold">$0.00</p></div>
+                </div>
+                <!-- Active Investment Plans -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 mb-8">
+                    <h2 class="text-xl font-bold mb-4">📈 Investment Plans</h2>
+                    <div id="plansContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+                </div>
+                <!-- Active Investments list -->
+                <div class="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 class="text-xl font-bold mb-4">⏳ Your Active Investments</h2>
+                    <div id="activeInvestments" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- ADD FUNDS SECTION -->
+            <div id="addfundsSection" class="section">
+                <div class="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold mb-2">💰 Add Funds</h2>
+                    <p class="text-gray-500 mb-6">Request a deposit. Admin will review and credit your balance.</p>
+                    <form id="depositRequestForm" class="space-y-4 max-w-md">
+                        <div><label class="block text-sm font-medium mb-1">Amount (USD)</label><input type="number" id="depositAmount" step="0.01" class="w-full border rounded-xl p-3" placeholder="Min $10" required></div>
+                        <div><label class="block text-sm font-medium mb-1">Payment Method</label><select id="depositMethod" class="w-full border rounded-xl p-3"><option>Bank Transfer</option><option>Mpesa</option><option>Crypto</option></select></div>
+                        <button type="submit" class="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 w-full md:w-auto">Submit Deposit Request</button>
+                    </form>
+                    <div class="mt-8"><h3 class="font-semibold text-lg">📋 Your Deposit Requests</h3><div id="userDepositRequests" class="mt-3 space-y-2"></div></div>
+                </div>
+            </div>
+
+            <!-- WITHDRAWALS SECTION -->
+            <div id="withdrawalsSection" class="section">
+                <div class="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold mb-2">💸 Withdrawal Requests</h2>
+                    <form id="withdrawalForm" class="space-y-4 max-w-md mb-8">
+                        <div><input type="number" id="withdrawAmount" step="0.01" class="w-full border rounded-xl p-3" placeholder="Amount ($)" required></div>
+                        <div><select id="withdrawMethod" class="w-full border rounded-xl p-3" required><option value="Mpesa">Mpesa</option><option value="Bank Transfer">Bank Transfer</option><option value="Crypto">Crypto</option></select></div>
+                        <div><textarea id="accountDetails" rows="2" class="w-full border rounded-xl p-3" placeholder="Account details (phone / bank / wallet address)" required></textarea></div>
+                        <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700">Submit Request</button>
+                    </form>
+                    <h3 class="font-semibold text-lg">📜 Withdrawal History</h3>
+                    <div id="withdrawalHistory" class="mt-3 space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- TRANSACTIONS SECTION -->
+            <div id="transactionsSection" class="section">
+                <div class="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold mb-4">📜 Transaction History</h2>
+                    <div id="transactionsList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- CONTACT SECTION -->
+            <div id="contactSection" class="section">
+                <div class="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold mb-4">📞 Contact Support</h2>
+                    <p class="mb-4">For any inquiries, reach us at <strong>support@urbanpay.com</strong> or use the form below.</p>
+                    <form id="contactForm" class="space-y-4 max-w-lg">
+                        <input type="text" placeholder="Subject" class="w-full border rounded-xl p-3" required>
+                        <textarea rows="4" placeholder="Message" class="w-full border rounded-xl p-3" required></textarea>
+                        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-xl">Send Message</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- INVITE SECTION -->
+            <div id="inviteSection" class="section">
+                <div class="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold mb-2">🤝 Invite Friends, Earn Rewards</h2>
+                    <p class="text-gray-600 mb-4">Share your unique referral link. When they sign up and invest, you get a bonus!</p>
+                    <div class="bg-gray-50 p-4 rounded-xl flex flex-wrap items-center gap-3">
+                        <input id="referralLinkInput" type="text" readonly class="flex-1 bg-transparent border-0 p-2 text-sm font-mono">
+                        <button id="copyLinkBtn" class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg"><i class="fas fa-copy"></i> Copy</button>
+                    </div>
+                    <div class="mt-6"><h3 class="font-bold">Your Referral Code:</h3><p id="refCodeDisplay" class="text-lg font-mono bg-gray-100 inline-block px-3 py-1 rounded mt-1"></p></div>
+                </div>
+            </div>
+
+            <!-- MY ACCOUNT SECTION -->
+            <div id="myaccountSection" class="section">
+                <div class="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold mb-4">👤 Account Details</h2>
+                    <div class="space-y-3">
+                        <div><span class="font-semibold">Email:</span> <span id="userEmailDisplay"></span></div>
+                        <div><span class="font-semibold">Role:</span> <span id="userRoleDisplay"></span></div>
+                        <div><span class="font-semibold">Account Status:</span> <span id="userStatusDisplay"></span></div>
+                        <div><span class="font-semibold">Member since:</span> <span id="memberSince"></span></div>
+                        <div><span class="font-semibold">Referral Code:</span> <span id="accountRefCode"></span></div>
+                    </div>
+                    <hr class="my-6">
+                    <h3 class="text-xl font-semibold mb-2">Security</h3>
+                    <button onclick="resetPassword()" class="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300">Send password reset email</button>
+                </div>
+            </div>
+
+            <!-- TEAM SECTION -->
+            <div id="teamSection" class="section">
+                <div class="bg-white rounded-2xl shadow-sm p-6">
+                    <h2 class="text-2xl font-bold mb-4">👥 Your Team (Referrals)</h2>
+                    <div id="teamListContainer" class="space-y-2 max-h-96 overflow-y-auto">
+                        <p class="text-gray-500">Loading team members...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INVEST MODAL (unchanged functionality) -->
+    <div id="investModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 w-96 max-w-md"><h3 class="text-xl font-bold mb-4">Invest in Plan</h3><p class="mb-2">Amount range: $<span id="modalMin">0</span> - $<span id="modalMax">0</span></p><input type="number" id="investAmount" step="0.01" class="w-full border rounded p-2 mb-4" placeholder="Enter amount"><input type="hidden" id="modalPlanId"><div class="flex justify-end gap-2"><button onclick="closeModal()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button><button onclick="submitInvestment()" class="px-4 py-2 bg-indigo-600 text-white rounded">Invest</button></div></div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, collection, query, where, orderBy, limit, addDoc, updateDoc, runTransaction, Timestamp, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, getDocs, collection, query, where, orderBy, limit, addDoc, updateDoc, runTransaction, Timestamp, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
-            authDomain: "urbanpay-c5aee.firebaseapp.com",
-            projectId: "urbanpay-c5aee",
-            storageBucket: "urbanpay-c5aee.firebasestorage.app",
-            messagingSenderId: "648155825006",
-            appId: "1:648155825006:web:16d6ea4dfab808920b777f",
-            measurementId: "G-CTKZN6VHPS"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20", authDomain: "urbanpay-c5aee.firebaseapp.com", projectId: "urbanpay-c5aee", storageBucket: "urbanpay-c5aee.firebasestorage.app", messagingSenderId: "648155825006", appId: "1:648155825006:web:16d6ea4dfab808920b777f", measurementId: "G-CTKZN6VHPS" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
         let currentUser = null;
         let userData = null;
 
-        // DOM elements
-        const balanceEl = document.getElementById('balance');
-        const totalInvestedEl = document.getElementById('totalInvested');
-        const totalProfitEl = document.getElementById('totalProfit');
-        const plansContainer = document.getElementById('plansContainer');
-        const activeInvestmentsContainer = document.getElementById('activeInvestments');
-        const transactionsContainer = document.getElementById('transactions');
-        const withdrawalForm = document.getElementById('withdrawalForm');
+        // UI Elements
         const messageBox = document.getElementById('messageBox');
+        function showMessage(msg, isError = false) { messageBox.innerHTML = `<div class="p-3 rounded-lg ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${msg}</div>`; setTimeout(() => messageBox.innerHTML = '', 5000); }
+        window.logout = async () => { await signOut(auth); window.location.href = "register.html"; };
+        window.resetPassword = async () => { if(currentUser) { await sendPasswordResetEmail(auth, currentUser.email); showMessage("Password reset email sent!"); } };
 
-        function showMessage(msg, isError = false) {
-            messageBox.innerHTML = `<div class="p-3 rounded-lg ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${msg}</div>`;
-            setTimeout(() => messageBox.innerHTML = '', 4000);
+        // Sidebar logic
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('active'); }
+        function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('active'); }
+        document.getElementById('hamburgerBtn').onclick = openSidebar;
+        document.getElementById('closeSidebarBtn').onclick = closeSidebar;
+        overlay.onclick = closeSidebar;
+
+        // Section switching
+        const sections = ['invest', 'addfunds', 'withdrawals', 'transactions', 'contact', 'invite', 'myaccount', 'team'];
+        function showSection(sectionId) {
+            sections.forEach(sec => { document.getElementById(sec+'Section').classList.remove('active-section'); });
+            document.getElementById(sectionId+'Section').classList.add('active-section');
+            closeSidebar();
+            // update nav active style
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.nav-item[data-section="${sectionId}"]`).classList.add('active');
         }
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.addEventListener('click', () => showSection(btn.getAttribute('data-section')));
+        });
 
-        // Logout
-        window.logout = async () => {
-            await signOut(auth);
-            window.location.href = "register.html";
-        };
-
-        // Fetch user data and check suspension
+        // Load all user data, referrals, deposit requests, withdrawals history
         async function loadUserData() {
             if (!currentUser) return;
             const userRef = doc(db, "users", currentUser.uid);
             const snap = await getDoc(userRef);
             if (snap.exists()) {
                 userData = snap.data();
-                balanceEl.textContent = `$${userData.balance.toFixed(2)}`;
-                totalInvestedEl.textContent = `$${userData.totalInvested.toFixed(2)}`;
-                totalProfitEl.textContent = `$${userData.totalProfit.toFixed(2)}`;
-                if (userData.status === 'suspended') {
-                    showMessage("Your account is suspended. You cannot invest or withdraw.", true);
-                    document.getElementById('investSection').style.opacity = '0.5';
-                    document.getElementById('withdrawSection').style.opacity = '0.5';
-                    document.querySelectorAll('#investSection button, #withdrawSection button').forEach(btn => btn.disabled = true);
-                } else {
-                    document.getElementById('investSection').style.opacity = '1';
-                    document.getElementById('withdrawSection').style.opacity = '1';
+                document.getElementById('balance').innerText = `$${userData.balance?.toFixed(2) || '0.00'}`;
+                document.getElementById('topBalance').innerText = `$${userData.balance?.toFixed(2) || '0.00'}`;
+                document.getElementById('totalInvested').innerText = `$${userData.totalInvested?.toFixed(2) || '0.00'}`;
+                document.getElementById('totalProfit').innerText = `$${userData.totalProfit?.toFixed(2) || '0.00'}`;
+                document.getElementById('userEmailDisplay').innerText = userData.email;
+                document.getElementById('userRoleDisplay').innerText = userData.role || 'user';
+                document.getElementById('userStatusDisplay').innerText = userData.status || 'active';
+                if (userData.createdAt) document.getElementById('memberSince').innerText = userData.createdAt.toDate().toLocaleDateString();
+                // referral code
+                let refCode = userData.referralCode;
+                if (!refCode) {
+                    refCode = currentUser.uid.substring(0,8).toUpperCase();
+                    await updateDoc(userRef, { referralCode: refCode });
+                    userData.referralCode = refCode;
                 }
+                const inviteLink = `${window.location.origin}/register.html?ref=${refCode}`;
+                document.getElementById('referralLinkInput').value = inviteLink;
+                document.getElementById('refCodeDisplay').innerText = refCode;
+                document.getElementById('accountRefCode').innerText = refCode;
             }
         }
 
-        // Load active investment plans
-        async function loadPlans() {
-            const q = query(collection(db, "plans"), where("status", "==", "active"));
-            const querySnapshot = await getDocs(q);
-            plansContainer.innerHTML = '';
-            if (querySnapshot.empty) {
-                plansContainer.innerHTML = '<div class="col-span-full text-gray-500">No active plans available.</div>';
-                return;
-            }
-            querySnapshot.forEach(doc => {
-                const plan = doc.data();
-                const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-xl shadow hover:shadow-md transition";
-                card.innerHTML = `
-                    <h3 class="font-bold text-lg">${plan.name}</h3>
-                    <p class="text-sm text-gray-600">${plan.description || ''}</p>
-                    <p class="text-indigo-600 font-semibold mt-2">${plan.dailyProfit}% daily</p>
-                    <p class="text-sm">Min: $${plan.minAmount} | Max: $${plan.maxAmount}</p>
-                    <p class="text-sm">Duration: ${plan.duration} days</p>
-                    <button onclick="showInvestModal('${doc.id}', ${plan.minAmount}, ${plan.maxAmount}, ${plan.dailyProfit}, ${plan.duration})" 
-                        class="mt-3 w-full bg-indigo-600 text-white py-1 rounded-lg hover:bg-indigo-700">Invest</button>
-                `;
-                plansContainer.appendChild(card);
+        // Load active investments (existing)
+        async function loadActiveInvestments() {
+            if(!currentUser) return;
+            const now = new Date();
+            const q = query(collection(db, "investments"), where("userId", "==", currentUser.uid), where("endDate", ">", Timestamp.fromDate(now)), orderBy("startDate", "desc"));
+            const snap = await getDocs(q);
+            const container = document.getElementById('activeInvestments');
+            container.innerHTML = '';
+            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">No active investments</div>'; return; }
+            snap.forEach(doc => {
+                const inv = doc.data();
+                const start = inv.startDate.toDate();
+                const end = inv.endDate.toDate();
+                const daysActive = Math.max(0, Math.floor((new Date() - start) / (1000*3600*24)));
+                const profitSoFar = (inv.amount * inv.dailyProfit / 100) * daysActive;
+                const dailyEarn = (inv.amount * inv.dailyProfit / 100).toFixed(2);
+                container.innerHTML += `<div class="border p-3 rounded-lg bg-gray-50"><div class="flex justify-between"><span class="font-semibold">${inv.planName}</span><span>$${inv.amount}</span></div><div class="text-sm text-gray-600">Start: ${start.toLocaleDateString()} | End: ${end.toLocaleDateString()}</div><div class="text-sm text-green-600">Daily profit: $${dailyEarn} | Earned so far: $${profitSoFar.toFixed(2)}</div></div>`;
             });
         }
 
+        // Load plans
+        async function loadPlans() {
+            const q = query(collection(db, "plans"), where("status", "==", "active"));
+            const snap = await getDocs(q);
+            const container = document.getElementById('plansContainer');
+            container.innerHTML = '';
+            if(snap.empty) { container.innerHTML = '<div class="col-span-full text-gray-500">No active plans.</div>'; return; }
+            snap.forEach(docSnap => {
+                const plan = docSnap.data();
+                container.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border"><h3 class="font-bold text-lg">${plan.name}</h3><p class="text-sm text-gray-600">${plan.description || ''}</p><p class="text-indigo-600 font-semibold mt-2">${plan.dailyProfit}% daily</p><p class="text-sm">Min: $${plan.minAmount} | Max: $${plan.maxAmount}</p><p class="text-sm">Duration: ${plan.duration} days</p><button onclick="showInvestModal('${docSnap.id}', ${plan.minAmount}, ${plan.maxAmount}, ${plan.dailyProfit}, ${plan.duration})" class="mt-3 w-full bg-indigo-600 text-white py-1 rounded-lg hover:bg-indigo-700">Invest</button></div>`;
+            });
+        }
         window.showInvestModal = (planId, minAmount, maxAmount, dailyProfit, duration) => {
             const modal = document.getElementById('investModal');
             document.getElementById('modalPlanId').value = planId;
             document.getElementById('modalMin').innerText = minAmount;
             document.getElementById('modalMax').innerText = maxAmount;
             document.getElementById('investAmount').value = '';
-            document.getElementById('investAmount').min = minAmount;
-            document.getElementById('investAmount').max = maxAmount;
             modal.classList.remove('hidden');
         };
-
-        window.closeModal = () => {
-            document.getElementById('investModal').classList.add('hidden');
-        };
-
+        window.closeModal = () => document.getElementById('investModal').classList.add('hidden');
         window.submitInvestment = async () => {
             const planId = document.getElementById('modalPlanId').value;
             const amount = parseFloat(document.getElementById('investAmount').value);
-            if (isNaN(amount)) return showMessage("Enter a valid amount", true);
-
-            // Fetch plan details
+            if(isNaN(amount)) return showMessage("Enter valid amount", true);
             const planRef = doc(db, "plans", planId);
             const planSnap = await getDoc(planRef);
-            if (!planSnap.exists()) return showMessage("Plan not found", true);
+            if(!planSnap.exists()) return showMessage("Plan not found", true);
             const plan = planSnap.data();
-            if (amount < plan.minAmount || amount > plan.maxAmount) {
-                return showMessage(`Amount must be between $${plan.minAmount} and $${plan.maxAmount}`, true);
-            }
-            if (userData.balance < amount) {
-                return showMessage("Insufficient balance", true);
-            }
-
+            if(amount < plan.minAmount || amount > plan.maxAmount) return showMessage(`Amount must be between $${plan.minAmount} and $${plan.maxAmount}`, true);
+            if(userData.balance < amount) return showMessage("Insufficient balance", true);
             const userRef = doc(db, "users", currentUser.uid);
             const startDate = new Date();
-            const endDate = new Date(startDate);
-            endDate.setDate(endDate.getDate() + plan.duration);
-            const expectedProfit = (amount * plan.dailyProfit / 100) * plan.duration;
-
+            const endDate = new Date(startDate); endDate.setDate(endDate.getDate() + plan.duration);
             try {
                 await runTransaction(db, async (transaction) => {
                     const userSnap = await transaction.get(userRef);
-                    if (!userSnap.exists()) throw new Error("User not found");
-                    const currentBalance = userSnap.data().balance;
-                    if (currentBalance < amount) throw new Error("Insufficient balance");
-
-                    // Deduct balance, update totalInvested
-                    transaction.update(userRef, {
-                        balance: currentBalance - amount,
-                        totalInvested: (userSnap.data().totalInvested || 0) + amount
-                    });
-
-                    // Create investment doc
+                    const currBalance = userSnap.data().balance;
+                    if(currBalance < amount) throw new Error("Insufficient balance");
+                    transaction.update(userRef, { balance: currBalance - amount, totalInvested: (userSnap.data().totalInvested || 0) + amount });
                     const investmentRef = doc(collection(db, "investments"));
-                    transaction.set(investmentRef, {
-                        userId: currentUser.uid,
-                        planId: planId,
-                        planName: plan.name,
-                        amount: amount,
-                        dailyProfit: plan.dailyProfit,
-                        duration: plan.duration,
-                        startDate: Timestamp.fromDate(startDate),
-                        endDate: Timestamp.fromDate(endDate),
-                        profitEarned: 0,
-                        createdAt: serverTimestamp()
-                    });
-
-                    // Create transaction record
+                    transaction.set(investmentRef, { userId: currentUser.uid, planId, planName: plan.name, amount, dailyProfit: plan.dailyProfit, duration: plan.duration, startDate: Timestamp.fromDate(startDate), endDate: Timestamp.fromDate(endDate), profitEarned: 0, createdAt: serverTimestamp(), status: 'active' });
                     const transRef = doc(collection(db, "transactions"));
-                    transaction.set(transRef, {
-                        userId: currentUser.uid,
-                        type: 'investment',
-                        amount: amount,
-                        status: 'completed',
-                        description: `Invested in ${plan.name}`,
-                        createdAt: serverTimestamp()
-                    });
+                    transaction.set(transRef, { userId: currentUser.uid, type: 'investment', amount, status: 'completed', description: `Invested in ${plan.name}`, createdAt: serverTimestamp() });
                 });
                 showMessage("Investment successful!");
                 closeModal();
-                // Refresh data
                 await loadUserData();
                 await loadActiveInvestments();
-                await loadTransactions();
-            } catch (err) {
-                showMessage(err.message, true);
-            }
+                loadTransactions();
+            } catch(err) { showMessage(err.message, true); }
         };
 
-        // Load active investments (endDate > now)
-        async function loadActiveInvestments() {
-            const now = new Date();
-            const q = query(
-                collection(db, "investments"),
-                where("userId", "==", currentUser.uid),
-                where("endDate", ">", Timestamp.fromDate(now)),
-                orderBy("startDate", "desc")
-            );
-            const snap = await getDocs(q);
-            activeInvestmentsContainer.innerHTML = '';
-            if (snap.empty) {
-                activeInvestmentsContainer.innerHTML = '<div class="text-gray-500">No active investments</div>';
-                return;
-            }
-            snap.forEach(doc => {
-                const inv = doc.data();
-                const start = inv.startDate.toDate();
-                const end = inv.endDate.toDate();
-                const daysActive = Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
-                const profitSoFar = (inv.amount * inv.dailyProfit / 100) * daysActive;
-                const dailyEarn = (inv.amount * inv.dailyProfit / 100).toFixed(2);
-                const card = document.createElement('div');
-                card.className = "border p-3 rounded-lg bg-gray-50";
-                card.innerHTML = `
-                    <div class="flex justify-between"><span class="font-semibold">${inv.planName}</span><span>$${inv.amount}</span></div>
-                    <div class="text-sm text-gray-600">Start: ${start.toLocaleDateString()} | End: ${end.toLocaleDateString()}</div>
-                    <div class="text-sm text-green-600">Daily profit: $${dailyEarn} | Earned so far: $${profitSoFar.toFixed(2)}</div>
-                `;
-                activeInvestmentsContainer.appendChild(card);
-            });
-        }
-
-        // Load recent transactions
+        // transactions
         async function loadTransactions() {
-            const q = query(
-                collection(db, "transactions"),
-                where("userId", "==", currentUser.uid),
-                orderBy("createdAt", "desc"),
-                limit(10)
-            );
+            const q = query(collection(db, "transactions"), where("userId", "==", currentUser.uid), orderBy("createdAt", "desc"), limit(20));
             const snap = await getDocs(q);
-            transactionsContainer.innerHTML = '';
-            if (snap.empty) {
-                transactionsContainer.innerHTML = '<div class="text-gray-500">No transactions yet</div>';
-                return;
-            }
-            snap.forEach(doc => {
-                const t = doc.data();
-                const date = t.createdAt ? t.createdAt.toDate().toLocaleString() : 'Just now';
-                const row = document.createElement('div');
-                row.className = "flex justify-between border-b py-2";
-                row.innerHTML = `
-                    <span>${t.type}</span>
-                    <span class="${t.type === 'investment' ? 'text-red-600' : 'text-green-600'}">$${t.amount}</span>
-                    <span class="text-xs text-gray-500">${date}</span>
-                `;
-                transactionsContainer.appendChild(row);
-            });
+            const container = document.getElementById('transactionsList');
+            container.innerHTML = '';
+            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">No transactions</div>'; return; }
+            snap.forEach(doc => { const t = doc.data(); const date = t.createdAt ? t.createdAt.toDate().toLocaleString() : 'Just now'; container.innerHTML += `<div class="flex justify-between border-b py-2"><span>${t.type}</span><span class="${t.type === 'investment' ? 'text-red-600' : 'text-green-600'}">$${t.amount}</span><span class="text-xs text-gray-500">${date}</span></div>`; });
         }
 
-        // Withdrawal request
+        // withdrawal form & history
+        const withdrawalForm = document.getElementById('withdrawalForm');
         withdrawalForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (userData.status === 'suspended') return showMessage("Account suspended", true);
+            if(userData?.status === 'suspended') return showMessage("Account suspended", true);
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
             const method = document.getElementById('withdrawMethod').value;
             const accountDetails = document.getElementById('accountDetails').value;
-            if (isNaN(amount) || amount <= 0) return showMessage("Valid amount required", true);
-            if (amount > userData.balance) return showMessage("Insufficient balance", true);
-            try {
-                // Create pending withdrawal (balance not deducted until admin approval)
-                await addDoc(collection(db, "withdrawals"), {
-                    userId: currentUser.uid,
-                    amount: amount,
-                    method: method,
-                    accountDetails: accountDetails,
-                    status: 'pending',
-                    createdAt: serverTimestamp()
-                });
-                showMessage("Withdrawal request submitted. Awaiting admin approval.");
-                withdrawalForm.reset();
-            } catch (err) {
-                showMessage(err.message, true);
-            }
+            if(isNaN(amount) || amount <=0) return showMessage("Valid amount required", true);
+            if(amount > userData.balance) return showMessage("Insufficient balance", true);
+            await addDoc(collection(db, "withdrawals"), { userId: currentUser.uid, amount, method, accountDetails, status: 'pending', createdAt: serverTimestamp() });
+            showMessage("Withdrawal request submitted.");
+            withdrawalForm.reset();
+            loadWithdrawalHistory();
         });
+        async function loadWithdrawalHistory() {
+            const q = query(collection(db, "withdrawals"), where("userId", "==", currentUser.uid), orderBy("createdAt", "desc"));
+            const snap = await getDocs(q);
+            const container = document.getElementById('withdrawalHistory');
+            container.innerHTML = '';
+            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">No withdrawal requests</div>'; return; }
+            snap.forEach(doc => { const w = doc.data(); container.innerHTML += `<div class="border p-2 rounded flex justify-between"><span>$${w.amount} - ${w.method}</span><span class="text-sm font-semibold ${w.status === 'pending' ? 'text-yellow-600' : w.status === 'completed' ? 'text-green-600' : 'text-red-600'}">${w.status}</span></div>`; });
+        }
 
-        // Auth state listener
+        // Deposit requests (add funds)
+        const depositForm = document.getElementById('depositRequestForm');
+        depositForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const method = document.getElementById('depositMethod').value;
+            if(isNaN(amount) || amount < 10) return showMessage("Minimum deposit $10", true);
+            await addDoc(collection(db, "deposits"), { userId: currentUser.uid, amount, method, status: 'pending', createdAt: serverTimestamp() });
+            showMessage("Deposit request sent to admin.");
+            document.getElementById('depositAmount').value = '';
+            loadDepositRequests();
+        });
+        async function loadDepositRequests() {
+            const q = query(collection(db, "deposits"), where("userId", "==", currentUser.uid), orderBy("createdAt", "desc"));
+            const snap = await getDocs(q);
+            const container = document.getElementById('userDepositRequests');
+            container.innerHTML = '';
+            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">No deposit requests</div>'; return; }
+            snap.forEach(doc => { const d = doc.data(); container.innerHTML += `<div class="flex justify-between border-b py-1"><span>$${d.amount} - ${d.method}</span><span class="text-xs ${d.status === 'pending' ? 'text-yellow-600' : 'text-green-600'}">${d.status}</span></div>`; });
+        }
+
+        // Team (referrals)
+        async function loadTeam() {
+            const refCode = userData?.referralCode;
+            if(!refCode) { document.getElementById('teamListContainer').innerHTML = '<div class="text-gray-500">No referral code yet.</div>'; return; }
+            const q = query(collection(db, "users"), where("referrerId", "==", currentUser.uid));
+            const snap = await getDocs(q);
+            const container = document.getElementById('teamListContainer');
+            container.innerHTML = '';
+            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">You have not referred anyone yet.</div>'; return; }
+            snap.forEach(docSnap => { const u = docSnap.data(); container.innerHTML += `<div class="bg-gray-50 p-2 rounded">${u.email} (joined ${u.createdAt?.toDate().toLocaleDateString() || 'recently'})</div>`; });
+        }
+
+        // Contact form dummy
+        document.getElementById('contactForm')?.addEventListener('submit', (e) => { e.preventDefault(); showMessage("Message sent! We'll reply soon."); e.target.reset(); });
+        // Copy referral link
+        document.getElementById('copyLinkBtn')?.addEventListener('click', () => { const inp = document.getElementById('referralLinkInput'); inp.select(); document.execCommand('copy'); showMessage("Referral link copied!"); });
+
+        // Auth state
         onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = "register.html";
-                return;
-            }
+            if (!user) { window.location.href = "register.html"; return; }
             currentUser = user;
             await loadUserData();
             await loadPlans();
             await loadActiveInvestments();
             await loadTransactions();
+            await loadWithdrawalHistory();
+            await loadDepositRequests();
+            await loadTeam();
+            // set default section
+            showSection('invest');
         });
     </script>
-</head>
-<body class="bg-gray-100">
-    <!-- Invest Modal -->
-    <div id="investModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 w-96 max-w-md">
-            <h3 class="text-xl font-bold mb-4">Invest in Plan</h3>
-            <p class="mb-2">Amount range: $<span id="modalMin">0</span> - $<span id="modalMax">0</span></p>
-            <input type="number" id="investAmount" step="0.01" class="w-full border rounded p-2 mb-4" placeholder="Enter amount">
-            <input type="hidden" id="modalPlanId">
-            <div class="flex justify-end gap-2">
-                <button onclick="closeModal()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-                <button onclick="submitInvestment()" class="px-4 py-2 bg-indigo-600 text-white rounded">Invest</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">User Dashboard</h1>
-            <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Logout</button>
-        </div>
-        <div id="messageBox" class="mb-4"></div>
-
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-md"><h2 class="text-gray-500">Current Balance</h2><p id="balance" class="text-3xl font-bold">$0.00</p></div>
-            <div class="bg-white p-6 rounded-xl shadow-md"><h2 class="text-gray-500">Total Invested</h2><p id="totalInvested" class="text-3xl font-bold">$0.00</p></div>
-            <div class="bg-white p-6 rounded-xl shadow-md"><h2 class="text-gray-500">Total Profit</h2><p id="totalProfit" class="text-3xl font-bold">$0.00</p></div>
-        </div>
-
-        <!-- Investment Plans -->
-        <div id="investSection" class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Active Investment Plans</h2>
-            <div id="plansContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-        </div>
-
-        <!-- Active Investments & Transactions Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-md">
-                <h2 class="text-xl font-semibold mb-3">Active Investments</h2>
-                <div id="activeInvestments" class="space-y-3"></div>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-md">
-                <h2 class="text-xl font-semibold mb-3">Recent Transactions</h2>
-                <div id="transactions" class="space-y-2"></div>
-            </div>
-        </div>
-
-        <!-- Withdrawal Request -->
-        <div id="withdrawSection" class="bg-white p-6 rounded-xl shadow-md">
-            <h2 class="text-xl font-semibold mb-4">Request Withdrawal</h2>
-            <form id="withdrawalForm" class="space-y-4">
-                <div><input type="number" id="withdrawAmount" step="0.01" class="w-full border rounded p-2" placeholder="Amount ($)" required></div>
-                <div><select id="withdrawMethod" class="w-full border rounded p-2" required><option value="Mpesa">Mpesa</option><option value="Bank Transfer">Bank Transfer</option><option value="Crypto">Crypto</option></select></div>
-                <div><textarea id="accountDetails" rows="2" class="w-full border rounded p-2" placeholder="Account details (phone / bank / wallet address)" required></textarea></div>
-                <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">Submit Request</button>
-            </form>
-        </div>
-    </div>
 </body>
 </html>
