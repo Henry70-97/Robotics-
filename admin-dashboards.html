@@ -84,9 +84,18 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit, increment, serverTimestamp, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit, increment, serverTimestamp, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = { /* same config */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
+            authDomain: "urbanpay-c5aee.firebaseapp.com",
+            projectId: "urbanpay-c5aee",
+            storageBucket: "urbanpay-c5aee.firebasestorage.app",
+            messagingSenderId: "648155825006",
+            appId: "1:648155825006:web:16d6ea4dfab808920b777f",
+            measurementId: "G-CTKZN6VHPS"
+        };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -110,19 +119,28 @@
             window.location.href = 'index.html';
         }
 
-        function showTab(tab) {
+        // Tab switching function
+        async function showTab(tab) {
+            // Hide all tabs
             document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
-            document.getElementById(tab + 'Tab').classList.remove('hidden');
+            // Show selected tab
+            const activeTab = document.getElementById(tab + 'Tab');
+            if (activeTab) activeTab.classList.remove('hidden');
+            
+            // Update sidebar active state
             document.querySelectorAll('.admin-nav').forEach(btn => btn.classList.remove('bg-indigo-50', 'text-indigo-600'));
             event.target.classList.add('bg-indigo-50', 'text-indigo-600');
-            if (tab === 'stats') loadAdminStats();
-            if (tab === 'users') loadAdminUsers();
-            if (tab === 'products') loadAdminProducts();
-            if (tab === 'withdrawals') loadAdminWithdrawals();
-            if (tab === 'giftcodes') loadAdminGiftCodes();
-            if (tab === 'tasks') loadAdminTaskSettings();
+
+            // Load data for the selected tab
+            if (tab === 'stats') await loadAdminStats();
+            else if (tab === 'users') await loadAdminUsers();
+            else if (tab === 'products') await loadAdminProducts();
+            else if (tab === 'withdrawals') await loadAdminWithdrawals();
+            else if (tab === 'giftcodes') await loadAdminGiftCodes();
+            else if (tab === 'tasks') await loadAdminTaskSettings();
         }
 
+        // --- Data Loading Functions ---
         async function loadAdminStats() {
             const usersSnap = await getDocs(collection(db, 'users'));
             document.getElementById('adminTotalUsers').innerText = usersSnap.size;
@@ -138,6 +156,7 @@
 
         async function loadAdminUsers() {
             const container = document.getElementById('adminUsersList');
+            container.innerHTML = '<div class="loader"></div>';
             const usersSnap = await getDocs(collection(db, 'users'));
             container.innerHTML = '';
             usersSnap.forEach(docSnap => {
@@ -145,7 +164,11 @@
                 const div = document.createElement('div');
                 div.className = 'bg-white p-4 rounded-xl shadow-sm flex justify-between items-center';
                 div.innerHTML = `
-                    <div><p class="font-bold">${user.displayName}</p><p class="text-sm text-gray-500">${user.email}</p><p class="text-sm">Balance: ${formatCurrency(user.availableBalance)} | Invested: ${formatCurrency(user.totalInvested)}</p></div>
+                    <div>
+                        <p class="font-bold">${user.displayName}</p>
+                        <p class="text-sm text-gray-500">${user.email}</p>
+                        <p class="text-sm">Balance: ${formatCurrency(user.availableBalance)} | Invested: ${formatCurrency(user.totalInvested)}</p>
+                    </div>
                     <button onclick="editUserBalance('${docSnap.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm">Edit Balance</button>
                 `;
                 container.appendChild(div);
@@ -163,6 +186,7 @@
 
         async function loadAdminProducts() {
             const container = document.getElementById('adminProductsList');
+            container.innerHTML = '<div class="loader"></div>';
             const productsSnap = await getDocs(collection(db, 'products'));
             container.innerHTML = '';
             productsSnap.forEach(docSnap => {
@@ -170,15 +194,23 @@
                 const div = document.createElement('div');
                 div.className = 'bg-white p-4 rounded-xl shadow-sm flex justify-between items-center';
                 div.innerHTML = `
-                    <div><p class="font-bold">${prod.name}</p><p>Price: ${formatCurrency(prod.price)} | Daily: ${formatCurrency(prod.dailyIncome)}</p><p>Status: ${prod.status ? 'Active' : 'Inactive'}</p></div>
+                    <div>
+                        <p class="font-bold">${prod.name}</p>
+                        <p>Price: ${formatCurrency(prod.price)} | Daily: ${formatCurrency(prod.dailyIncome)}</p>
+                        <p>Status: ${prod.status ? 'Active' : 'Inactive'}</p>
+                    </div>
                     <button onclick="deleteProduct('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
                 `;
                 container.appendChild(div);
             });
         }
 
-        window.showAddProductForm = function() { document.getElementById('addProductForm').classList.remove('hidden'); };
-        window.hideAddProductForm = function() { document.getElementById('addProductForm').classList.add('hidden'); };
+        window.showAddProductForm = function() {
+            document.getElementById('addProductForm').classList.remove('hidden');
+        };
+        window.hideAddProductForm = function() {
+            document.getElementById('addProductForm').classList.add('hidden');
+        };
         window.addProduct = async function() {
             const name = document.getElementById('prodName').value;
             const price = parseFloat(document.getElementById('prodPrice').value);
@@ -208,6 +240,7 @@
 
         async function loadAdminWithdrawals() {
             const container = document.getElementById('adminWithdrawalsList');
+            container.innerHTML = '<div class="loader"></div>';
             const pendingSnap = await getDocs(query(collection(db, 'withdrawals'), where('status', '==', 'pending')));
             container.innerHTML = '';
             pendingSnap.forEach(docSnap => {
@@ -226,6 +259,7 @@
                 `;
                 container.appendChild(div);
             });
+            if (pendingSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No pending withdrawals</p>';
         }
 
         window.approveWithdrawal = async function(id, amount, userId) {
@@ -249,6 +283,7 @@
 
         async function loadAdminGiftCodes() {
             const container = document.getElementById('adminGiftCodesList');
+            container.innerHTML = '<div class="loader"></div>';
             const codesSnap = await getDocs(collection(db, 'giftCodes'));
             container.innerHTML = '';
             codesSnap.forEach(docSnap => {
@@ -256,11 +291,16 @@
                 const div = document.createElement('div');
                 div.className = 'bg-white p-4 rounded-xl shadow-sm flex justify-between items-center';
                 div.innerHTML = `
-                    <div><p class="font-bold">${docSnap.id}</p><p>Amount: ${formatCurrency(code.amount)} | Uses: ${code.usedCount || 0}/${code.maxUses || '∞'}</p><p>Status: ${code.status} | Expiry: ${code.expiryDate ? code.expiryDate.toDate().toLocaleDateString() : 'Never'}</p></div>
+                    <div>
+                        <p class="font-bold">${docSnap.id}</p>
+                        <p>Amount: ${formatCurrency(code.amount)} | Uses: ${code.usedCount || 0}/${code.maxUses || '∞'}</p>
+                        <p>Status: ${code.status} | Expiry: ${code.expiryDate ? code.expiryDate.toDate().toLocaleDateString() : 'Never'}</p>
+                    </div>
                     <button onclick="deleteGiftCode('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
                 `;
                 container.appendChild(div);
             });
+            if (codesSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No gift codes</p>';
         }
 
         window.generateGiftCode = async function() {
@@ -326,8 +366,10 @@
                 currentUserId = user.uid;
                 const userDoc = await getDoc(doc(db, 'users', currentUserId));
                 if (userDoc.exists() && userDoc.data().role === 'admin') {
-                    // Load initial tab
-                    showTab('stats');
+                    // Load the default tab (stats) and make it active
+                    document.getElementById('statsTab').classList.remove('hidden');
+                    document.querySelector('.admin-nav').classList.add('bg-indigo-50', 'text-indigo-600');
+                    await loadAdminStats();
                 } else {
                     await signOut(auth);
                     window.location.href = 'index.html';
@@ -337,8 +379,20 @@
             }
         });
 
+        // Expose functions to global window object
         window.showTab = showTab;
         window.logout = logout;
+        window.editUserBalance = editUserBalance;
+        window.showAddProductForm = showAddProductForm;
+        window.hideAddProductForm = hideAddProductForm;
+        window.addProduct = addProduct;
+        window.deleteProduct = deleteProduct;
+        window.approveWithdrawal = approveWithdrawal;
+        window.rejectWithdrawal = rejectWithdrawal;
+        window.generateGiftCode = generateGiftCode;
+        window.deleteGiftCode = deleteGiftCode;
+        window.saveTaskSettings = saveTaskSettings;
+        window.saveSettings = saveSettings;
     </script>
 </body>
 </html>
