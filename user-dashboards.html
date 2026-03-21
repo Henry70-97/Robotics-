@@ -209,7 +209,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit, onSnapshot, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit, onSnapshot, increment, serverTimestamp, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
@@ -262,6 +262,55 @@
             window.location.href = 'index.html';
         }
 
+        // Process expired hourly investments
+        async function processHourlyInvestments() {
+            if (!currentUserId) return;
+            const q = query(collection(db, 'hourlyInvestments'), where('userId', '==', currentUserId), where('status', '==', 'active'));
+            const snapshot = await getDocs(q);
+            const now = new Date();
+            const batch = writeBatch(db);
+            let processed = false;
+            for (const docSnap of snapshot.docs) {
+                const inv = docSnap.data();
+                const endTime = inv.endTime.toDate();
+                if (endTime <= now) {
+                    // Investment matured
+                    batch.update(docSnap.ref, { status: 'completed' });
+                    batch.update(doc(db, 'users', currentUserId), {
+                        availableBalance: increment(inv.totalReturn),
+                        totalBalance: increment(inv.totalReturn),
+                        totalReturns: increment(inv.profit)
+                    });
+                    // Add transaction record
+                    const transRef = doc(collection(db, 'transactions'));
+                    batch.set(transRef, {
+                        userId: currentUserId,
+                        type: 'hourly_profit',
+                        amount: inv.totalReturn,
+                        status: 'completed',
+                        description: `Hourly investment profit: ${inv.amount} for ${inv.hours}h, earned ${inv.profit}`,
+                        timestamp: serverTimestamp()
+                    });
+                    processed = true;
+                    showToast(`Your hourly investment of ${formatCurrency(inv.amount)} has matured! ${formatCurrency(inv.totalReturn)} added to your balance.`, false);
+                }
+            }
+            if (processed) {
+                await batch.commit();
+                loadUserData(); // refresh user data
+                loadTransactions(); // refresh transactions
+            }
+        }
+
+        // Check user frozen status and disable actions if needed
+        function isUserFrozen() {
+            if (currentUserData && currentUserData.status === 'frozen') {
+                showToast('Your account is frozen. Please contact admin for assistance.', true);
+                return true;
+            }
+            return false;
+        }
+
         // Load user data
         function loadUserData() {
             if (!currentUserId) return;
@@ -272,6 +321,8 @@
                     updateUserUI();
                     loadReferralInfo();
                     loadPendingCommission();
+                    // Process hourly investments after user data is loaded
+                    processHourlyInvestments();
                 }
             });
         }
@@ -328,7 +379,7 @@
                         </div>
                     `;
                     container.appendChild(card);
-                    // Add event listeners for radio buttons
+                    // Add event listeners
                     const radios = card.querySelectorAll(`input[name="type_${id}"]`);
                     radios.forEach(radio => {
                         radio.addEventListener('change', function(e) {
@@ -355,12 +406,16 @@
             let roi = 15;
             if (hours >= 16) roi = 20;
             document.getElementById(`roi_${productId}`).innerText = roi + '%';
-            const price = parseFloat(document.querySelector(`#productsList button[onclick*="'${productId}'"]`).getAttribute('onclick').match(/(\d+\.?\d*)/)[0]);
+            // Need to get price from the button's onclick attribute; we can extract from the card
+            const card = document.getElementById(`hours_${productId}`).closest('.bg-white');
+            const priceText = card.querySelector('p:first-of-type').innerText.match(/[\d,]+/)[0];
+            const price = parseFloat(priceText.replace(/,/g, ''));
             const profit = price * roi / 100;
             document.getElementById(`profit_${productId}`).innerText = profit.toFixed(2);
         }
 
         window.buyProduct = async function(productId, price, productName, productImage, dailyIncome) {
+            if (isUserFrozen()) return;
             if (!currentUserData || currentUserData.availableBalance < price) { showToast('Insufficient balance', true); return; }
             const radios = document.querySelectorAll(`input[name="type_${productId}"]`);
             let type = 'daily';
@@ -375,7 +430,7 @@
                     // Daily income subscription
                     const startDate = new Date();
                     const endDate = new Date(startDate);
-                    endDate.setDate(endDate.getDate() + 30); // default 30 days? Actually product should have duration. We'll use product's duration? But product has no duration in this spec? We'll use 30 days.
+                    endDate.setDate(endDate.getDate() + 30); // default 30 days
                     const batch = writeBatch(db);
                     const userRef = doc(db, 'users', currentUserId);
                     batch.update(userRef, { availableBalance: increment(-price), totalInvested: increment(price), activePackagesCount: increment(1), totalBalance: increment(-price) });
@@ -385,12 +440,23 @@
                     const commissionAmount = price * 0.10;
                     const commissionRef = doc(collection(db, 'purchaseCommissions'));
                     batch.set(commissionRef, { userId: currentUserId, productName, amount: commissionAmount, isClaimed: false, createdAt: serverTimestamp() });
+                    // Add transaction record
+                    const transRef = doc(collection(db, 'transactions'));
+                    batch.set(transRef, {
+                        userId: currentUserId,
+                        type: 'package_purchase',
+                        amount: price,
+                        status: 'completed',
+                        description: `Purchase of ${productName}`,
+                        timestamp: serverTimestamp()
+                    });
                     await batch.commit();
                     showToast('Package purchased successfully!');
                     loadSubscriptions();
                 } else {
                     // Hourly investment
-                    const profit = price * (hours >= 16 ? 0.20 : 0.15);
+                    const roi = hours >= 16 ? 20 : 15;
+                    const profit = price * roi / 100;
                     const totalReturn = price + profit;
                     const endTime = new Date();
                     endTime.setHours(endTime.getHours() + hours);
@@ -403,15 +469,25 @@
                         productName,
                         amount: price,
                         hours,
+                        roi,
                         profit,
                         totalReturn,
                         startTime: serverTimestamp(),
                         endTime,
                         status: 'active'
                     });
+                    // Add transaction for investment (not profit yet)
+                    const transRef = doc(collection(db, 'transactions'));
+                    batch.set(transRef, {
+                        userId: currentUserId,
+                        type: 'hourly_investment',
+                        amount: price,
+                        status: 'completed',
+                        description: `Hourly investment of ${formatCurrency(price)} for ${hours} hours (${roi}% profit)`,
+                        timestamp: serverTimestamp()
+                    });
                     await batch.commit();
                     showToast(`Hourly investment of ${formatCurrency(price)} placed for ${hours} hours. You'll receive ${formatCurrency(totalReturn)} after completion.`);
-                    // Optionally, we could add a transaction record.
                 }
                 loadUserData();
                 loadPendingCommission();
@@ -446,7 +522,6 @@
                         <button onclick="claimDailyIncome('${subId}', ${sub.dailyIncome})" class="mt-3 w-full bg-green-600 text-white py-2 rounded-lg">Claim Today</button>
                     `;
                     container.appendChild(card);
-                    // Start countdown timer
                     startCountdown(subId, lastClaim);
                 });
                 document.getElementById('dailyIncomeTotal').textContent = formatCurrency(totalDaily);
@@ -480,6 +555,7 @@
         }
 
         window.claimDailyIncome = async function(subId, dailyIncome) {
+            if (isUserFrozen()) return;
             try {
                 const subRef = doc(db, 'subscriptions', subId);
                 const subSnap = await getDoc(subRef);
@@ -493,6 +569,16 @@
                 batch.update(subRef, { totalEarned: increment(dailyIncome), lastClaimDate: serverTimestamp() });
                 const userRef = doc(db, 'users', currentUserId);
                 batch.update(userRef, { availableBalance: increment(dailyIncome), totalReturns: increment(dailyIncome), totalBalance: increment(dailyIncome) });
+                // Add transaction record
+                const transRef = doc(collection(db, 'transactions'));
+                batch.set(transRef, {
+                    userId: currentUserId,
+                    type: 'daily_income',
+                    amount: dailyIncome,
+                    status: 'completed',
+                    description: `Daily income from ${subData.productName}`,
+                    timestamp: serverTimestamp()
+                });
                 await batch.commit();
                 showToast(`Claimed ${formatCurrency(dailyIncome)} successfully!`);
                 loadSubscriptions();
@@ -500,10 +586,10 @@
             } catch (error) { showToast(error.message, true); }
         };
 
-        // Wallet: Add funds button
+        // Wallet functions
         async function loadPaymentLink() {
             const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
-            let link = 'https://lipana.dev'; // default
+            let link = 'https://lipana.dev'; // default fallback
             if (settingsDoc.exists() && settingsDoc.data().paymentLink) {
                 link = settingsDoc.data().paymentLink;
             }
@@ -511,10 +597,17 @@
             linkEl.href = link;
             linkEl.textContent = link;
             const btn = document.getElementById('addFundsButton');
-            btn.onclick = () => window.open(link, '_blank');
+            btn.onclick = () => {
+                if (link && link !== '#') {
+                    window.open(link, '_blank');
+                } else {
+                    showToast('Payment link not configured by admin', true);
+                }
+            };
         }
 
         window.requestDeposit = async function() {
+            if (isUserFrozen()) return;
             const amount = parseFloat(document.getElementById('depositAmount').value);
             const message = document.getElementById('depositMessage').value.trim();
             if (isNaN(amount) || amount <= 0 || !message) {
@@ -536,6 +629,7 @@
         };
 
         window.requestWithdrawal = async function() {
+            if (isUserFrozen()) return;
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
             const method = document.getElementById('withdrawMethod').value;
             const details = document.getElementById('withdrawDetails').value;
@@ -547,6 +641,16 @@
                 batch.update(userRef, { availableBalance: increment(-amount), pendingBalance: increment(amount), totalBalance: increment(-amount) });
                 const withdrawRef = doc(collection(db, 'withdrawals'));
                 batch.set(withdrawRef, { userId: currentUserId, amount, method, accountDetails: details, status: 'pending', createdAt: serverTimestamp() });
+                // Add transaction record for pending withdrawal
+                const transRef = doc(collection(db, 'transactions'));
+                batch.set(transRef, {
+                    userId: currentUserId,
+                    type: 'withdrawal_request',
+                    amount: amount,
+                    status: 'pending',
+                    description: `Withdrawal request via ${method}`,
+                    timestamp: serverTimestamp()
+                });
                 await batch.commit();
                 showToast('Withdrawal request submitted');
                 document.getElementById('withdrawAmount').value = '';
@@ -556,6 +660,7 @@
         };
 
         window.redeemGiftCode = async function() {
+            if (isUserFrozen()) return;
             const code = document.getElementById('giftCodeInput').value.trim().toUpperCase();
             if (!code) { showToast('Enter gift code', true); return; }
             try {
@@ -570,6 +675,16 @@
                 batch.update(codeRef, { usedCount: increment(1), status: (codeData.maxUses && codeData.usedCount+1 >= codeData.maxUses) ? 'expired' : 'active' });
                 const userRef = doc(db, 'users', currentUserId);
                 batch.update(userRef, { availableBalance: increment(codeData.amount), totalBalance: increment(codeData.amount) });
+                // Add transaction record
+                const transRef = doc(collection(db, 'transactions'));
+                batch.set(transRef, {
+                    userId: currentUserId,
+                    type: 'gift_code',
+                    amount: codeData.amount,
+                    status: 'completed',
+                    description: `Redeemed gift code ${code}`,
+                    timestamp: serverTimestamp()
+                });
                 await batch.commit();
                 showToast(`Redeemed ${formatCurrency(codeData.amount)} from gift code`);
                 document.getElementById('giftCodeInput').value = '';
@@ -581,16 +696,16 @@
             const container = document.getElementById('transactionList');
             container.innerHTML = '<div class="loader"></div>';
             try {
-                const q = query(collection(db, 'transactions'), where('userId', '==', currentUserId), orderBy('timestamp', 'desc'), limit(20));
+                const q = query(collection(db, 'transactions'), where('userId', '==', currentUserId), orderBy('timestamp', 'desc'), limit(50));
                 const snapshot = await getDocs(q);
                 container.innerHTML = '';
-                if (snapshot.empty) { container.innerHTML = '<p class="text-center text-gray-500">No transactions</p>'; return; }
+                if (snapshot.empty) { container.innerHTML = '<p class="text-center text-gray-500">No transactions yet</p>'; return; }
                 snapshot.forEach(docSnap => {
                     const t = docSnap.data();
                     const date = t.timestamp ? t.timestamp.toDate().toLocaleString() : 'Just now';
                     const div = document.createElement('div');
                     div.className = 'flex justify-between items-center border-b pb-2';
-                    div.innerHTML = `<div><p class="font-medium">${t.type.replace('_', ' ').toUpperCase()}</p><p class="text-xs text-gray-400">${date}</p></div><div class="text-right"><p class="font-bold ${t.amount >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(Math.abs(t.amount))}</p><p class="text-xs ${t.status === 'completed' ? 'text-green-500' : 'text-yellow-500'}">${t.status}</p></div>`;
+                    div.innerHTML = `<div><p class="font-medium">${t.type.replace('_', ' ').toUpperCase()}</p><p class="text-xs text-gray-400">${date}</p><p class="text-xs">${t.description || ''}</p></div><div class="text-right"><p class="font-bold ${t.amount >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(Math.abs(t.amount))}</p><p class="text-xs ${t.status === 'completed' ? 'text-green-500' : 'text-yellow-500'}">${t.status}</p></div>`;
                     container.appendChild(div);
                 });
             } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading transactions</p>'; }
@@ -599,8 +714,10 @@
         // Referral
         async function loadReferralInfo() {
             if (!currentUserData) return;
-            // Build referral link pointing to index.html
-            const link = `${window.location.origin}/index.html?ref=${currentUserData.referralCode}`;
+            // Build referral link pointing to signup page (index.html) with referral code
+            const baseUrl = window.location.origin;
+            const signupPath = '/index.html'; // adjust if your signup page is different
+            const link = `${baseUrl}${signupPath}?ref=${currentUserData.referralCode || ''}`;
             document.getElementById('referralLink').value = link;
             // Get referred users
             const q = query(collection(db, 'users'), where('referredBy', '==', currentUserId));
@@ -631,6 +748,7 @@
         }
 
         window.claimReferralBonus = async function(referredUserId, purchaseAmount) {
+            if (isUserFrozen()) return;
             const bonusAmount = purchaseAmount * 0.15;
             try {
                 await addDoc(collection(db, 'referralBonusClaims'), {
@@ -667,6 +785,7 @@
         }
 
         window.claimCommission = async function() {
+            if (isUserFrozen()) return;
             if (pendingCommission <= 0) { showToast('No pending commission', true); return; }
             try {
                 const q = query(collection(db, 'purchaseCommissions'), where('userId', '==', currentUserId), where('isClaimed', '==', false));
@@ -681,6 +800,16 @@
                     totalBalance: increment(pendingCommission),
                     dailyTaskCommission: increment(pendingCommission)
                 });
+                // Add transaction record
+                const transRef = doc(collection(db, 'transactions'));
+                batch.set(transRef, {
+                    userId: currentUserId,
+                    type: 'commission_claim',
+                    amount: pendingCommission,
+                    status: 'completed',
+                    description: 'Claimed purchase commission',
+                    timestamp: serverTimestamp()
+                });
                 await batch.commit();
                 showToast(`Claimed ${formatCurrency(pendingCommission)} commission!`);
                 loadPendingCommission();
@@ -690,6 +819,7 @@
 
         // Contact
         window.sendContactMessage = async function() {
+            if (isUserFrozen()) return;
             const subject = document.getElementById('contactSubject').value.trim();
             const message = document.getElementById('contactMessage').value.trim();
             if (!subject || !message) { showToast('Please fill all fields', true); return; }
@@ -711,6 +841,7 @@
 
         // Profile
         window.updateProfile = async function() {
+            if (isUserFrozen()) return;
             const newName = document.getElementById('profileName').value;
             const newPassword = document.getElementById('profilePassword').value;
             if (!newName && !newPassword) { showToast('No changes to save', true); return; }
