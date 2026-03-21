@@ -14,14 +14,37 @@
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #6366f1; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none; }
-        /* Ensure mobile menu appears above content */
-        #mobileMenu { z-index: 100; position: absolute; width: 100%; left: 0; right: 0; }
-        @media (min-width: 768px) {
-            #mobileMenu { display: none !important; }
+        #mobileMenu { z-index: 100; position: absolute; width: 100%; left: 0; right: 0; background: white; }
+        @media (min-width: 768px) { #mobileMenu { display: none !important; } }
+        .whatsapp-float {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #25D366;
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        .whatsapp-float:hover {
+            transform: scale(1.1);
         }
     </style>
 </head>
 <body>
+    <!-- Floating WhatsApp Icon -->
+    <a href="https://wa.me/254794757062" target="_blank" class="whatsapp-float">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.559 1.122 3.648l-1.203 3.841 3.964-1.178c1.033.566 2.2.864 3.4.863 3.18 0 5.766-2.586 5.766-5.767 0-3.18-2.586-5.767-5.766-5.767zm2.651 7.086c-.131.334-.745.65-1.044.724-.31.074-.527.102-.776.102-.249 0-.489-.068-.711-.142-.217-.072-.442-.152-.648-.232-.103-.04-.207-.08-.312-.12-.104-.041-.21-.082-.314-.123-.424-.172-.79-.354-1.112-.606-.316-.247-.605-.532-.852-.851-.246-.319-.439-.678-.563-1.064-.068-.215-.125-.441-.14-.671-.015-.23.028-.46.125-.675.07-.16.177-.304.312-.414.135-.11.297-.193.47-.233.173-.04.358-.021.53.05.172.071.324.188.448.334.124.146.215.325.259.523.043.198.03.404-.038.595-.068.19-.193.356-.357.473-.041.03-.083.059-.126.088.04.064.088.125.139.182.279.331.604.612.968.832.362.219.763.365 1.187.436.215.036.43.032.64-.009.21-.041.411-.13.586-.257.175-.127.31-.303.395-.507.085-.204.121-.428.106-.65-.015-.222-.081-.439-.187-.638-.106-.199-.249-.381-.424-.528-.175-.147-.381-.262-.606-.339-.161-.054-.33-.072-.5-.052-.169.02-.33.08-.47.173.07-.177.178-.337.31-.471.132-.134.287-.238.456-.306.169-.068.35-.099.528-.091.179.008.355.045.52.108.496.194.914.578 1.153 1.079.239.501.274 1.06.097 1.592z"/>
+        </svg>
+    </a>
+
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,6 +63,7 @@
                     <a href="#" onclick="navigateTo('wallet')" class="text-gray-600 hover:text-indigo-600">Wallet</a>
                     <a href="#" onclick="navigateTo('referral')" class="text-gray-600 hover:text-indigo-600">Referrals</a>
                     <a href="#" onclick="navigateTo('tasks')" class="text-gray-600 hover:text-indigo-600">Daily Task</a>
+                    <a href="#" onclick="navigateTo('contacts')" class="text-gray-600 hover:text-indigo-600">Contact</a>
                     <a href="#" onclick="navigateTo('profile')" class="text-gray-600 hover:text-indigo-600">Profile</a>
                     <button onclick="logout()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Logout</button>
                 </div>
@@ -60,6 +84,7 @@
                 <a href="#" onclick="navigateTo('wallet'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Wallet</a>
                 <a href="#" onclick="navigateTo('referral'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Referrals</a>
                 <a href="#" onclick="navigateTo('tasks'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Daily Task</a>
+                <a href="#" onclick="navigateTo('contacts'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Contact</a>
                 <a href="#" onclick="navigateTo('profile'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Profile</a>
                 <button onclick="logout(); toggleMobileMenu()" class="w-full text-left py-2 text-red-500">Logout</button>
             </div>
@@ -83,20 +108,116 @@
             <div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Recent Activity</h2><div id="recentActivity" class="space-y-2"></div></div>
         </div>
 
-        <!-- Products Page -->
-        <div id="productsPage" class="hidden"><h1 class="text-3xl font-bold mb-6">Investment Packages</h1><div id="productsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div></div>
+        <!-- Products Page (includes both standard products and hourly investment) -->
+        <div id="productsPage" class="hidden">
+            <h1 class="text-3xl font-bold mb-6">Investment Options</h1>
+            <!-- Standard Products -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold mb-4">📦 Standard Packages (Daily Income)</h2>
+                <div id="productsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+            <!-- Hourly Investment Card -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-2xl font-bold mb-4">⏱️ Hourly Investment</h2>
+                <p class="text-gray-600 mb-4">Choose an amount and duration (5-24 hours) to earn profit based on ROI:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Amount to Invest (Ksh)</label>
+                        <input type="number" id="hourlyAmount" class="w-full border rounded-lg px-4 py-2" placeholder="Min 100">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Duration (hours)</label>
+                        <input type="number" id="hourlyHours" class="w-full border rounded-lg px-4 py-2" min="5" max="24" step="1" value="5">
+                    </div>
+                </div>
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <p class="font-semibold">ROI: <span id="roiPercent">15%</span></p>
+                    <p class="font-semibold">Expected Profit: Ksh <span id="hourlyProfit">0</span></p>
+                    <p class="font-semibold">Total Return: Ksh <span id="hourlyReturn">0</span></p>
+                </div>
+                <button onclick="investHourly()" class="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Invest Now</button>
+            </div>
+        </div>
 
         <!-- Subscriptions Page -->
         <div id="subscriptionsPage" class="hidden"><div class="flex justify-between items-center mb-6"><h1 class="text-3xl font-bold">Active Subscriptions</h1><div class="bg-white px-4 py-2 rounded-lg shadow-sm"><span class="text-gray-500">Daily Income: </span><span id="dailyIncomeTotal" class="text-xl font-bold text-green-600">Ksh 0</span></div></div><div id="subscriptionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div></div>
 
         <!-- Wallet Page -->
-        <div id="walletPage" class="hidden"><h1 class="text-3xl font-bold mb-6">Wallet</h1><div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"><div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Total Balance</p><p id="walletTotalBalance" class="text-2xl font-bold">Ksh 0</p></div><div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Available Balance</p><p id="walletAvailableBalance" class="text-2xl font-bold text-green-600">Ksh 0</p></div><div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Pending Balance</p><p id="walletPendingBalance" class="text-2xl font-bold text-yellow-600">Ksh 0</p></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"><div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Add Funds</h2><input type="number" id="addFundsAmount" class="w-full border rounded-lg px-4 py-2 mb-3" placeholder="Amount (Ksh)"><button onclick="addFunds()" class="w-full bg-indigo-600 text-white py-2 rounded-lg">Add Funds (Demo)</button></div><div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Withdraw Funds</h2><input type="number" id="withdrawAmount" class="w-full border rounded-lg px-4 py-2 mb-3" placeholder="Amount (Ksh)"><select id="withdrawMethod" class="w-full border rounded-lg px-4 py-2 mb-3"><option value="mpesa">M-Pesa</option><option value="bank">Bank Transfer</option></select><textarea id="withdrawDetails" class="w-full border rounded-lg px-4 py-2 mb-3" rows="2" placeholder="Account details"></textarea><button onclick="requestWithdrawal()" class="w-full bg-yellow-500 text-white py-2 rounded-lg">Request Withdrawal</button></div></div><div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Redeem Gift Code</h2><div class="flex gap-2"><input type="text" id="giftCodeInput" class="flex-1 border rounded-lg px-4 py-2" placeholder="Enter gift code"><button onclick="redeemGiftCode()" class="bg-purple-600 text-white px-6 py-2 rounded-lg">Redeem</button></div></div><div class="bg-white rounded-xl p-6 shadow-sm mt-6"><h2 class="text-xl font-bold mb-4">Transaction History</h2><div id="transactionList" class="space-y-2 max-h-96 overflow-y-auto"></div></div></div>
+        <div id="walletPage" class="hidden"><h1 class="text-3xl font-bold mb-6">Wallet</h1><div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"><div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Total Balance</p><p id="walletTotalBalance" class="text-2xl font-bold">Ksh 0</p></div><div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Available Balance</p><p id="walletAvailableBalance" class="text-2xl font-bold text-green-600">Ksh 0</p></div><div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Pending Balance</p><p id="walletPendingBalance" class="text-2xl font-bold text-yellow-600">Ksh 0</p></div></div>
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <h2 class="text-xl font-bold mb-4">Add Funds</h2>
+                <div id="paymentLinkContainer" class="mb-4 p-3 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-gray-600">Use the payment link below to make a deposit:</p>
+                    <a id="paymentLink" href="#" target="_blank" class="text-blue-600 underline break-all">Loading...</a>
+                </div>
+                <div class="border-t pt-4">
+                    <p class="text-sm text-gray-600 mb-2">Or request manual deposit:</p>
+                    <input type="number" id="depositAmount" placeholder="Amount (Ksh)" class="w-full border rounded-lg px-4 py-2 mb-3">
+                    <textarea id="depositMessage" rows="3" placeholder="Paste payment confirmation message (transaction ID, screenshot link, etc.)" class="w-full border rounded-lg px-4 py-2 mb-3"></textarea>
+                    <button onclick="requestDeposit()" class="w-full bg-indigo-600 text-white py-2 rounded-lg">Submit Deposit Request</button>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Withdraw Funds</h2><input type="number" id="withdrawAmount" class="w-full border rounded-lg px-4 py-2 mb-3" placeholder="Amount (Ksh)"><select id="withdrawMethod" class="w-full border rounded-lg px-4 py-2 mb-3"><option value="mpesa">M-Pesa</option><option value="bank">Bank Transfer</option></select><textarea id="withdrawDetails" class="w-full border rounded-lg px-4 py-2 mb-3" rows="2" placeholder="Account details"></textarea><button onclick="requestWithdrawal()" class="w-full bg-yellow-500 text-white py-2 rounded-lg">Request Withdrawal</button></div>
+            <div class="bg-white rounded-xl p-6 shadow-sm mt-6"><h2 class="text-xl font-bold mb-4">Redeem Gift Code</h2><div class="flex gap-2"><input type="text" id="giftCodeInput" class="flex-1 border rounded-lg px-4 py-2" placeholder="Enter gift code"><button onclick="redeemGiftCode()" class="bg-purple-600 text-white px-6 py-2 rounded-lg">Redeem</button></div></div>
+            <div class="bg-white rounded-xl p-6 shadow-sm mt-6"><h2 class="text-xl font-bold mb-4">Transaction History</h2><div id="transactionList" class="space-y-2 max-h-96 overflow-y-auto"></div></div>
+        </div>
 
         <!-- Referral Page -->
-        <div id="referralPage" class="hidden"><h1 class="text-3xl font-bold mb-6">Referral Program</h1><div class="bg-white rounded-xl p-6 shadow-sm mb-6"><p class="text-gray-600 mb-2">Your Referral Link</p><div class="flex gap-2"><input type="text" id="referralLink" class="flex-1 border rounded-lg px-4 py-2 bg-gray-50" readonly><button onclick="copyReferralLink()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg">Copy</button></div><p class="text-sm text-gray-500 mt-2">Share this link with friends. You'll earn 15% of their first package purchase!</p></div><div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Your Referral Stats</h2><div class="grid grid-cols-2 gap-4"><div><p class="text-gray-500">Total Referrals</p><p id="referralCount" class="text-2xl font-bold">0</p></div><div><p class="text-gray-500">Referral Bonus Earned</p><p id="referralBonusTotal" class="text-2xl font-bold text-green-600">Ksh 0</p></div></div></div></div>
+        <div id="referralPage" class="hidden">
+            <h1 class="text-3xl font-bold mb-6">Referral Program</h1>
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <p class="text-gray-600 mb-2">Your Referral Link</p>
+                <div class="flex gap-2">
+                    <input type="text" id="referralLink" class="flex-1 border rounded-lg px-4 py-2 bg-gray-50" readonly>
+                    <button onclick="copyReferralLink()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg">Copy</button>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Share this link with friends. You'll earn 15% of their first package purchase!</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+                <h2 class="text-xl font-bold mb-4">Your Referral Stats</h2>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div><p class="text-gray-500">Total Referrals</p><p id="referralCount" class="text-2xl font-bold">0</p></div>
+                    <div><p class="text-gray-500">Referral Bonus Earned</p><p id="referralBonusTotal" class="text-2xl font-bold text-green-600">Ksh 0</p></div>
+                </div>
+                <h3 class="text-lg font-semibold mb-3">Referred Users</h3>
+                <div id="referredUsersList" class="space-y-3 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
 
         <!-- Daily Task Page -->
-        <div id="tasksPage" class="hidden"><h1 class="text-3xl font-bold mb-6">Daily Task</h1><div class="bg-white rounded-xl p-8 shadow-sm text-center"><div class="text-6xl mb-4">🎯</div><h2 class="text-2xl font-bold mb-2">Complete Your Daily Task</h2><p class="text-gray-600 mb-4">Earn a commission by clicking the button below. Available once per day.</p><div class="inline-block bg-green-100 text-green-800 px-4 py-2 rounded-full mb-6">Commission: <span id="taskCommissionAmount">Ksh 0</span></div><div><button id="claimTaskBtn" onclick="claimDailyTask()" class="bg-green-600 text-white px-8 py-3 rounded-lg text-lg font-semibold">Claim Today's Reward</button></div></div></div>
+        <div id="tasksPage" class="hidden">
+            <h1 class="text-3xl font-bold mb-6">Daily Task</h1>
+            <div class="bg-white rounded-xl p-8 shadow-sm text-center">
+                <div class="text-6xl mb-4">🎯</div>
+                <h2 class="text-2xl font-bold mb-2">Claim Purchase Commission</h2>
+                <p class="text-gray-600 mb-4">You earn 10% commission on every product purchase. Claim all pending commissions here.</p>
+                <div class="inline-block bg-green-100 text-green-800 px-4 py-2 rounded-full mb-6">
+                    Pending Commission: <span id="pendingCommissionAmount">Ksh 0</span>
+                </div>
+                <div>
+                    <button id="claimTaskBtn" onclick="claimCommission()" class="bg-green-600 text-white px-8 py-3 rounded-lg text-lg font-semibold">Claim Commission</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contacts Page -->
+        <div id="contactsPage" class="hidden">
+            <h1 class="text-3xl font-bold mb-6">Contact Support</h1>
+            <div class="bg-white rounded-xl p-6 shadow-sm max-w-2xl">
+                <p class="text-gray-600 mb-4">Send a message to admin. We'll respond as soon as possible.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Subject</label>
+                        <input type="text" id="contactSubject" class="w-full border rounded-lg px-4 py-2" placeholder="e.g., Withdrawal issue">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Message</label>
+                        <textarea id="contactMessage" rows="5" class="w-full border rounded-lg px-4 py-2" placeholder="Describe your issue..."></textarea>
+                    </div>
+                    <button onclick="sendContactMessage()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg">Send Message</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Profile Page -->
         <div id="profilePage" class="hidden"><h1 class="text-3xl font-bold mb-6">Profile Settings</h1><div class="bg-white rounded-xl p-6 shadow-sm max-w-lg"><div class="mb-4"><label class="block text-gray-700 mb-2">Display Name</label><input type="text" id="profileName" class="w-full border rounded-lg px-4 py-2"></div><div class="mb-4"><label class="block text-gray-700 mb-2">Email</label><input type="email" id="profileEmail" class="w-full border rounded-lg px-4 py-2 bg-gray-50" readonly></div><div class="mb-4"><label class="block text-gray-700 mb-2">New Password (leave blank to keep current)</label><input type="password" id="profilePassword" class="w-full border rounded-lg px-4 py-2"></div><button onclick="updateProfile()" class="w-full bg-indigo-600 text-white py-2 rounded-lg">Update Profile</button></div></div>
@@ -107,7 +228,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit, onSnapshot, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit, onSnapshot, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
@@ -126,6 +247,7 @@
         let currentUser = null;
         let currentUserData = null;
         let currentUserId = null;
+        let pendingCommission = 0;
 
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
@@ -140,21 +262,17 @@
         }
 
         function navigateTo(page) {
-            const pages = ['dashboard', 'products', 'subscriptions', 'wallet', 'referral', 'tasks', 'profile'];
+            const pages = ['dashboard', 'products', 'subscriptions', 'wallet', 'referral', 'tasks', 'contacts', 'profile'];
             pages.forEach(p => document.getElementById(p + 'Page').classList.add('hidden'));
             document.getElementById(page + 'Page').classList.remove('hidden');
             window.scrollTo(0, 0);
-            // Also close mobile menu if open
             const mobileMenu = document.getElementById('mobileMenu');
-            if (!mobileMenu.classList.contains('hidden')) {
-                mobileMenu.classList.add('hidden');
-            }
+            if (!mobileMenu.classList.contains('hidden')) mobileMenu.classList.add('hidden');
         }
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobileMenu');
             menu.classList.toggle('hidden');
-            console.log('Mobile menu toggled, now hidden?', menu.classList.contains('hidden'));
         }
 
         async function logout() {
@@ -171,6 +289,7 @@
                     currentUserData = docSnap.data();
                     updateUserUI();
                     loadReferralInfo();
+                    loadPendingCommission();
                 }
             });
         }
@@ -229,12 +348,82 @@
                 batch.update(userRef, { availableBalance: increment(-price), totalInvested: increment(price), activePackagesCount: increment(1), totalBalance: increment(-price) });
                 const subRef = doc(collection(db, 'subscriptions'));
                 batch.set(subRef, { userId: currentUserId, productId: id, productName: name, productImage: img, dailyIncome, durationDays, startDate, endDate, lastClaimDate: null, totalEarned: 0, status: 'active' });
+                // Add purchase commission (10% of price)
+                const commissionAmount = price * 0.10;
+                const commissionRef = doc(collection(db, 'purchaseCommissions'));
+                batch.set(commissionRef, {
+                    userId: currentUserId,
+                    productName: name,
+                    amount: commissionAmount,
+                    isClaimed: false,
+                    createdAt: serverTimestamp()
+                });
                 await batch.commit();
                 showToast('Package purchased successfully!');
                 loadSubscriptions();
                 loadUserData();
+                loadPendingCommission();
             } catch (error) { showToast(error.message, true); }
         };
+
+        // Hourly Investment
+        function updateHourlyROI() {
+            const hours = parseInt(document.getElementById('hourlyHours').value) || 5;
+            const amount = parseFloat(document.getElementById('hourlyAmount').value) || 0;
+            let roi = 0;
+            if (hours >= 5 && hours <= 15) roi = 15;
+            else if (hours >= 16 && hours <= 24) roi = 20;
+            document.getElementById('roiPercent').innerText = roi + '%';
+            const profit = amount * roi / 100;
+            document.getElementById('hourlyProfit').innerText = profit.toFixed(2);
+            document.getElementById('hourlyReturn').innerText = (amount + profit).toFixed(2);
+        }
+        window.investHourly = async function() {
+            if (!currentUserData) return;
+            const amount = parseFloat(document.getElementById('hourlyAmount').value);
+            const hours = parseInt(document.getElementById('hourlyHours').value);
+            if (isNaN(amount) || amount < 100) { showToast('Minimum investment is Ksh 100', true); return; }
+            if (hours < 5 || hours > 24) { showToast('Hours must be between 5 and 24', true); return; }
+            if (amount > currentUserData.availableBalance) { showToast('Insufficient balance', true); return; }
+            let roi = 0;
+            if (hours >= 5 && hours <= 15) roi = 15;
+            else if (hours >= 16 && hours <= 24) roi = 20;
+            const profit = amount * roi / 100;
+            const totalReturn = amount + profit;
+            try {
+                const batch = writeBatch(db);
+                const userRef = doc(db, 'users', currentUserId);
+                batch.update(userRef, {
+                    availableBalance: increment(-amount),
+                    totalInvested: increment(amount),
+                    totalBalance: increment(-amount)
+                });
+                const investRef = doc(collection(db, 'hourlyInvestments'));
+                const endTime = new Date();
+                endTime.setHours(endTime.getHours() + hours);
+                batch.set(investRef, {
+                    userId: currentUserId,
+                    amount: amount,
+                    hours: hours,
+                    roi: roi,
+                    profit: profit,
+                    totalReturn: totalReturn,
+                    startTime: serverTimestamp(),
+                    endTime: endTime,
+                    status: 'active'
+                });
+                await batch.commit();
+                showToast(`Investment of ${formatCurrency(amount)} placed for ${hours} hours. You'll receive ${formatCurrency(totalReturn)} after completion.`);
+                document.getElementById('hourlyAmount').value = '';
+                document.getElementById('hourlyHours').value = 5;
+                updateHourlyROI();
+                loadUserData();
+                // Optionally, you could have a separate "active investments" section. For now, we just update balance.
+            } catch (error) { showToast(error.message, true); }
+        };
+        document.getElementById('hourlyHours')?.addEventListener('input', updateHourlyROI);
+        document.getElementById('hourlyAmount')?.addEventListener('input', updateHourlyROI);
+        updateHourlyROI();
 
         // Subscriptions
         async function loadSubscriptions() {
@@ -288,18 +477,25 @@
             } catch (error) { showToast(error.message, true); }
         };
 
-        // Wallet functions
-        window.addFunds = async function() {
-            const amount = parseFloat(document.getElementById('addFundsAmount').value);
-            if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount', true); return; }
+        // Wallet: Deposit request
+        window.requestDeposit = async function() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const message = document.getElementById('depositMessage').value.trim();
+            if (isNaN(amount) || amount <= 0 || !message) {
+                showToast('Please enter amount and payment confirmation', true);
+                return;
+            }
             try {
-                const userRef = doc(db, 'users', currentUserId);
-                await updateDoc(userRef, { availableBalance: increment(amount), totalBalance: increment(amount) });
-                await addDoc(collection(db, 'transactions'), { userId: currentUserId, type: 'deposit', amount, status: 'completed', description: 'Funds added', timestamp: serverTimestamp() });
-                showToast(`Added ${formatCurrency(amount)} to your wallet`);
-                document.getElementById('addFundsAmount').value = '';
-                loadUserData();
-                loadTransactions();
+                await addDoc(collection(db, 'depositRequests'), {
+                    userId: currentUserId,
+                    amount: amount,
+                    message: message,
+                    status: 'pending',
+                    createdAt: serverTimestamp()
+                });
+                showToast('Deposit request sent to admin. Funds will be added after approval.');
+                document.getElementById('depositAmount').value = '';
+                document.getElementById('depositMessage').value = '';
             } catch (error) { showToast(error.message, true); }
         };
 
@@ -313,8 +509,9 @@
                 const batch = writeBatch(db);
                 const userRef = doc(db, 'users', currentUserId);
                 batch.update(userRef, { availableBalance: increment(-amount), pendingBalance: increment(amount), totalBalance: increment(-amount) });
+                const withdrawRef = doc(collection(db, 'withdrawals'));
+                batch.set(withdrawRef, { userId: currentUserId, amount, method, accountDetails: details, status: 'pending', createdAt: serverTimestamp() });
                 await batch.commit();
-                await addDoc(collection(db, 'withdrawals'), { userId: currentUserId, amount, method, accountDetails: details, status: 'pending', createdAt: serverTimestamp() });
                 showToast('Withdrawal request submitted');
                 document.getElementById('withdrawAmount').value = '';
                 document.getElementById('withdrawDetails').value = '';
@@ -367,13 +564,54 @@
         async function loadReferralInfo() {
             if (!currentUserData) return;
             document.getElementById('referralLink').value = `${window.location.origin}${window.location.pathname}?ref=${currentUserData.referralCode}`;
-            try {
-                const q = query(collection(db, 'users'), where('referredBy', '==', currentUserId));
-                const snapshot = await getDocs(q);
-                document.getElementById('referralCount').textContent = snapshot.size;
-                document.getElementById('referralBonusTotal').textContent = formatCurrency(currentUserData.referralBonus || 0);
-            } catch (error) { console.error(error); }
+            // Get referred users
+            const q = query(collection(db, 'users'), where('referredBy', '==', currentUserId));
+            const snapshot = await getDocs(q);
+            document.getElementById('referralCount').innerText = snapshot.size;
+            document.getElementById('referralBonusTotal').innerText = formatCurrency(currentUserData.referralBonus || 0);
+            // Build referred users list with their first package purchase amount
+            const container = document.getElementById('referredUsersList');
+            container.innerHTML = '';
+            for (const docSnap of snapshot.docs) {
+                const referred = docSnap.data();
+                // Find first package purchase transaction of this referred user
+                const txQuery = query(collection(db, 'transactions'), where('userId', '==', docSnap.id), where('type', '==', 'package_purchase'), where('status', '==', 'completed'), orderBy('timestamp', 'asc'), limit(1));
+                const txSnap = await getDocs(txQuery);
+                let purchaseAmount = 0;
+                let claimable = false;
+                if (!txSnap.empty) purchaseAmount = txSnap.docs[0].data().amount;
+                // Check if bonus already claimed for this referral
+                const bonusQuery = query(collection(db, 'referralBonusClaims'), where('referrerId', '==', currentUserId), where('referredUserId', '==', docSnap.id), where('status', '==', 'approved'));
+                const bonusSnap = await getDocs(bonusQuery);
+                if (bonusSnap.empty && purchaseAmount > 0) claimable = true;
+                const div = document.createElement('div');
+                div.className = 'border rounded-lg p-3 flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${referred.displayName}</p>
+                        <p class="text-sm text-gray-500">First purchase: ${formatCurrency(purchaseAmount)}</p>
+                    </div>
+                    ${claimable ? `<button onclick="claimReferralBonus('${docSnap.id}', ${purchaseAmount})" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Claim Bonus (15%)</button>` : '<span class="text-gray-400">Bonus claimed</span>'}
+                `;
+                container.appendChild(div);
+            }
         }
+
+        window.claimReferralBonus = async function(referredUserId, purchaseAmount) {
+            const bonusAmount = purchaseAmount * 0.15;
+            try {
+                // Create claim request for admin
+                await addDoc(collection(db, 'referralBonusClaims'), {
+                    referrerId: currentUserId,
+                    referredUserId: referredUserId,
+                    amount: bonusAmount,
+                    status: 'pending',
+                    createdAt: serverTimestamp()
+                });
+                showToast(`Bonus claim (${formatCurrency(bonusAmount)}) sent to admin for approval.`);
+                loadReferralInfo();
+            } catch (error) { showToast(error.message, true); }
+        };
 
         window.copyReferralLink = function() {
             const link = document.getElementById('referralLink');
@@ -382,49 +620,60 @@
             showToast('Referral link copied!');
         };
 
-        // Daily Task
-        async function loadDailyTaskStatus() {
-            try {
-                const taskDoc = await getDoc(doc(db, 'tasks', 'daily'));
-                if (taskDoc.exists()) {
-                    const task = taskDoc.data();
-                    document.getElementById('taskCommissionAmount').textContent = formatCurrency(task.commission);
-                    const btn = document.getElementById('claimTaskBtn');
-                    if (task.status !== 'active') {
-                        btn.disabled = true; btn.textContent = 'Task Unavailable'; return;
-                    }
-                    const today = new Date().toISOString().slice(0,10);
-                    const q = query(collection(db, 'taskCompletions'), where('userId', '==', currentUserId), where('taskId', '==', 'daily'), where('date', '==', today));
-                    const snapshot = await getDocs(q);
-                    if (!snapshot.empty) {
-                        btn.disabled = true; btn.textContent = 'Already Claimed Today';
-                    } else {
-                        btn.disabled = false; btn.textContent = `Claim ${formatCurrency(task.commission)}`;
-                    }
-                } else {
-                    document.getElementById('taskCommissionAmount').textContent = formatCurrency(0);
-                    document.getElementById('claimTaskBtn').disabled = true;
-                    document.getElementById('claimTaskBtn').textContent = 'Task Not Configured';
-                }
-            } catch (error) { console.error(error); }
+        // Daily Task - Purchase Commission
+        async function loadPendingCommission() {
+            if (!currentUserId) return;
+            const q = query(collection(db, 'purchaseCommissions'), where('userId', '==', currentUserId), where('isClaimed', '==', false));
+            const snapshot = await getDocs(q);
+            let total = 0;
+            snapshot.forEach(doc => total += doc.data().amount);
+            pendingCommission = total;
+            document.getElementById('pendingCommissionAmount').innerText = formatCurrency(total);
+            const btn = document.getElementById('claimTaskBtn');
+            if (total <= 0) btn.disabled = true;
+            else btn.disabled = false;
         }
 
-        window.claimDailyTask = async function() {
-            const btn = document.getElementById('claimTaskBtn');
-            if (btn.disabled) return;
+        window.claimCommission = async function() {
+            if (pendingCommission <= 0) { showToast('No pending commission', true); return; }
             try {
-                const taskDoc = await getDoc(doc(db, 'tasks', 'daily'));
-                if (!taskDoc.exists() || taskDoc.data().status !== 'active') throw new Error('Task not available');
-                const commission = taskDoc.data().commission;
+                const q = query(collection(db, 'purchaseCommissions'), where('userId', '==', currentUserId), where('isClaimed', '==', false));
+                const snapshot = await getDocs(q);
                 const batch = writeBatch(db);
+                snapshot.forEach(doc => {
+                    batch.update(doc.ref, { isClaimed: true, claimedAt: serverTimestamp() });
+                });
                 const userRef = doc(db, 'users', currentUserId);
-                batch.update(userRef, { availableBalance: increment(commission), totalBalance: increment(commission), dailyTaskCommission: increment(commission) });
-                const completionRef = doc(collection(db, 'taskCompletions'));
-                batch.set(completionRef, { userId: currentUserId, taskId: 'daily', completedAt: serverTimestamp(), date: new Date().toISOString().slice(0,10) });
+                batch.update(userRef, {
+                    availableBalance: increment(pendingCommission),
+                    totalBalance: increment(pendingCommission),
+                    dailyTaskCommission: increment(pendingCommission)
+                });
                 await batch.commit();
-                showToast(`Claimed ${formatCurrency(commission)} from daily task!`);
-                loadDailyTaskStatus();
+                showToast(`Claimed ${formatCurrency(pendingCommission)} commission!`);
+                loadPendingCommission();
                 loadUserData();
+            } catch (error) { showToast(error.message, true); }
+        };
+
+        // Contact
+        window.sendContactMessage = async function() {
+            const subject = document.getElementById('contactSubject').value.trim();
+            const message = document.getElementById('contactMessage').value.trim();
+            if (!subject || !message) { showToast('Please fill all fields', true); return; }
+            try {
+                await addDoc(collection(db, 'contactMessages'), {
+                    userId: currentUserId,
+                    userName: currentUserData.displayName,
+                    userEmail: currentUserData.email,
+                    subject: subject,
+                    message: message,
+                    status: 'unread',
+                    createdAt: serverTimestamp()
+                });
+                showToast('Message sent! Admin will respond soon.');
+                document.getElementById('contactSubject').value = '';
+                document.getElementById('contactMessage').value = '';
             } catch (error) { showToast(error.message, true); }
         };
 
@@ -445,6 +694,18 @@
             } catch (error) { showToast(error.message, true); }
         };
 
+        // Load payment link from settings
+        async function loadPaymentLink() {
+            const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
+            let link = '#';
+            if (settingsDoc.exists() && settingsDoc.data().paymentLink) {
+                link = settingsDoc.data().paymentLink;
+            }
+            const linkEl = document.getElementById('paymentLink');
+            linkEl.href = link;
+            linkEl.textContent = link !== '#' ? link : 'Not set by admin';
+        }
+
         // Auth state
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -457,11 +718,11 @@
                     loadProducts();
                     loadSubscriptions();
                     loadTransactions();
-                    loadDailyTaskStatus();
                     loadReferralInfo();
+                    loadPendingCommission();
+                    loadPaymentLink();
                     navigateTo('dashboard');
                 } else if (userDoc.exists() && userDoc.data().role === 'admin') {
-                    // Redirect to admin dashboard if logged in as admin
                     window.location.href = 'admin-dashboard.html';
                 } else {
                     await signOut(auth);
@@ -472,7 +733,6 @@
             }
         });
 
-        // Expose functions globally
         window.navigateTo = navigateTo;
         window.toggleMobileMenu = toggleMobileMenu;
         window.logout = logout;
