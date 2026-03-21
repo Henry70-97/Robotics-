@@ -14,6 +14,8 @@
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #6366f1; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none; }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 24px; }
     </style>
 </head>
 <body>
@@ -91,6 +93,30 @@
         </div>
     </div>
 
+    <!-- Edit Product Modal -->
+    <div id="editProductModal" class="hidden modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Edit Product</h2>
+            <div class="space-y-3">
+                <input type="text" id="editProdId" hidden>
+                <input type="text" id="editProdName" placeholder="Name" class="w-full border rounded-lg px-4 py-2">
+                <input type="number" id="editProdPrice" placeholder="Price (Ksh)" class="w-full border rounded-lg px-4 py-2">
+                <input type="number" id="editProdDuration" placeholder="Duration (days)" class="w-full border rounded-lg px-4 py-2">
+                <input type="number" id="editProdROI" placeholder="ROI (%)" class="w-full border rounded-lg px-4 py-2">
+                <input type="number" id="editProdDailyIncome" placeholder="Daily Income (Ksh)" class="w-full border rounded-lg px-4 py-2">
+                <input type="text" id="editProdImageUrl" placeholder="Image URL" class="w-full border rounded-lg px-4 py-2">
+                <select id="editProdStatus" class="w-full border rounded-lg px-4 py-2">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+                <div class="flex gap-2">
+                    <button onclick="window.updateProduct()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Changes</button>
+                    <button onclick="window.closeEditModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="toast hidden"></div>
 
     <script type="module">
@@ -114,7 +140,6 @@
 
         let currentUserId = null;
 
-        // Helper functions
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -127,27 +152,20 @@
             return 'Ksh ' + amount.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        // Logout
         async function logout() {
             await signOut(auth);
             window.location.href = 'index.html';
         }
 
-        // Tab switching
         async function showTab(tab) {
-            // Hide all tabs
             document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
-            // Show selected tab
             const activeTab = document.getElementById(tab + 'Tab');
             if (activeTab) activeTab.classList.remove('hidden');
-            // Update sidebar active state
             document.querySelectorAll('.admin-nav').forEach(btn => btn.classList.remove('bg-indigo-50', 'text-indigo-600'));
-            // The clicked button is passed via event, but we can't rely on event in module; we'll find by text content? Instead, we'll rely on the fact that the button that called this has class admin-nav; we can select the one with the matching text? Simpler: just add class to all? Better to add a separate active class based on tab name.
             const buttons = document.querySelectorAll('.admin-nav');
             const tabNames = ['stats', 'users', 'products', 'withdrawals', 'giftcodes', 'tasks', 'contacts', 'deposits', 'referralBonuses', 'settings'];
             const idx = tabNames.indexOf(tab);
             if (idx !== -1) buttons[idx].classList.add('bg-indigo-50', 'text-indigo-600');
-            // Load data
             if (tab === 'stats') await loadAdminStats();
             else if (tab === 'users') await loadAdminUsers();
             else if (tab === 'products') await loadAdminProducts();
@@ -160,7 +178,7 @@
             else if (tab === 'settings') await loadAdminSettings();
         }
 
-        // Data loading functions
+        // Stats
         async function loadAdminStats() {
             const usersSnap = await getDocs(collection(db, 'users'));
             document.getElementById('adminTotalUsers').innerText = usersSnap.size;
@@ -174,6 +192,7 @@
             document.getElementById('adminPendingWithdrawals').innerText = pendingWithdrawalsSnap.size;
         }
 
+        // Users management
         async function loadAdminUsers() {
             const container = document.getElementById('adminUsersList');
             container.innerHTML = '<div class="loader"></div>';
@@ -181,18 +200,32 @@
             container.innerHTML = '';
             usersSnap.forEach(docSnap => {
                 const user = docSnap.data();
+                const status = user.status || 'active';
                 const div = document.createElement('div');
-                div.className = 'bg-white p-4 rounded-xl shadow-sm flex justify-between items-center';
+                div.className = 'bg-white p-4 rounded-xl shadow-sm flex justify-between items-center flex-wrap gap-3';
                 div.innerHTML = `
                     <div>
                         <p class="font-bold">${user.displayName}</p>
                         <p class="text-sm text-gray-500">${user.email}</p>
                         <p class="text-sm">Balance: ${formatCurrency(user.availableBalance)} | Invested: ${formatCurrency(user.totalInvested)}</p>
+                        <p class="text-sm">Status: <span class="${status === 'active' ? 'text-green-600' : 'text-red-600'}">${status}</span></p>
                     </div>
-                    <button onclick="window.editUserBalance('${docSnap.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm">Edit Balance</button>
+                    <div class="flex gap-2">
+                        <button onclick="window.toggleUserStatus('${docSnap.id}', '${status}')" class="${status === 'active' ? 'bg-red-500' : 'bg-green-600'} text-white px-3 py-1 rounded text-sm">
+                            ${status === 'active' ? 'Freeze' : 'Activate'}
+                        </button>
+                        <button onclick="window.editUserBalance('${docSnap.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm">Edit Balance</button>
+                    </div>
                 `;
                 container.appendChild(div);
             });
+        }
+
+        async function toggleUserStatus(uid, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'frozen' : 'active';
+            await updateDoc(doc(db, 'users', uid), { status: newStatus });
+            showToast(`User ${newStatus === 'active' ? 'activated' : 'frozen'} successfully.`);
+            loadAdminUsers();
         }
 
         async function editUserBalance(uid) {
@@ -204,6 +237,7 @@
             }
         }
 
+        // Products management
         async function loadAdminProducts() {
             const container = document.getElementById('adminProductsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -212,17 +246,63 @@
             productsSnap.forEach(docSnap => {
                 const prod = docSnap.data();
                 const div = document.createElement('div');
-                div.className = 'bg-white p-4 rounded-xl shadow-sm flex justify-between items-center';
+                div.className = 'bg-white p-4 rounded-xl shadow-sm flex justify-between items-center flex-wrap gap-3';
                 div.innerHTML = `
                     <div>
                         <p class="font-bold">${prod.name}</p>
                         <p>Price: ${formatCurrency(prod.price)} | Daily: ${formatCurrency(prod.dailyIncome)}</p>
+                        <p>Duration: ${prod.durationDays} days | ROI: ${prod.roi}%</p>
                         <p>Status: ${prod.status ? 'Active' : 'Inactive'}</p>
                     </div>
-                    <button onclick="window.deleteProduct('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
+                    <div class="flex gap-2">
+                        <button onclick="window.openEditModal('${docSnap.id}')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Edit</button>
+                        <button onclick="window.deleteProduct('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
+                    </div>
                 `;
                 container.appendChild(div);
             });
+        }
+
+        function openEditModal(productId) {
+            const modal = document.getElementById('editProductModal');
+            modal.classList.remove('hidden');
+            getDoc(doc(db, 'products', productId)).then(docSnap => {
+                if (docSnap.exists()) {
+                    const prod = docSnap.data();
+                    document.getElementById('editProdId').value = productId;
+                    document.getElementById('editProdName').value = prod.name;
+                    document.getElementById('editProdPrice').value = prod.price;
+                    document.getElementById('editProdDuration').value = prod.durationDays;
+                    document.getElementById('editProdROI').value = prod.roi;
+                    document.getElementById('editProdDailyIncome').value = prod.dailyIncome;
+                    document.getElementById('editProdImageUrl').value = prod.imageUrl || '';
+                    document.getElementById('editProdStatus').value = prod.status ? 'true' : 'false';
+                }
+            });
+        }
+
+        function closeEditModal() {
+            document.getElementById('editProductModal').classList.add('hidden');
+        }
+
+        async function updateProduct() {
+            const id = document.getElementById('editProdId').value;
+            const name = document.getElementById('editProdName').value;
+            const price = parseFloat(document.getElementById('editProdPrice').value);
+            const duration = parseInt(document.getElementById('editProdDuration').value);
+            const roi = parseFloat(document.getElementById('editProdROI').value);
+            const dailyIncome = parseFloat(document.getElementById('editProdDailyIncome').value);
+            const imageUrl = document.getElementById('editProdImageUrl').value;
+            const status = document.getElementById('editProdStatus').value === 'true';
+            if (!name || isNaN(price) || isNaN(duration) || isNaN(roi) || isNaN(dailyIncome)) {
+                showToast('Please fill all fields', true); return;
+            }
+            await updateDoc(doc(db, 'products', id), {
+                name, price, durationDays: duration, roi, dailyIncome, imageUrl, status
+            });
+            showToast('Product updated');
+            closeEditModal();
+            loadAdminProducts();
         }
 
         function showAddProductForm() {
@@ -257,6 +337,7 @@
             }
         }
 
+        // Withdrawals
         async function loadAdminWithdrawals() {
             const container = document.getElementById('adminWithdrawalsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -300,6 +381,7 @@
             loadAdminStats();
         }
 
+        // Gift Codes
         async function loadAdminGiftCodes() {
             const container = document.getElementById('adminGiftCodesList');
             container.innerHTML = '<div class="loader"></div>';
@@ -347,6 +429,7 @@
             }
         }
 
+        // Daily Task Settings
         async function loadAdminTaskSettings() {
             const taskDoc = await getDoc(doc(db, 'tasks', 'daily'));
             if (taskDoc.exists()) {
@@ -523,10 +606,14 @@
             showToast('Settings saved');
         }
 
-        // Expose functions to global window object
+        // Expose all functions to window
         window.logout = logout;
         window.showTab = showTab;
+        window.toggleUserStatus = toggleUserStatus;
         window.editUserBalance = editUserBalance;
+        window.openEditModal = openEditModal;
+        window.closeEditModal = closeEditModal;
+        window.updateProduct = updateProduct;
         window.showAddProductForm = showAddProductForm;
         window.hideAddProductForm = hideAddProductForm;
         window.addProduct = addProduct;
