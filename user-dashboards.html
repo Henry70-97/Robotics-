@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard | Investment Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, updateDoc, runTransaction, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
+            authDomain: "urbanpay-c5aee.firebaseapp.com",
+            projectId: "urbanpay-c5aee",
+            storageBucket: "urbanpay-c5aee.firebasestorage.app",
+            messagingSenderId: "648155825006",
+            appId: "1:648155825006:web:16d6ea4dfab808920b777f",
+            measurementId: "G-CTKZN6VHPS"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+
+        // DOM elements
+        const userNameSpan = document.getElementById('userName');
+        const userEmailSpan = document.getElementById('userEmail');
+        const balanceSpan = document.getElementById('balance');
+        const totalInvestedSpan = document.getElementById('totalInvested');
+        const totalProfitSpan = document.getElementById('totalProfit');
+        const logoutBtn = document.getElementById('logout');
+        const investForm = document.getElementById('investForm');
+        const planSelect = document.getElementById('planSelect');
+        const investAmount = document.getElementById('investAmount');
+        const investMessage = document.getElementById('investMessage');
+        const withdrawalForm = document.getElementById('withdrawalForm');
+        const withdrawAmount = document.getElementById('withdrawAmount');
+        const withdrawMethod = document.getElementById('withdrawMethod');
+        const withdrawDetails = document.getElementById('withdrawDetails');
+        const withdrawMessage = document.getElementById('withdrawMessage');
+        const investmentsList = document.getElementById('investmentsList');
+        const transactionsList = document.getElementById('transactionsList');
+
+        // Load user data and populate dashboard
+        async function loadUserData() {
+            if (!currentUser) return;
+            const userRef = doc(db, 'users', currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                userNameSpan.textContent = data.displayName || currentUser.email;
+                userEmailSpan.textContent = currentUser.email;
+                balanceSpan.textContent = `$${data.balance.toFixed(2)}`;
+                totalInvestedSpan.textContent = `$${data.totalInvested.toFixed(2)}`;
+                totalProfitSpan.textContent = `$${data.totalProfit.toFixed(2)}`;
+            }
+        }
+
+        // Load active investment plans
+        async function loadPlans() {
+            const plansQuery = query(collection(db, 'plans'), where('status', '==', 'active'));
+            const plansSnap = await getDocs(plansQuery);
+            planSelect.innerHTML = '<option value="">Select a plan</option>';
+            plansSnap.forEach(doc => {
+                const plan = doc.data();
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = `${plan.name} (${plan.durationDays}d, ${plan.dailyProfitPercent}% daily) - $${plan.minAmount} - $${plan.maxAmount}`;
+                planSelect.appendChild(option);
+            });
+        }
+
+        // Load user's active investments
+        async function loadInvestments() {
+            const investmentsQuery = query(
+                collection(db, 'investments'),
+                where('userId', '==', currentUser.uid),
+                where('status', '==', 'active'),
+                orderBy('startDate', 'desc')
+            );
+            const investmentsSnap = await getDocs(investmentsQuery);
+            investmentsList.innerHTML = '';
+            if (investmentsSnap.empty) {
+                investmentsList.innerHTML = '<tr><td colspan="4" class="text-center py-4">No active investments</td></tr>';
+                return;
+            }
+            investmentsSnap.forEach(doc => {
+                const inv = doc.data();
+                const startDate = inv.startDate?.toDate().toLocaleDateString() || 'N/A';
+                const endDate = inv.endDate?.toDate().toLocaleDateString() || 'N/A';
+                const row = `
+                    <tr class="border-b">
+                        <td class="py-2">$${inv.amount.toFixed(2)}</td>
+                        <td>${startDate}</td>
+                        <td>${endDate}</td>
+                        <td>$${inv.profitEarned.toFixed(2)}</td>
+                    </tr>
+                `;
+                investmentsList.innerHTML += row;
+            });
+        }
+
+        // Load transaction history (last 10)
+        async function loadTransactions() {
+            const transactionsQuery = query(
+                collection(db, 'transactions'),
+                where('userId', '==', currentUser.uid),
+                orderBy('createdAt', 'desc'),
+                limit(10)
+            );
+            const transactionsSnap = await getDocs(transactionsQuery);
+            transactionsList.innerHTML = '';
+            if (transactionsSnap.empty) {
+                transactionsList.innerHTML = '<tr><td colspan="3" class="text-center py-4">No transactions</td></tr>';
+                return;
+            }
+            transactionsSnap.forEach(doc => {
+                const tx = doc.data();
+                const date = tx.createdAt?.toDate().toLocaleString() || 'N/A';
+                const sign = tx.amount >= 0 ? '+' : '';
+                const row = `
+                    <tr class="border-b">
+                        <td class="py-2">${tx.type}</td>
+                        <td>${sign}$${tx.amount.toFixed(2)}</td>
+                        <td>${date}</td>
+                    </tr>
+                `;
+                transactionsList.innerHTML += row;
+            });
+        }
+
+        // Invest (using transaction)
+        investForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const planId = planSelect.value;
+            const amount = parseFloat(investAmount.value);
+            if (!planId || isNaN(amount) || amount <= 0) {
+                investMessage.textContent = 'Please select a plan and enter a valid amount.';
+                return;
+            }
+            // Fetch plan details
+            const planRef = doc(db, 'plans', planId);
+            const planSnap = await getDoc(planRef);
+            if (!planSnap.exists()) {
+                investMessage.textContent = 'Plan not found.';
+                return;
+            }
+            const plan = planSnap.data();
+            if (amount < plan.minAmount || amount > plan.maxAmount) {
+                investMessage.textContent = `Amount must be between $${plan.minAmount} and $${plan.maxAmount}.`;
+                return;
+            }
+
+            const userRef = doc(db, 'users', currentUser.uid);
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const userSnap = await transaction.get(userRef);
+                    if (!userSnap.exists()) throw new Error('User not found');
+                    const userData = userSnap.data();
+                    if (userData.balance < amount) throw new Error('Insufficient balance');
+                    if (userData.status !== 'active') throw new Error('Account is suspended');
+
+                    // Calculate end date
+                    const startDate = new Date();
+                    const endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + plan.durationDays);
+
+                    // Create investment document
+                    const investmentRef = doc(collection(db, 'investments'));
+                    transaction.set(investmentRef, {
+                        userId: currentUser.uid,
+                        planId: planId,
+                        amount: amount,
+                        startDate: serverTimestamp(),
+                        endDate: endDate,
+                        status: 'active',
+                        profitEarned: 0,
+                        lastProfitDate: startDate,
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    });
+
+                    // Create transaction record (debit)
+                    const transactionRef = doc(collection(db, 'transactions'));
+                    transaction.set(transactionRef, {
+                        userId: currentUser.uid,
+                        type: 'investment',
+                        amount: -amount,
+                        status: 'completed',
+                        description: `Investment in ${plan.name}`,
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    });
+
+                    // Update user balance and totalInvested
+                    transaction.update(userRef, {
+                        balance: userData.balance - amount,
+                        totalInvested: userData.totalInvested + amount,
+                        updatedAt: serverTimestamp()
+                    });
+                });
+                investMessage.textContent = 'Investment successful!';
+                investAmount.value = '';
+                planSelect.value = '';
+                // Refresh data
+                loadUserData();
+                loadInvestments();
+                loadTransactions();
+            } catch (error) {
+                investMessage.textContent = 'Investment failed: ' + error.message;
+            }
+        });
+
+        // Request withdrawal
+        withdrawalForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amount = parseFloat(withdrawAmount.value);
+            const method = withdrawMethod.value;
+            const details = withdrawDetails.value.trim();
+            if (isNaN(amount) || amount <= 0 || !method || !details) {
+                withdrawMessage.textContent = 'Please fill all fields correctly.';
+                return;
+            }
+            const userRef = doc(db, 'users', currentUser.uid);
+            try {
+                // We'll use a transaction to ensure balance check is atomic
+                await runTransaction(db, async (transaction) => {
+                    const userSnap = await transaction.get(userRef);
+                    if (!userSnap.exists()) throw new Error('User not found');
+                    const userData = userSnap.data();
+                    if (userData.balance < amount) throw new Error('Insufficient balance');
+                    if (userData.status !== 'active') throw new Error('Account is suspended');
+
+                    // Create withdrawal request (pending)
+                    const withdrawalRef = doc(collection(db, 'withdrawals'));
+                    transaction.set(withdrawalRef, {
+                        userId: currentUser.uid,
+                        amount: amount,
+                        method: method,
+                        accountDetails: JSON.parse(details), // Assume JSON string for simplicity
+                        status: 'pending',
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    });
+
+                    // Optional: we could also create a transaction record with status pending, but we'll keep it simple
+                });
+                withdrawMessage.textContent = 'Withdrawal request submitted. Awaiting admin approval.';
+                withdrawAmount.value = '';
+                withdrawMethod.value = '';
+                withdrawDetails.value = '';
+                // No immediate balance change, so no refresh needed
+            } catch (error) {
+                withdrawMessage.textContent = 'Request failed: ' + error.message;
+            }
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            window.location.href = 'register.html';
+        });
+
+        // Auth state listener
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                // Check if user has a role (admin) - if admin, redirect to admin dashboard
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    window.location.href = 'admin-dashboard.html';
+                    return;
+                }
+                await loadUserData();
+                await loadPlans();
+                await loadInvestments();
+                await loadTransactions();
+            } else {
+                window.location.href = 'register.html';
+            }
+        });
+    </script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4 max-w-6xl">
+        <!-- Header -->
+        <div class="flex justify-between items-center bg-white p-4 rounded shadow mb-6">
+            <div>
+                <h1 class="text-2xl font-bold">User Dashboard</h1>
+                <p id="userName" class="text-gray-600"></p>
+                <p id="userEmail" class="text-sm text-gray-500"></p>
+            </div>
+            <button id="logout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Logout</button>
+        </div>
+
+        <!-- Balance & Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white p-4 rounded shadow text-center">
+                <h2 class="text-gray-500">Balance</h2>
+                <p id="balance" class="text-3xl font-bold">$0.00</p>
+            </div>
+            <div class="bg-white p-4 rounded shadow text-center">
+                <h2 class="text-gray-500">Total Invested</h2>
+                <p id="totalInvested" class="text-3xl font-bold">$0.00</p>
+            </div>
+            <div class="bg-white p-4 rounded shadow text-center">
+                <h2 class="text-gray-500">Total Profit</h2>
+                <p id="totalProfit" class="text-3xl font-bold">$0.00</p>
+            </div>
+        </div>
+
+        <!-- Investment Form -->
+        <div class="bg-white p-4 rounded shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Make an Investment</h2>
+            <form id="investForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700">Select Plan</label>
+                    <select id="planSelect" class="w-full border rounded px-3 py-2" required></select>
+                </div>
+                <div>
+                    <label class="block text-gray-700">Amount ($)</label>
+                    <input type="number" id="investAmount" step="0.01" min="0" class="w-full border rounded px-3 py-2" required>
+                </div>
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Invest</button>
+                <div id="investMessage" class="text-sm text-red-500"></div>
+            </form>
+        </div>
+
+        <!-- Withdrawal Request -->
+        <div class="bg-white p-4 rounded shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Request Withdrawal</h2>
+            <form id="withdrawalForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700">Amount ($)</label>
+                    <input type="number" id="withdrawAmount" step="0.01" min="0" class="w-full border rounded px-3 py-2" required>
+                </div>
+                <div>
+                    <label class="block text-gray-700">Method</label>
+                    <select id="withdrawMethod" class="w-full border rounded px-3 py-2" required>
+                        <option value="">Select</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="crypto">Cryptocurrency</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700">Account Details (JSON format)</label>
+                    <textarea id="withdrawDetails" rows="2" class="w-full border rounded px-3 py-2" placeholder='{"bank":"Chase","account":"123456789"}' required></textarea>
+                    <p class="text-xs text-gray-500">Enter details as a JSON object</p>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Submit Request</button>
+                <div id="withdrawMessage" class="text-sm text-red-500"></div>
+            </form>
+        </div>
+
+        <!-- Active Investments -->
+        <div class="bg-white p-4 rounded shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Active Investments</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-2">Amount</th>
+                            <th class="text-left">Start Date</th>
+                            <th class="text-left">End Date</th>
+                            <th class="text-left">Profit Earned</th>
+                        </tr>
+                    </thead>
+                    <tbody id="investmentsList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="bg-white p-4 rounded shadow">
+            <h2 class="text-xl font-semibold mb-4">Recent Transactions</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-2">Type</th>
+                            <th class="text-left">Amount</th>
+                            <th class="text-left">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

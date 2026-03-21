@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Investment Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, updateDoc, runTransaction, serverTimestamp, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
+            authDomain: "urbanpay-c5aee.firebaseapp.com",
+            projectId: "urbanpay-c5aee",
+            storageBucket: "urbanpay-c5aee.firebasestorage.app",
+            messagingSenderId: "648155825006",
+            appId: "1:648155825006:web:16d6ea4dfab808920b777f",
+            measurementId: "G-CTKZN6VHPS"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+
+        // DOM elements
+        const logoutBtn = document.getElementById('logout');
+        const pendingWithdrawalsList = document.getElementById('pendingWithdrawalsList');
+        const usersList = document.getElementById('usersList');
+        const plansList = document.getElementById('plansList');
+        const planForm = document.getElementById('planForm');
+        const planName = document.getElementById('planName');
+        const planDescription = document.getElementById('planDescription');
+        const planMinAmount = document.getElementById('planMinAmount');
+        const planMaxAmount = document.getElementById('planMaxAmount');
+        const planDurationDays = document.getElementById('planDurationDays');
+        const planDailyProfit = document.getElementById('planDailyProfit');
+        const planStatus = document.getElementById('planStatus');
+        const planMessage = document.getElementById('planMessage');
+
+        // Load pending withdrawals
+        async function loadPendingWithdrawals() {
+            const withdrawalsQuery = query(
+                collection(db, 'withdrawals'),
+                where('status', '==', 'pending'),
+                orderBy('createdAt', 'desc')
+            );
+            const withdrawalsSnap = await getDocs(withdrawalsQuery);
+            pendingWithdrawalsList.innerHTML = '';
+            if (withdrawalsSnap.empty) {
+                pendingWithdrawalsList.innerHTML = '<tr><td colspan="5" class="text-center py-4">No pending withdrawals</td></tr>';
+                return;
+            }
+            for (const docSnap of withdrawalsSnap.docs) {
+                const w = docSnap.data();
+                const userDoc = await getDoc(doc(db, 'users', w.userId));
+                const userEmail = userDoc.exists() ? userDoc.data().email : 'Unknown';
+                const row = document.createElement('tr');
+                row.className = 'border-b';
+                row.innerHTML = `
+                    <td class="py-2">${userEmail}</td>
+                    <td>$${w.amount.toFixed(2)}</td>
+                    <td>${w.method}</td>
+                    <td>${JSON.stringify(w.accountDetails)}</td>
+                    <td class="space-x-2">
+                        <button data-id="${docSnap.id}" data-action="approve" class="approve-btn bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600">Approve</button>
+                        <button data-id="${docSnap.id}" data-action="reject" class="reject-btn bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">Reject</button>
+                    </td>
+                `;
+                pendingWithdrawalsList.appendChild(row);
+            }
+            // Attach event listeners after rendering
+            document.querySelectorAll('.approve-btn').forEach(btn => {
+                btn.addEventListener('click', () => handleWithdrawal(btn.dataset.id, 'approve'));
+            });
+            document.querySelectorAll('.reject-btn').forEach(btn => {
+                btn.addEventListener('click', () => handleWithdrawal(btn.dataset.id, 'reject'));
+            });
+        }
+
+        // Handle withdrawal approval/rejection
+        async function handleWithdrawal(withdrawalId, action) {
+            if (!confirm(`Are you sure you want to ${action} this withdrawal?`)) return;
+            const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
+            const withdrawalSnap = await getDoc(withdrawalRef);
+            if (!withdrawalSnap.exists()) {
+                alert('Withdrawal not found');
+                return;
+            }
+            const withdrawal = withdrawalSnap.data();
+            if (withdrawal.status !== 'pending') {
+                alert('This withdrawal has already been processed');
+                return;
+            }
+
+            try {
+                if (action === 'approve') {
+                    // Approve: deduct balance, create transaction, update withdrawal status
+                    await runTransaction(db, async (transaction) => {
+                        const userRef = doc(db, 'users', withdrawal.userId);
+                        const userSnap = await transaction.get(userRef);
+                        if (!userSnap.exists()) throw new Error('User not found');
+                        const userData = userSnap.data();
+                        if (userData.balance < withdrawal.amount) throw new Error('Insufficient balance');
+
+                        // Create transaction record
+                        const transactionRef = doc(collection(db, 'transactions'));
+                        transaction.set(transactionRef, {
+                            userId: withdrawal.userId,
+                            type: 'withdrawal',
+                            amount: -withdrawal.amount,
+                            status: 'completed',
+                            description: `Withdrawal via ${withdrawal.method}`,
+                            createdAt: serverTimestamp(),
+                            updatedAt: serverTimestamp()
+                        });
+
+                        // Update user balance and totalWithdrawn
+                        transaction.update(userRef, {
+                            balance: userData.balance - withdrawal.amount,
+                            totalWithdrawn: userData.totalWithdrawn + withdrawal.amount,
+                            updatedAt: serverTimestamp()
+                        });
+
+                        // Update withdrawal status
+                        transaction.update(withdrawalRef, {
+                            status: 'completed',
+                            processedAt: serverTimestamp(),
+                            updatedAt: serverTimestamp()
+                        });
+                    });
+                    alert('Withdrawal approved successfully');
+                } else {
+                    // Reject: just update status
+                    await updateDoc(withdrawalRef, {
+                        status: 'rejected',
+                        processedAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    });
+                    alert('Withdrawal rejected');
+                }
+                loadPendingWithdrawals(); // refresh list
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Load all users
+        async function loadUsers() {
+            const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+            const usersSnap = await getDocs(usersQuery);
+            usersList.innerHTML = '';
+            usersSnap.forEach(doc => {
+                const u = doc.data();
+                const row = `
+                    <tr class="border-b">
+                        <td class="py-2">${u.email}</td>
+                        <td>${u.displayName || '-'}</td>
+                        <td>$${u.balance.toFixed(2)}</td>
+                        <td>${u.role}</td>
+                        <td>${u.status}</td>
+                        <td>
+                            <button data-id="${doc.id}" data-action="toggle" class="toggle-status bg-yellow-500 text-white px-2 py-1 rounded text-sm">Toggle Status</button>
+                        </td>
+                    </tr>
+                `;
+                usersList.innerHTML += row;
+            });
+            // Add toggle listeners
+            document.querySelectorAll('.toggle-status').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const userId = btn.dataset.id;
+                    const userRef = doc(db, 'users', userId);
+                    const userSnap = await getDoc(userRef);
+                    const newStatus = userSnap.data().status === 'active' ? 'suspended' : 'active';
+                    await updateDoc(userRef, { status: newStatus, updatedAt: serverTimestamp() });
+                    loadUsers(); // refresh
+                });
+            });
+        }
+
+        // Load all plans
+        async function loadPlans() {
+            const plansSnap = await getDocs(collection(db, 'plans'));
+            plansList.innerHTML = '';
+            plansSnap.forEach(doc => {
+                const p = doc.data();
+                const row = `
+                    <tr class="border-b">
+                        <td class="py-2">${p.name}</td>
+                        <td>${p.durationDays}d</td>
+                        <td>${p.dailyProfitPercent}%</td>
+                        <td>$${p.minAmount} - $${p.maxAmount}</td>
+                        <td>${p.status}</td>
+                        <td>
+                            <button data-id="${doc.id}" data-action="delete" class="delete-plan bg-red-500 text-white px-2 py-1 rounded text-sm">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                plansList.innerHTML += row;
+            });
+            document.querySelectorAll('.delete-plan').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (confirm('Delete this plan? This may affect existing investments.')) {
+                        await deleteDoc(doc(db, 'plans', btn.dataset.id));
+                        loadPlans();
+                    }
+                });
+            });
+        }
+
+        // Create or update plan
+        planForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = planName.value.trim();
+            const description = planDescription.value.trim();
+            const minAmount = parseFloat(planMinAmount.value);
+            const maxAmount = parseFloat(planMaxAmount.value);
+            const durationDays = parseInt(planDurationDays.value);
+            const dailyProfitPercent = parseFloat(planDailyProfit.value);
+            const status = planStatus.value;
+
+            if (!name || isNaN(minAmount) || isNaN(maxAmount) || isNaN(durationDays) || isNaN(dailyProfitPercent)) {
+                planMessage.textContent = 'Please fill all fields correctly.';
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, 'plans'), {
+                    name,
+                    description,
+                    minAmount,
+                    maxAmount,
+                    durationDays,
+                    dailyProfitPercent,
+                    totalProfitPercent: dailyProfitPercent * durationDays, // approximate
+                    status,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+                planMessage.textContent = 'Plan added successfully!';
+                planForm.reset();
+                loadPlans();
+            } catch (error) {
+                planMessage.textContent = 'Error: ' + error.message;
+            }
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            window.location.href = 'register.html';
+        });
+
+        // Auth check
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                // Verify admin role
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (!userDoc.exists() || userDoc.data().role !== 'admin') {
+                    alert('You are not authorized as admin. Redirecting to user dashboard.');
+                    window.location.href = 'user-dashboard.html';
+                    return;
+                }
+                // Load all data
+                await loadPendingWithdrawals();
+                await loadUsers();
+                await loadPlans();
+            } else {
+                window.location.href = 'register.html';
+            }
+        });
+    </script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4 max-w-6xl">
+        <!-- Header -->
+        <div class="flex justify-between items-center bg-white p-4 rounded shadow mb-6">
+            <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+            <button id="logout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Logout</button>
+        </div>
+
+        <!-- Pending Withdrawals -->
+        <div class="bg-white p-4 rounded shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Pending Withdrawals</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-2">User</th>
+                            <th class="text-left">Amount</th>
+                            <th class="text-left">Method</th>
+                            <th class="text-left">Details</th>
+                            <th class="text-left">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingWithdrawalsList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Users Management -->
+        <div class="bg-white p-4 rounded shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">All Users</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-2">Email</th>
+                            <th class="text-left">Name</th>
+                            <th class="text-left">Balance</th>
+                            <th class="text-left">Role</th>
+                            <th class="text-left">Status</th>
+                            <th class="text-left">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Plan Management -->
+        <div class="bg-white p-4 rounded shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Investment Plans</h2>
+            <div class="mb-6">
+                <h3 class="text-lg font-medium mb-2">Add New Plan</h3>
+                <form id="planForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700">Plan Name</label>
+                        <input type="text" id="planName" class="w-full border rounded px-3 py-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Description</label>
+                        <input type="text" id="planDescription" class="w-full border rounded px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Min Amount ($)</label>
+                        <input type="number" id="planMinAmount" step="0.01" class="w-full border rounded px-3 py-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Max Amount ($)</label>
+                        <input type="number" id="planMaxAmount" step="0.01" class="w-full border rounded px-3 py-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Duration (Days)</label>
+                        <input type="number" id="planDurationDays" class="w-full border rounded px-3 py-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Daily Profit (%)</label>
+                        <input type="number" id="planDailyProfit" step="0.01" class="w-full border rounded px-3 py-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Status</label>
+                        <select id="planStatus" class="w-full border rounded px-3 py-2">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add Plan</button>
+                        <div id="planMessage" class="text-sm text-red-500 mt-2"></div>
+                    </div>
+                </form>
+            </div>
+            <div>
+                <h3 class="text-lg font-medium mb-2">Existing Plans</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-2">Name</th>
+                                <th class="text-left">Duration</th>
+                                <th class="text-left">Daily ROI</th>
+                                <th class="text-left">Amount Range</th>
+                                <th class="text-left">Status</th>
+                                <th class="text-left">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="plansList"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
