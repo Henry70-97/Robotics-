@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UrbanPay • Admin Dashboard</title>
+    <title>UrbanPay • Admin Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, collection, query, where, orderBy, addDoc, updateDoc, deleteDoc, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, collection, query, where, orderBy, addDoc, updateDoc, deleteDoc, runTransaction, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
@@ -28,13 +28,16 @@
 
         // DOM elements
         const pendingWithdrawalsDiv = document.getElementById('pendingWithdrawals');
+        const approvedWithdrawalsDiv = document.getElementById('approvedWithdrawals');
         const usersListDiv = document.getElementById('usersList');
         const plansListDiv = document.getElementById('plansList');
+        const paymentLinksListDiv = document.getElementById('paymentLinksList');
+        const investmentsListDiv = document.getElementById('investmentsList');
         const messageBox = document.getElementById('messageBox');
 
         function showMessage(msg, isError = false) {
             messageBox.innerHTML = `<div class="p-3 rounded-lg ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${msg}</div>`;
-            setTimeout(() => messageBox.innerHTML = '', 4000);
+            setTimeout(() => messageBox.innerHTML = '', 5000);
         }
 
         window.logout = async () => {
@@ -47,11 +50,10 @@
             if (!user) return false;
             const userRef = doc(db, "users", user.uid);
             const snap = await getDoc(userRef);
-            if (snap.exists() && snap.data().role === 'admin') return true;
-            return false;
+            return snap.exists() && snap.data().role === 'admin';
         }
 
-        // ---- Pending Withdrawals ----
+        // ---------- 1. WITHDRAWALS (two‑step: approve → mark paid) ----------
         async function loadPendingWithdrawals() {
             const q = query(collection(db, "withdrawals"), where("status", "==", "pending"), orderBy("createdAt", "desc"));
             const snap = await getDocs(q);
@@ -69,48 +71,24 @@
                 card.innerHTML = `
                     <div><span class="font-semibold">User:</span> ${userEmail}</div>
                     <div><span class="font-semibold">Amount:</span> $${w.amount}</div>
-                    <div><span class="font-semibold">Method:</span> ${w.method}</div>
-                    <div><span class="font-semibold">Details:</span> ${w.accountDetails}</div>
+                    <div><span class="font-semibold">Method:</span> ${w.method || 'Bank'}</div>
+                    <div><span class="font-semibold">Details:</span> ${w.accountDetails || 'N/A'}</div>
                     <div class="flex gap-2 mt-3">
-                        <button onclick="approveWithdrawal('${docSnap.id}', '${w.userId}', ${w.amount})" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Approve</button>
-                        <button onclick="rejectWithdrawal('${docSnap.id}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Reject</button>
+                        <button onclick="approveWithdrawalStep('${docSnap.id}')" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">✔ Approve</button>
+                        <button onclick="rejectWithdrawal('${docSnap.id}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">✘ Reject</button>
                     </div>
                 `;
                 pendingWithdrawalsDiv.appendChild(card);
             }
         }
 
-        window.approveWithdrawal = async (withdrawalId, userId, amount) => {
+        window.approveWithdrawalStep = async (withdrawalId) => {
             try {
-                await runTransaction(db, async (transaction) => {
-                    const userRef = doc(db, "users", userId);
-                    const withdrawalRef = doc(db, "withdrawals", withdrawalId);
-                    const userSnap = await transaction.get(userRef);
-                    if (!userSnap.exists()) throw new Error("User not found");
-                    const user = userSnap.data();
-                    if (user.balance < amount) throw new Error("Insufficient balance for approval");
-
-                    // Deduct balance, update totalWithdrawn
-                    transaction.update(userRef, {
-                        balance: user.balance - amount,
-                        totalWithdrawn: (user.totalWithdrawn || 0) + amount
-                    });
-                    // Mark withdrawal as completed
-                    transaction.update(withdrawalRef, { status: 'completed' });
-                    // Create transaction record
-                    const transRef = doc(collection(db, "transactions"));
-                    transaction.set(transRef, {
-                        userId: userId,
-                        type: 'withdrawal',
-                        amount: amount,
-                        status: 'completed',
-                        description: 'Withdrawal approved',
-                        createdAt: serverTimestamp()
-                    });
-                });
-                showMessage("Withdrawal approved successfully");
+                const ref = doc(db, "withdrawals", withdrawalId);
+                await updateDoc(ref, { status: 'approved' });
+                showMessage("Withdrawal approved. Now you can mark it as paid.");
                 loadPendingWithdrawals();
-                loadUsers(); // refresh user balance display
+                loadApprovedWithdrawals();
             } catch (err) {
                 showMessage(err.message, true);
             }
@@ -120,53 +98,388 @@
             try {
                 const ref = doc(db, "withdrawals", withdrawalId);
                 await updateDoc(ref, { status: 'rejected' });
-                showMessage("Withdrawal rejected");
+                showMessage("Withdrawal rejected.");
                 loadPendingWithdrawals();
             } catch (err) {
                 showMessage(err.message, true);
             }
         };
 
-        // ---- Users Management ----
-        async function loadUsers() {
-            const q = query(collection(db, "users"));
+        async function loadApprovedWithdrawals() {
+            const q = query(collection(db, "withdrawals"), where("status", "==", "approved"), orderBy("createdAt", "desc"));
             const snap = await getDocs(q);
-            usersListDiv.innerHTML = '';
-            snap.forEach(docSnap => {
-                const user = docSnap.data();
-                const statusColor = user.status === 'active' ? 'text-green-600' : 'text-red-600';
-                const row = document.createElement('div');
-                row.className = "border-b p-3 flex flex-wrap justify-between items-center";
-                row.innerHTML = `
-                    <div class="flex-1"><span class="font-medium">${user.email}</span><br><span class="text-sm text-gray-500">Balance: $${user.balance.toFixed(2)} | Role: ${user.role}</span></div>
-                    <div class="flex items-center gap-2">
-                        <span class="${statusColor} font-semibold">${user.status}</span>
-                        <button onclick="toggleUserStatus('${docSnap.id}', '${user.status}')" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">Toggle Status</button>
-                    </div>
+            approvedWithdrawalsDiv.innerHTML = '';
+            if (snap.empty) {
+                approvedWithdrawalsDiv.innerHTML = '<div class="text-gray-500">No approved withdrawals waiting for payment</div>';
+                return;
+            }
+            for (const docSnap of snap.docs) {
+                const w = docSnap.data();
+                const userSnap = await getDoc(doc(db, "users", w.userId));
+                const userEmail = userSnap.exists() ? userSnap.data().email : 'Unknown';
+                const card = document.createElement('div');
+                card.className = "border rounded-lg p-4 mb-3 bg-yellow-50 shadow-sm";
+                card.innerHTML = `
+                    <div><span class="font-semibold">User:</span> ${userEmail}</div>
+                    <div><span class="font-semibold">Amount:</span> $${w.amount}</div>
+                    <div><span class="font-semibold">Method:</span> ${w.method || 'Bank'}</div>
+                    <button onclick="markWithdrawalPaid('${docSnap.id}', '${w.userId}', ${w.amount})" class="mt-2 bg-green-700 text-white px-4 py-1 rounded hover:bg-green-800">💰 Mark as Paid</button>
                 `;
-                usersListDiv.appendChild(row);
-            });
+                approvedWithdrawalsDiv.appendChild(card);
+            }
         }
 
-        window.toggleUserStatus = async (userId, currentStatus) => {
-            const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+        window.markWithdrawalPaid = async (withdrawalId, userId, amount) => {
             try {
-                await updateDoc(doc(db, "users", userId), { status: newStatus });
-                showMessage(`User status updated to ${newStatus}`);
+                await runTransaction(db, async (transaction) => {
+                    const userRef = doc(db, "users", userId);
+                    const withdrawalRef = doc(db, "withdrawals", withdrawalId);
+                    const userSnap = await transaction.get(userRef);
+                    if (!userSnap.exists()) throw new Error("User not found");
+                    const user = userSnap.data();
+                    if (user.balance < amount) throw new Error("Insufficient balance");
+                    transaction.update(userRef, {
+                        balance: user.balance - amount,
+                        totalWithdrawn: (user.totalWithdrawn || 0) + amount
+                    });
+                    transaction.update(withdrawalRef, { status: 'paid' });
+                    const transRef = doc(collection(db, "transactions"));
+                    transaction.set(transRef, {
+                        userId: userId,
+                        type: 'withdrawal_paid',
+                        amount: amount,
+                        status: 'completed',
+                        description: 'Withdrawal paid by admin',
+                        createdAt: serverTimestamp()
+                    });
+                });
+                showMessage("Withdrawal marked as PAID, balance deducted.");
+                loadApprovedWithdrawals();
+                loadPendingWithdrawals();
                 loadUsers();
             } catch (err) {
                 showMessage(err.message, true);
             }
         };
 
-        // ---- Plans Management ----
+        // ---------- 2. USER MANAGEMENT: adjust wallet, freeze, delete, payment links ----------
+        async function loadUsers() {
+            const q = query(collection(db, "users"));
+            const snap = await getDocs(q);
+            usersListDiv.innerHTML = '';
+            for (const docSnap of snap.docs) {
+                const user = docSnap.data();
+                const isFrozen = user.frozen === true;
+                const statusColor = user.status === 'active' ? 'text-green-600' : 'text-red-600';
+                const row = document.createElement('div');
+                row.className = "border-b p-3 flex flex-wrap justify-between items-center gap-2";
+                row.innerHTML = `
+                    <div class="flex-1 min-w-[200px]">
+                        <span class="font-medium">${user.email}</span><br>
+                        <span class="text-sm text-gray-500">Balance: $${user.balance?.toFixed(2) || '0.00'} | Role: ${user.role}</span>
+                        ${isFrozen ? '<span class="ml-2 text-xs bg-gray-300 px-1 rounded">❄️ Frozen</span>' : ''}
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <span class="${statusColor} font-semibold">${user.status}</span>
+                        <button onclick="toggleUserStatus('${docSnap.id}', '${user.status}')" class="bg-yellow-500 text-white px-2 py-1 rounded text-sm">Toggle Status</button>
+                        <button onclick="showAdjustBalanceModal('${docSnap.id}', '${user.email}')" class="bg-purple-600 text-white px-2 py-1 rounded text-sm">💰 Adjust</button>
+                        <button onclick="toggleFreezeUser('${docSnap.id}', ${isFrozen})" class="bg-cyan-600 text-white px-2 py-1 rounded text-sm">${isFrozen ? '❄️ Unfreeze' : '🧊 Freeze'}</button>
+                        <button onclick="deleteUserAccount('${docSnap.id}')" class="bg-red-700 text-white px-2 py-1 rounded text-sm">🗑 Delete</button>
+                        <button onclick="showPaymentLinkModal('${docSnap.id}')" class="bg-indigo-600 text-white px-2 py-1 rounded text-sm">🔗 Payment Link</button>
+                    </div>
+                `;
+                usersListDiv.appendChild(row);
+            }
+        }
+
+        window.toggleUserStatus = async (userId, currentStatus) => {
+            const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+            try {
+                await updateDoc(doc(db, "users", userId), { status: newStatus });
+                showMessage(`User status → ${newStatus}`);
+                loadUsers();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        window.toggleFreezeUser = async (userId, currentlyFrozen) => {
+            try {
+                await updateDoc(doc(db, "users", userId), { frozen: !currentlyFrozen });
+                showMessage(`User ${!currentlyFrozen ? 'frozen' : 'unfrozen'}`);
+                loadUsers();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        window.showAdjustBalanceModal = (userId, userEmail) => {
+            const amount = prompt(`Adjust wallet for ${userEmail}\nEnter amount (positive = add, negative = subtract):`, "0");
+            if (amount === null) return;
+            const numeric = parseFloat(amount);
+            if (isNaN(numeric)) return showMessage("Invalid number", true);
+            adjustBalance(userId, numeric);
+        };
+
+        async function adjustBalance(userId, delta) {
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const userRef = doc(db, "users", userId);
+                    const snap = await transaction.get(userRef);
+                    if (!snap.exists()) throw new Error("User not found");
+                    const oldBalance = snap.data().balance || 0;
+                    const newBalance = oldBalance + delta;
+                    if (newBalance < 0) throw new Error("Balance cannot be negative");
+                    transaction.update(userRef, { balance: newBalance });
+                    const transRef = doc(collection(db, "transactions"));
+                    transaction.set(transRef, {
+                        userId: userId,
+                        type: delta >= 0 ? 'admin_credit' : 'admin_debit',
+                        amount: Math.abs(delta),
+                        status: 'completed',
+                        description: `Admin ${delta >= 0 ? 'added' : 'deducted'} $${Math.abs(delta)}`,
+                        createdAt: serverTimestamp()
+                    });
+                });
+                showMessage(`Balance updated: ${delta >= 0 ? '+' : ''}${delta}`);
+                loadUsers();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        }
+
+        window.deleteUserAccount = async (userId) => {
+            if (!confirm("⚠️ PERMANENT: delete user and all related data (investments, withdrawals, transactions, payment links). This cannot be undone.")) return;
+            try {
+                // Delete subcollections manually (Firestore client can't delete subcollections directly, but we delete known docs)
+                const investmentsSnap = await getDocs(query(collection(db, "investments"), where("userId", "==", userId)));
+                investmentsSnap.forEach(docSnap => deleteDoc(docSnap.ref));
+                const withdrawalsSnap = await getDocs(query(collection(db, "withdrawals"), where("userId", "==", userId)));
+                withdrawalsSnap.forEach(docSnap => deleteDoc(docSnap.ref));
+                const transactionsSnap = await getDocs(query(collection(db, "transactions"), where("userId", "==", userId)));
+                transactionsSnap.forEach(docSnap => deleteDoc(docSnap.ref));
+                const linksSnap = await getDocs(query(collection(db, "paymentLinks"), where("userId", "==", userId)));
+                linksSnap.forEach(docSnap => deleteDoc(docSnap.ref));
+                await deleteDoc(doc(db, "users", userId));
+                showMessage("User and all related data deleted.");
+                loadUsers();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        // ---------- 3. PAYMENT LINKS (for deposits) ----------
+        window.showPaymentLinkModal = async (userId) => {
+            const amount = prompt("Enter deposit amount for this payment link:", "100");
+            if (!amount) return;
+            const numAmount = parseFloat(amount);
+            if (isNaN(numAmount) || numAmount <= 0) return showMessage("Invalid amount", true);
+            await createPaymentLink(userId, numAmount);
+        };
+
+        async function createPaymentLink(userId, amount) {
+            try {
+                const linkId = Math.random().toString(36).substring(2, 12);
+                const expiresAt = new Date();
+                expiresAt.setDate(expiresAt.getDate() + 3); // 3 days validity
+                await addDoc(collection(db, "paymentLinks"), {
+                    userId: userId,
+                    amount: amount,
+                    status: 'active',
+                    linkId: linkId,
+                    createdAt: serverTimestamp(),
+                    expiresAt: Timestamp.fromDate(expiresAt),
+                    description: `Deposit link $${amount}`
+                });
+                const linkUrl = `${window.location.origin}/pay.html?link=${linkId}`; // placeholder
+                showMessage(`Payment link created: ${linkUrl} (copy & share)`, false);
+                loadPaymentLinks();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        }
+
+        async function loadPaymentLinks() {
+            const snap = await getDocs(query(collection(db, "paymentLinks"), orderBy("createdAt", "desc")));
+            paymentLinksListDiv.innerHTML = '';
+            if (snap.empty) {
+                paymentLinksListDiv.innerHTML = '<div class="text-gray-500">No payment links generated</div>';
+                return;
+            }
+            for (const docSnap of snap.docs) {
+                const link = docSnap.data();
+                const userSnap = await getDoc(doc(db, "users", link.userId));
+                const userEmail = userSnap.exists() ? userSnap.data().email : 'Unknown';
+                const card = document.createElement('div');
+                card.className = "border rounded p-2 mb-2 bg-white flex justify-between items-center flex-wrap";
+                card.innerHTML = `
+                    <div>
+                        <div><strong>${userEmail}</strong> - $${link.amount}</div>
+                        <div class="text-xs">Status: ${link.status} | Link: ${link.linkId}</div>
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick="revokePaymentLink('${docSnap.id}')" class="bg-red-500 text-white px-2 py-1 text-xs rounded">Revoke</button>
+                    </div>
+                `;
+                paymentLinksListDiv.appendChild(card);
+            }
+        }
+
+        window.revokePaymentLink = async (linkId) => {
+            try {
+                await updateDoc(doc(db, "paymentLinks", linkId), { status: 'revoked' });
+                showMessage("Payment link revoked");
+                loadPaymentLinks();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        // ---------- 4. INVESTMENT RETURNS (6-24 hours auto-like manual trigger) ----------
+        async function loadInvestments() {
+            const snap = await getDocs(query(collection(db, "investments"), orderBy("createdAt", "desc")));
+            investmentsListDiv.innerHTML = '';
+            if (snap.empty) {
+                investmentsListDiv.innerHTML = '<div class="text-gray-500">No active investments found.</div>';
+                return;
+            }
+            for (const docSnap of snap.docs) {
+                const inv = docSnap.data();
+                const userSnap = await getDoc(doc(db, "users", inv.userId));
+                const userEmail = userSnap.exists() ? userSnap.data().email : 'Unknown';
+                const lastProfit = inv.lastProfitDate ? inv.lastProfitDate.toDate() : null;
+                const now = new Date();
+                const hoursSince = lastProfit ? Math.floor((now - lastProfit) / (1000 * 3600)) : 999;
+                const canReturn = (!inv.completed && inv.status === 'active' && hoursSince >= (inv.returnIntervalHours || 6));
+                const card = document.createElement('div');
+                card.className = "border rounded p-3 mb-2 bg-gray-50";
+                card.innerHTML = `
+                    <div class="flex justify-between flex-wrap">
+                        <div><strong>${userEmail}</strong> | Plan: ${inv.planName || 'N/A'} | Amount: $${inv.amount}</div>
+                        <div>Daily Profit: ${inv.dailyProfitPercent}% | Duration: ${inv.durationDays} days</div>
+                    </div>
+                    <div class="text-sm text-gray-600">Started: ${inv.createdAt?.toDate().toLocaleDateString()} | Last profit: ${lastProfit ? lastProfit.toLocaleString() : 'Never'}</div>
+                    <div class="mt-2 flex gap-2">
+                        <button onclick="processSingleInvestment('${docSnap.id}')" ${canReturn ? '' : 'disabled'} class="bg-green-600 text-white px-3 py-1 rounded text-sm ${!canReturn ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'}">💸 Credit Profit (if ready)</button>
+                        <button onclick="forceCompleteInvestment('${docSnap.id}')" class="bg-orange-600 text-white px-3 py-1 rounded text-sm">✅ Mark Completed & Pay Final</button>
+                    </div>
+                `;
+                investmentsListDiv.appendChild(card);
+            }
+        }
+
+        window.processSingleInvestment = async (investmentId) => {
+            try {
+                await processReturnForInvestment(investmentId);
+                showMessage("Profit credited (if eligible).");
+                loadInvestments();
+                loadUsers(); // refresh balances
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        async function processReturnForInvestment(investmentId) {
+            await runTransaction(db, async (transaction) => {
+                const invRef = doc(db, "investments", investmentId);
+                const invSnap = await transaction.get(invRef);
+                if (!invSnap.exists()) throw new Error("Investment not found");
+                const inv = invSnap.data();
+                if (inv.completed) throw new Error("Investment already completed");
+                if (inv.status !== 'active') throw new Error("Investment not active");
+
+                const lastProfit = inv.lastProfitDate ? inv.lastProfitDate.toDate() : null;
+                const now = new Date();
+                const intervalHours = inv.returnIntervalHours || 6;
+                if (lastProfit && (now - lastProfit) / (1000 * 3600) < intervalHours) {
+                    throw new Error(`Wait ${intervalHours} hours between returns`);
+                }
+                const profitAmount = (inv.amount * inv.dailyProfitPercent) / 100;
+                const userRef = doc(db, "users", inv.userId);
+                const userSnap = await transaction.get(userRef);
+                if (!userSnap.exists()) throw new Error("User missing");
+                const newBalance = (userSnap.data().balance || 0) + profitAmount;
+                transaction.update(userRef, { balance: newBalance });
+                transaction.update(invRef, {
+                    lastProfitDate: Timestamp.fromDate(now),
+                    totalProfitPaid: (inv.totalProfitPaid || 0) + profitAmount
+                });
+                const transRef = doc(collection(db, "transactions"));
+                transaction.set(transRef, {
+                    userId: inv.userId,
+                    type: 'investment_return',
+                    amount: profitAmount,
+                    status: 'completed',
+                    description: `Profit from ${inv.planName} investment`,
+                    createdAt: serverTimestamp()
+                });
+            });
+        }
+
+        window.forceCompleteInvestment = async (investmentId) => {
+            if (!confirm("Complete this investment? Final profit will be credited based on remaining days.")) return;
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const invRef = doc(db, "investments", investmentId);
+                    const invSnap = await transaction.get(invRef);
+                    if (!invSnap.exists()) throw new Error("No investment");
+                    const inv = invSnap.data();
+                    if (inv.completed) throw new Error("Already completed");
+                    const startDate = inv.createdAt.toDate();
+                    const daysActive = Math.floor((new Date() - startDate) / (1000 * 3600 * 24));
+                    const expectedDays = inv.durationDays;
+                    let finalProfit = 0;
+                    if (daysActive < expectedDays) {
+                        finalProfit = (inv.amount * inv.dailyProfitPercent / 100) * (expectedDays - daysActive);
+                    }
+                    const userRef = doc(db, "users", inv.userId);
+                    const userSnap = await transaction.get(userRef);
+                    const newBalance = (userSnap.data().balance || 0) + finalProfit;
+                    transaction.update(userRef, { balance: newBalance });
+                    transaction.update(invRef, { completed: true, status: 'completed', finalProfitPaid: finalProfit });
+                    if (finalProfit > 0) {
+                        const transRef = doc(collection(db, "transactions"));
+                        transaction.set(transRef, {
+                            userId: inv.userId,
+                            type: 'investment_maturity',
+                            amount: finalProfit,
+                            status: 'completed',
+                            description: `Maturity bonus for ${inv.planName}`,
+                            createdAt: serverTimestamp()
+                        });
+                    }
+                });
+                showMessage("Investment marked completed, final profit added.");
+                loadInvestments();
+                loadUsers();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        window.processAllReturns = async () => {
+            showMessage("Processing all eligible investment returns...");
+            const investmentsSnap = await getDocs(query(collection(db, "investments"), where("completed", "==", false), where("status", "==", "active")));
+            let processed = 0;
+            for (const docSnap of investmentsSnap.docs) {
+                try {
+                    await processReturnForInvestment(docSnap.id);
+                    processed++;
+                } catch (e) { console.warn(e); }
+            }
+            showMessage(`Processed returns for ${processed} investments.`);
+            loadInvestments();
+            loadUsers();
+        };
+
+        // ---------- 5. PLANS MANAGEMENT (unchanged but enhanced) ----------
         async function loadPlans() {
             const snap = await getDocs(collection(db, "plans"));
             plansListDiv.innerHTML = '';
             snap.forEach(docSnap => {
                 const plan = docSnap.data();
                 const card = document.createElement('div');
-                card.className = "border rounded p-3 mb-2 bg-gray-50 flex justify-between items-center";
+                card.className = "border rounded p-3 mb-2 bg-gray-50 flex justify-between items-center flex-wrap";
                 card.innerHTML = `
                     <div>
                         <span class="font-bold">${plan.name}</span> - ${plan.dailyProfit}% daily / ${plan.duration} days<br>
@@ -190,7 +503,6 @@
             }
         };
 
-        // Add new plan
         const addPlanForm = document.getElementById('addPlanForm');
         addPlanForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -201,7 +513,6 @@
             const duration = parseInt(document.getElementById('duration').value);
             const dailyProfit = parseFloat(document.getElementById('dailyProfit').value);
             const status = document.getElementById('planStatus').value;
-
             if (isNaN(minAmount) || isNaN(maxAmount) || isNaN(duration) || isNaN(dailyProfit)) {
                 return showMessage("All numeric fields required", true);
             }
@@ -218,7 +529,26 @@
             }
         });
 
-        // Auth guard
+        // ---------- 6. GLOBAL SETTINGS (investment return interval) ----------
+        async function loadGlobalSettings() {
+            const settingsRef = doc(db, "settings", "global");
+            const snap = await getDoc(settingsRef);
+            let interval = 6;
+            if (snap.exists()) interval = snap.data().investmentReturnHours || 6;
+            document.getElementById('returnIntervalInput').value = interval;
+        }
+        window.updateReturnInterval = async () => {
+            const hours = parseInt(document.getElementById('returnIntervalInput').value);
+            if (isNaN(hours) || hours < 1) return showMessage("Minimum 1 hour", true);
+            try {
+                await setDoc(doc(db, "settings", "global"), { investmentReturnHours: hours }, { merge: true });
+                showMessage(`Return interval updated to ${hours} hours.`);
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        // ---------- INIT & AUTH GUARD ----------
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = "register.html";
@@ -232,36 +562,65 @@
             }
             currentAdmin = user;
             loadPendingWithdrawals();
+            loadApprovedWithdrawals();
             loadUsers();
             loadPlans();
+            loadPaymentLinks();
+            loadInvestments();
+            loadGlobalSettings();
         });
     </script>
 </head>
 <body class="bg-gray-100">
     <div class="max-w-7xl mx-auto p-6">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+            <h1 class="text-3xl font-bold text-gray-800">UrbanPay • Full Admin Control</h1>
             <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Logout</button>
         </div>
         <div id="messageBox" class="mb-4"></div>
 
-        <!-- Pending Withdrawals -->
-        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Pending Withdrawals</h2>
-            <div id="pendingWithdrawals"></div>
+        <!-- Withdrawal sections -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">⏳ Pending Withdrawals</h2>
+                <div id="pendingWithdrawals"></div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">✅ Approved (waiting for payment)</h2>
+                <div id="approvedWithdrawals"></div>
+            </div>
         </div>
 
-        <!-- Users Management -->
+        <!-- Users Management (full actions) -->
         <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <h2 class="text-2xl font-semibold mb-4">All Users</h2>
+            <h2 class="text-2xl font-semibold mb-4">👥 All Users – Adjust Wallet / Freeze / Delete / Payment Link</h2>
             <div id="usersList"></div>
         </div>
 
-        <!-- Plan Management -->
+        <!-- Payment Links & Investment Returns -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">🔗 Payment Links (deposit)</h2>
+                <div id="paymentLinksList" class="mb-2"></div>
+                <p class="text-xs text-gray-500">Use "Payment Link" button per user to create a deposit link.</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">📈 Investments & Returns (6-24h interval)</h2>
+                <div class="mb-3 flex gap-2 items-center">
+                    <label class="text-sm">Return interval (hours):</label>
+                    <input type="number" id="returnIntervalInput" class="border p-1 w-20 rounded" value="6">
+                    <button onclick="updateReturnInterval()" class="bg-gray-700 text-white px-3 py-1 rounded text-sm">Set</button>
+                    <button onclick="processAllReturns()" class="bg-blue-700 text-white px-3 py-1 rounded text-sm">🔄 Process All Eligible</button>
+                </div>
+                <div id="investmentsList" class="max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- Investment Plans -->
         <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Investment Plans</h2>
+            <h2 class="text-2xl font-semibold mb-4">📦 Investment Plans</h2>
             <div id="plansList" class="mb-4"></div>
-            <h3 class="text-xl font-semibold mt-6 mb-3">Add New Plan</h3>
+            <h3 class="text-xl font-semibold mt-6 mb-3">➕ Add New Plan</h3>
             <form id="addPlanForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="text" id="planName" placeholder="Plan Name" class="border p-2 rounded" required>
                 <input type="text" id="planDesc" placeholder="Description" class="border p-2 rounded">
