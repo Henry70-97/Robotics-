@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register / Login | Investment Platform</title>
-    <!-- Tailwind CSS for styling -->
+    <title>UrbanPay • Register / Login</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK -->
+    <!-- Firebase Modular SDKs (v10) -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Your Firebase configuration
+        // Firebase Config (exact as provided)
         const firebaseConfig = {
             apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
             authDomain: "urbanpay-c5aee.firebaseapp.com",
@@ -27,141 +27,138 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+        const googleProvider = new GoogleAuthProvider();
 
-        // DOM elements
-        const googleBtn = document.getElementById('googleSignIn');
-        const emailSignupBtn = document.getElementById('emailSignup');
-        const emailSigninBtn = document.getElementById('emailSignin');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const showPasswordCheckbox = document.getElementById('showPassword');
-        const messageDiv = document.getElementById('message');
+        window.app = { auth, db, googleProvider }; // expose for inline handlers
 
-        // Show password toggle
-        showPasswordCheckbox.addEventListener('change', (e) => {
-            passwordInput.type = e.target.checked ? 'text' : 'password';
-        });
-
-        // Helper: Create/update user document in Firestore
-        async function ensureUserDocument(user, role = 'user') {
-            const userRef = doc(db, 'users', user.uid);
-            const userSnap = await getDoc(userRef);
-            if (!userSnap.exists()) {
+        // Helper: create user document if not exists (with default values)
+        async function createUserDocIfNeeded(user, role = 'user') {
+            const userRef = doc(db, "users", user.uid);
+            const snap = await getDoc(userRef);
+            if (!snap.exists()) {
                 await setDoc(userRef, {
                     email: user.email,
                     displayName: user.displayName || user.email.split('@')[0],
-                    photoURL: user.photoURL || null,
                     balance: 0,
                     totalInvested: 0,
                     totalWithdrawn: 0,
                     totalProfit: 0,
                     status: 'active',
                     role: role,
-                    createdAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
+                    createdAt: serverTimestamp()
                 });
-            } else {
-                // Optionally update last login
-                await setDoc(userRef, { updatedAt: serverTimestamp() }, { merge: true });
             }
+            // fetch role from existing doc (in case already existed)
+            const freshSnap = await getDoc(userRef);
+            return freshSnap.data()?.role || 'user';
         }
 
-        // Redirect based on role
+        // redirect based on role
         async function redirectToDashboard(user) {
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
-            const role = userDoc.exists() ? userDoc.data().role : 'user';
-            window.location.href = role === 'admin' ? 'admin-dashboards.html' : 'user-dashboards.html';
+            const userRef = doc(db, "users", user.uid);
+            const snap = await getDoc(userRef);
+            let role = 'user';
+            if (snap.exists()) role = snap.data().role;
+            else role = 'user'; // fallback, but doc should be created after login
+            if (role === 'admin') {
+                window.location.href = "admin-dashboards.html";
+            } else {
+                window.location.href = "user-dashboards.html";
+            }
         }
 
-        // Google Sign-In
-        googleBtn.addEventListener('click', async () => {
+        // UI helpers
+        function showMessage(msg, isError = false) {
+            const container = document.getElementById('messageContainer');
+            if (!container) return;
+            container.innerHTML = `<div class="p-3 rounded-lg ${isError ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}">${msg}</div>`;
+            setTimeout(() => { if(container) container.innerHTML = ''; }, 4000);
+        }
+
+        // ---- Email/Password Sign Up ----
+        window.handleSignUp = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (!email || !password) return showMessage("Please fill email & password", true);
             try {
-                const result = await signInWithPopup(auth, provider);
+                const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCred.user;
+                await createUserDocIfNeeded(user, 'user');
+                showMessage("Account created! Redirecting...");
+                setTimeout(() => redirectToDashboard(user), 1500);
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        // ---- Email/Password Sign In ----
+        window.handleSignIn = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (!email || !password) return showMessage("Enter email & password", true);
+            try {
+                const userCred = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCred.user;
+                // ensure user doc exists (just in case)
+                await createUserDocIfNeeded(user);
+                showMessage("Login successful! Redirecting...");
+                setTimeout(() => redirectToDashboard(user), 1200);
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        // ---- Google Sign In ----
+        window.handleGoogleSignIn = async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
                 const user = result.user;
-                await ensureUserDocument(user, 'user'); // new users get role 'user'
-                await redirectToDashboard(user);
-            } catch (error) {
-                messageDiv.innerText = 'Google Sign-In failed: ' + error.message;
+                await createUserDocIfNeeded(user);
+                showMessage("Google sign-in success! Redirecting...");
+                setTimeout(() => redirectToDashboard(user), 1200);
+            } catch (err) {
+                showMessage(err.message, true);
             }
-        });
+        };
 
-        // Email Sign-Up
-        emailSignupBtn.addEventListener('click', async () => {
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
-            if (!email || !password) {
-                messageDiv.innerText = 'Please enter email and password.';
-                return;
-            }
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-                await ensureUserDocument(user, 'user');
-                await redirectToDashboard(user);
-            } catch (error) {
-                messageDiv.innerText = 'Sign-up failed: ' + error.message;
-            }
-        });
-
-        // Email Sign-In
-        emailSigninBtn.addEventListener('click', async () => {
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
-            if (!email || !password) {
-                messageDiv.innerText = 'Please enter email and password.';
-                return;
-            }
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-                await redirectToDashboard(user);
-            } catch (error) {
-                messageDiv.innerText = 'Sign-in failed: ' + error.message;
-            }
-        });
-
-        // If already logged in, go to dashboard
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                await redirectToDashboard(user);
-            }
-        });
+        // toggle password visibility
+        window.togglePassword = () => {
+            const pwdField = document.getElementById('password');
+            const type = pwdField.getAttribute('type') === 'password' ? 'text' : 'password';
+            pwdField.setAttribute('type', type);
+        };
     </script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 class="text-2xl font-bold text-center mb-6">Investment Platform</h1>
+<body class="bg-gradient-to-br from-slate-900 to-indigo-900 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white">UrbanPay</h1>
+            <p class="text-indigo-200 mt-2">Short-term investment · Daily returns</p>
+        </div>
+
+        <div id="messageContainer" class="mb-4"></div>
+
         <div class="space-y-4">
-            <button id="googleSignIn" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
+            <input type="email" id="email" placeholder="Email address" class="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder:text-indigo-200 border border-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <div class="relative">
+                <input type="password" id="password" placeholder="Password" class="w-full px-4 py-3 rounded-xl bg-white/20 text-white placeholder:text-indigo-200 border border-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <button type="button" onclick="togglePassword()" class="absolute right-3 top-3 text-indigo-200 text-sm">👁️</button>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="handleSignIn()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl transition">Login</button>
+                <button onclick="handleSignUp()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-xl transition">Sign Up</button>
+            </div>
+            <div class="relative flex items-center my-4">
+                <div class="flex-grow border-t border-white/30"></div>
+                <span class="mx-4 text-indigo-200 text-sm">OR</span>
+                <div class="flex-grow border-t border-white/30"></div>
+            </div>
+            <button onclick="handleGoogleSignIn()" class="w-full bg-white text-gray-800 font-semibold py-2 rounded-xl shadow-md hover:bg-gray-100 transition flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                 Sign in with Google
             </button>
-            <div class="relative my-4">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-gray-300"></div>
-                </div>
-                <div class="relative flex justify-center text-sm">
-                    <span class="bg-white px-2 text-gray-500">Or use email</span>
-                </div>
-            </div>
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" id="email" class="mt-1 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" id="password" class="mt-1 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                <div class="mt-1 flex items-center">
-                    <input type="checkbox" id="showPassword" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                    <label for="showPassword" class="ml-2 text-sm text-gray-600">Show password</label>
-                </div>
-            </div>
-            <div class="flex space-x-3">
-                <button id="emailSignup" class="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">Sign Up</button>
-                <button id="emailSignin" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Sign In</button>
-            </div>
-            <div id="message" class="text-red-500 text-sm text-center mt-2"></div>
         </div>
+        <p class="text-center text-indigo-200 text-sm mt-6">Secure & regulated investment platform</p>
     </div>
 </body>
 </html>
