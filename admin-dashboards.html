@@ -2,13 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>UrbanPay • Admin Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for better UX */
+        .overflow-y-auto::-webkit-scrollbar { width: 6px; }
+        .overflow-y-auto::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .overflow-y-auto::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+    </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, collection, query, where, orderBy, addDoc, updateDoc, deleteDoc, runTransaction, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, collection, query, where, orderBy, addDoc, updateDoc, deleteDoc, runTransaction, serverTimestamp, Timestamp, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
@@ -33,6 +39,7 @@
         const plansListDiv = document.getElementById('plansList');
         const paymentLinksListDiv = document.getElementById('paymentLinksList');
         const investmentsListDiv = document.getElementById('investmentsList');
+        const pendingDepositsDiv = document.getElementById('pendingDeposits');
         const messageBox = document.getElementById('messageBox');
 
         function showMessage(msg, isError = false) {
@@ -53,7 +60,7 @@
             return snap.exists() && snap.data().role === 'admin';
         }
 
-        // ---------- 1. WITHDRAWALS (two‑step: approve → mark paid) ----------
+        // ---------- 1. WITHDRAWALS (unchanged) ----------
         async function loadPendingWithdrawals() {
             const q = query(collection(db, "withdrawals"), where("status", "==", "pending"), orderBy("createdAt", "desc"));
             const snap = await getDocs(q);
@@ -84,9 +91,8 @@
 
         window.approveWithdrawalStep = async (withdrawalId) => {
             try {
-                const ref = doc(db, "withdrawals", withdrawalId);
-                await updateDoc(ref, { status: 'approved' });
-                showMessage("Withdrawal approved. Now you can mark it as paid.");
+                await updateDoc(doc(db, "withdrawals", withdrawalId), { status: 'approved' });
+                showMessage("Withdrawal approved. Now mark as paid.");
                 loadPendingWithdrawals();
                 loadApprovedWithdrawals();
             } catch (err) {
@@ -96,8 +102,7 @@
 
         window.rejectWithdrawal = async (withdrawalId) => {
             try {
-                const ref = doc(db, "withdrawals", withdrawalId);
-                await updateDoc(ref, { status: 'rejected' });
+                await updateDoc(doc(db, "withdrawals", withdrawalId), { status: 'rejected' });
                 showMessage("Withdrawal rejected.");
                 loadPendingWithdrawals();
             } catch (err) {
@@ -153,7 +158,7 @@
                         createdAt: serverTimestamp()
                     });
                 });
-                showMessage("Withdrawal marked as PAID, balance deducted.");
+                showMessage("Withdrawal marked as PAID.");
                 loadApprovedWithdrawals();
                 loadPendingWithdrawals();
                 loadUsers();
@@ -162,7 +167,100 @@
             }
         };
 
-        // ---------- 2. USER MANAGEMENT: adjust wallet, freeze, delete, payment links ----------
+        // ---------- 2. DEPOSIT REQUESTS (new) ----------
+        async function loadPendingDeposits() {
+            const q = query(collection(db, "deposits"), where("status", "==", "pending"), orderBy("createdAt", "desc"));
+            const snap = await getDocs(q);
+            pendingDepositsDiv.innerHTML = '';
+            if (snap.empty) {
+                pendingDepositsDiv.innerHTML = '<div class="text-gray-500">No pending deposit requests</div>';
+                return;
+            }
+            for (const docSnap of snap.docs) {
+                const d = docSnap.data();
+                const userSnap = await getDoc(doc(db, "users", d.userId));
+                const userEmail = userSnap.exists() ? userSnap.data().email : 'Unknown';
+                const card = document.createElement('div');
+                card.className = "border rounded-lg p-4 mb-3 bg-white shadow-sm";
+                card.innerHTML = `
+                    <div><span class="font-semibold">User:</span> ${userEmail}</div>
+                    <div><span class="font-semibold">Amount:</span> $${d.amount}</div>
+                    <div><span class="font-semibold">Method:</span> ${d.method || 'Manual Report'}</div>
+                    ${d.transactionId ? `<div><span class="font-semibold">Tx ID:</span> ${d.transactionId}</div>` : ''}
+                    ${d.message ? `<div><span class="font-semibold">Message:</span> ${d.message}</div>` : ''}
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="approveDeposit('${docSnap.id}', '${d.userId}', ${d.amount})" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">✅ Approve & Credit</button>
+                        <button onclick="rejectDeposit('${docSnap.id}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">❌ Reject</button>
+                    </div>
+                `;
+                pendingDepositsDiv.appendChild(card);
+            }
+        }
+
+        window.approveDeposit = async (depositId, userId, amount) => {
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const userRef = doc(db, "users", userId);
+                    const depositRef = doc(db, "deposits", depositId);
+                    const userSnap = await transaction.get(userRef);
+                    if (!userSnap.exists()) throw new Error("User not found");
+                    const user = userSnap.data();
+                    // Credit user balance
+                    transaction.update(userRef, { balance: (user.balance || 0) + amount });
+                    // Mark deposit as completed
+                    transaction.update(depositRef, { status: 'completed' });
+                    // Create transaction record
+                    const transRef = doc(collection(db, "transactions"));
+                    transaction.set(transRef, {
+                        userId: userId,
+                        type: 'deposit',
+                        amount: amount,
+                        status: 'completed',
+                        description: 'Deposit approved by admin',
+                        createdAt: serverTimestamp()
+                    });
+                    // Referral bonus: if user has referrer, give 10% to referrer
+                    if (user.referrerId) {
+                        const referrerRef = doc(db, "users", user.referrerId);
+                        const referrerSnap = await transaction.get(referrerRef);
+                        if (referrerSnap.exists()) {
+                            const bonus = amount * 0.10;
+                            transaction.update(referrerRef, {
+                                balance: increment(bonus),
+                                totalReferralBonus: increment(bonus)
+                            });
+                            // Record bonus transaction for referrer
+                            const bonusTransRef = doc(collection(db, "transactions"));
+                            transaction.set(bonusTransRef, {
+                                userId: user.referrerId,
+                                type: 'referral_bonus',
+                                amount: bonus,
+                                status: 'completed',
+                                description: `10% bonus from referral deposit ($${amount})`,
+                                createdAt: serverTimestamp()
+                            });
+                        }
+                    }
+                });
+                showMessage(`Deposit of $${amount} approved and credited. Referral bonus applied if any.`);
+                loadPendingDeposits();
+                loadUsers();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        window.rejectDeposit = async (depositId) => {
+            try {
+                await updateDoc(doc(db, "deposits", depositId), { status: 'rejected' });
+                showMessage("Deposit request rejected.");
+                loadPendingDeposits();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        // ---------- 3. USER MANAGEMENT (enhanced) ----------
         async function loadUsers() {
             const q = query(collection(db, "users"));
             const snap = await getDocs(q);
@@ -176,7 +274,11 @@
                 row.innerHTML = `
                     <div class="flex-1 min-w-[200px]">
                         <span class="font-medium">${user.email}</span><br>
-                        <span class="text-sm text-gray-500">Balance: $${user.balance?.toFixed(2) || '0.00'} | Role: ${user.role}</span>
+                        <span class="text-sm text-gray-500">
+                            Balance: $${user.balance?.toFixed(2) || '0.00'} | Role: ${user.role}<br>
+                            Referral code: ${user.referralCode || 'N/A'} | Referrer: ${user.referrerId ? 'Yes' : 'No'}<br>
+                            Total referral bonus: $${(user.totalReferralBonus || 0).toFixed(2)}
+                        </span>
                         ${isFrozen ? '<span class="ml-2 text-xs bg-gray-300 px-1 rounded">❄️ Frozen</span>' : ''}
                     </div>
                     <div class="flex flex-wrap gap-2 items-center">
@@ -249,26 +351,22 @@
         }
 
         window.deleteUserAccount = async (userId) => {
-            if (!confirm("⚠️ PERMANENT: delete user and all related data (investments, withdrawals, transactions, payment links). This cannot be undone.")) return;
+            if (!confirm("⚠️ PERMANENT: delete user and all related data. This cannot be undone.")) return;
             try {
-                // Delete subcollections manually (Firestore client can't delete subcollections directly, but we delete known docs)
-                const investmentsSnap = await getDocs(query(collection(db, "investments"), where("userId", "==", userId)));
-                investmentsSnap.forEach(docSnap => deleteDoc(docSnap.ref));
-                const withdrawalsSnap = await getDocs(query(collection(db, "withdrawals"), where("userId", "==", userId)));
-                withdrawalsSnap.forEach(docSnap => deleteDoc(docSnap.ref));
-                const transactionsSnap = await getDocs(query(collection(db, "transactions"), where("userId", "==", userId)));
-                transactionsSnap.forEach(docSnap => deleteDoc(docSnap.ref));
-                const linksSnap = await getDocs(query(collection(db, "paymentLinks"), where("userId", "==", userId)));
-                linksSnap.forEach(docSnap => deleteDoc(docSnap.ref));
+                const collections = ['investments', 'withdrawals', 'transactions', 'paymentLinks', 'deposits'];
+                for (const col of collections) {
+                    const snap = await getDocs(query(collection(db, col), where("userId", "==", userId)));
+                    snap.forEach(docSnap => deleteDoc(docSnap.ref));
+                }
                 await deleteDoc(doc(db, "users", userId));
-                showMessage("User and all related data deleted.");
+                showMessage("User and all data deleted.");
                 loadUsers();
             } catch (err) {
                 showMessage(err.message, true);
             }
         };
 
-        // ---------- 3. PAYMENT LINKS (for deposits) ----------
+        // ---------- 4. PAYMENT LINKS ----------
         window.showPaymentLinkModal = async (userId) => {
             const amount = prompt("Enter deposit amount for this payment link:", "100");
             if (!amount) return;
@@ -281,18 +379,15 @@
             try {
                 const linkId = Math.random().toString(36).substring(2, 12);
                 const expiresAt = new Date();
-                expiresAt.setDate(expiresAt.getDate() + 3); // 3 days validity
+                expiresAt.setDate(expiresAt.getDate() + 3);
                 await addDoc(collection(db, "paymentLinks"), {
-                    userId: userId,
-                    amount: amount,
-                    status: 'active',
-                    linkId: linkId,
+                    userId, amount, status: 'active', linkId,
                     createdAt: serverTimestamp(),
                     expiresAt: Timestamp.fromDate(expiresAt),
                     description: `Deposit link $${amount}`
                 });
-                const linkUrl = `${window.location.origin}/pay.html?link=${linkId}`; // placeholder
-                showMessage(`Payment link created: ${linkUrl} (copy & share)`, false);
+                const linkUrl = `${window.location.origin}/pay.html?link=${linkId}`;
+                showMessage(`Payment link created: ${linkUrl}`, false);
                 loadPaymentLinks();
             } catch (err) {
                 showMessage(err.message, true);
@@ -313,13 +408,9 @@
                 const card = document.createElement('div');
                 card.className = "border rounded p-2 mb-2 bg-white flex justify-between items-center flex-wrap";
                 card.innerHTML = `
-                    <div>
-                        <div><strong>${userEmail}</strong> - $${link.amount}</div>
-                        <div class="text-xs">Status: ${link.status} | Link: ${link.linkId}</div>
-                    </div>
-                    <div class="flex gap-1">
-                        <button onclick="revokePaymentLink('${docSnap.id}')" class="bg-red-500 text-white px-2 py-1 text-xs rounded">Revoke</button>
-                    </div>
+                    <div><div><strong>${userEmail}</strong> - $${link.amount}</div>
+                    <div class="text-xs">Status: ${link.status} | Link: ${link.linkId}</div></div>
+                    <div><button onclick="revokePaymentLink('${docSnap.id}')" class="bg-red-500 text-white px-2 py-1 text-xs rounded">Revoke</button></div>
                 `;
                 paymentLinksListDiv.appendChild(card);
             }
@@ -335,144 +426,41 @@
             }
         };
 
-        // ---------- 4. INVESTMENT RETURNS (6-24 hours auto-like manual trigger) ----------
+        // ---------- 5. INVESTMENT RETURNS (updated for time-based) ----------
         async function loadInvestments() {
             const snap = await getDocs(query(collection(db, "investments"), orderBy("createdAt", "desc")));
             investmentsListDiv.innerHTML = '';
             if (snap.empty) {
-                investmentsListDiv.innerHTML = '<div class="text-gray-500">No active investments found.</div>';
+                investmentsListDiv.innerHTML = '<div class="text-gray-500">No investments found.</div>';
                 return;
             }
             for (const docSnap of snap.docs) {
                 const inv = docSnap.data();
                 const userSnap = await getDoc(doc(db, "users", inv.userId));
                 const userEmail = userSnap.exists() ? userSnap.data().email : 'Unknown';
-                const lastProfit = inv.lastProfitDate ? inv.lastProfitDate.toDate() : null;
                 const now = new Date();
-                const hoursSince = lastProfit ? Math.floor((now - lastProfit) / (1000 * 3600)) : 999;
-                const canReturn = (!inv.completed && inv.status === 'active' && hoursSince >= (inv.returnIntervalHours || 6));
+                const endDate = inv.endDate?.toDate();
+                const isCompleted = inv.completed === true || (endDate && now >= endDate);
                 const card = document.createElement('div');
                 card.className = "border rounded p-3 mb-2 bg-gray-50";
                 card.innerHTML = `
                     <div class="flex justify-between flex-wrap">
                         <div><strong>${userEmail}</strong> | Plan: ${inv.planName || 'N/A'} | Amount: $${inv.amount}</div>
-                        <div>Daily Profit: ${inv.dailyProfitPercent}% | Duration: ${inv.durationDays} days</div>
+                        <div>Profit: ${inv.profitPercent}% | Return hours: ${inv.returnHours || 'N/A'}</div>
                     </div>
-                    <div class="text-sm text-gray-600">Started: ${inv.createdAt?.toDate().toLocaleDateString()} | Last profit: ${lastProfit ? lastProfit.toLocaleString() : 'Never'}</div>
-                    <div class="mt-2 flex gap-2">
-                        <button onclick="processSingleInvestment('${docSnap.id}')" ${canReturn ? '' : 'disabled'} class="bg-green-600 text-white px-3 py-1 rounded text-sm ${!canReturn ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'}">💸 Credit Profit (if ready)</button>
-                        <button onclick="forceCompleteInvestment('${docSnap.id}')" class="bg-orange-600 text-white px-3 py-1 rounded text-sm">✅ Mark Completed & Pay Final</button>
+                    <div class="text-sm text-gray-600">
+                        Started: ${inv.startDate?.toDate().toLocaleString() || 'N/A'} | 
+                        End: ${endDate ? endDate.toLocaleString() : 'N/A'}
+                    </div>
+                    <div class="text-xs ${isCompleted ? 'text-green-600' : 'text-yellow-600'}">
+                        ${isCompleted ? 'Completed' : 'Active'}
                     </div>
                 `;
                 investmentsListDiv.appendChild(card);
             }
         }
 
-        window.processSingleInvestment = async (investmentId) => {
-            try {
-                await processReturnForInvestment(investmentId);
-                showMessage("Profit credited (if eligible).");
-                loadInvestments();
-                loadUsers(); // refresh balances
-            } catch (err) {
-                showMessage(err.message, true);
-            }
-        };
-
-        async function processReturnForInvestment(investmentId) {
-            await runTransaction(db, async (transaction) => {
-                const invRef = doc(db, "investments", investmentId);
-                const invSnap = await transaction.get(invRef);
-                if (!invSnap.exists()) throw new Error("Investment not found");
-                const inv = invSnap.data();
-                if (inv.completed) throw new Error("Investment already completed");
-                if (inv.status !== 'active') throw new Error("Investment not active");
-
-                const lastProfit = inv.lastProfitDate ? inv.lastProfitDate.toDate() : null;
-                const now = new Date();
-                const intervalHours = inv.returnIntervalHours || 6;
-                if (lastProfit && (now - lastProfit) / (1000 * 3600) < intervalHours) {
-                    throw new Error(`Wait ${intervalHours} hours between returns`);
-                }
-                const profitAmount = (inv.amount * inv.dailyProfitPercent) / 100;
-                const userRef = doc(db, "users", inv.userId);
-                const userSnap = await transaction.get(userRef);
-                if (!userSnap.exists()) throw new Error("User missing");
-                const newBalance = (userSnap.data().balance || 0) + profitAmount;
-                transaction.update(userRef, { balance: newBalance });
-                transaction.update(invRef, {
-                    lastProfitDate: Timestamp.fromDate(now),
-                    totalProfitPaid: (inv.totalProfitPaid || 0) + profitAmount
-                });
-                const transRef = doc(collection(db, "transactions"));
-                transaction.set(transRef, {
-                    userId: inv.userId,
-                    type: 'investment_return',
-                    amount: profitAmount,
-                    status: 'completed',
-                    description: `Profit from ${inv.planName} investment`,
-                    createdAt: serverTimestamp()
-                });
-            });
-        }
-
-        window.forceCompleteInvestment = async (investmentId) => {
-            if (!confirm("Complete this investment? Final profit will be credited based on remaining days.")) return;
-            try {
-                await runTransaction(db, async (transaction) => {
-                    const invRef = doc(db, "investments", investmentId);
-                    const invSnap = await transaction.get(invRef);
-                    if (!invSnap.exists()) throw new Error("No investment");
-                    const inv = invSnap.data();
-                    if (inv.completed) throw new Error("Already completed");
-                    const startDate = inv.createdAt.toDate();
-                    const daysActive = Math.floor((new Date() - startDate) / (1000 * 3600 * 24));
-                    const expectedDays = inv.durationDays;
-                    let finalProfit = 0;
-                    if (daysActive < expectedDays) {
-                        finalProfit = (inv.amount * inv.dailyProfitPercent / 100) * (expectedDays - daysActive);
-                    }
-                    const userRef = doc(db, "users", inv.userId);
-                    const userSnap = await transaction.get(userRef);
-                    const newBalance = (userSnap.data().balance || 0) + finalProfit;
-                    transaction.update(userRef, { balance: newBalance });
-                    transaction.update(invRef, { completed: true, status: 'completed', finalProfitPaid: finalProfit });
-                    if (finalProfit > 0) {
-                        const transRef = doc(collection(db, "transactions"));
-                        transaction.set(transRef, {
-                            userId: inv.userId,
-                            type: 'investment_maturity',
-                            amount: finalProfit,
-                            status: 'completed',
-                            description: `Maturity bonus for ${inv.planName}`,
-                            createdAt: serverTimestamp()
-                        });
-                    }
-                });
-                showMessage("Investment marked completed, final profit added.");
-                loadInvestments();
-                loadUsers();
-            } catch (err) {
-                showMessage(err.message, true);
-            }
-        };
-
-        window.processAllReturns = async () => {
-            showMessage("Processing all eligible investment returns...");
-            const investmentsSnap = await getDocs(query(collection(db, "investments"), where("completed", "==", false), where("status", "==", "active")));
-            let processed = 0;
-            for (const docSnap of investmentsSnap.docs) {
-                try {
-                    await processReturnForInvestment(docSnap.id);
-                    processed++;
-                } catch (e) { console.warn(e); }
-            }
-            showMessage(`Processed returns for ${processed} investments.`);
-            loadInvestments();
-            loadUsers();
-        };
-
-        // ---------- 5. PLANS MANAGEMENT (unchanged but enhanced) ----------
+        // ---------- 6. PLANS MANAGEMENT ----------
         async function loadPlans() {
             const snap = await getDocs(collection(db, "plans"));
             plansListDiv.innerHTML = '';
@@ -481,10 +469,8 @@
                 const card = document.createElement('div');
                 card.className = "border rounded p-3 mb-2 bg-gray-50 flex justify-between items-center flex-wrap";
                 card.innerHTML = `
-                    <div>
-                        <span class="font-bold">${plan.name}</span> - ${plan.dailyProfit}% daily / ${plan.duration} days<br>
-                        <span class="text-sm">$${plan.minAmount} – $${plan.maxAmount} | ${plan.status}</span>
-                    </div>
+                    <div><span class="font-bold">${plan.name}</span> - ${plan.dailyProfit}% daily / ${plan.duration} days<br>
+                    <span class="text-sm">$${plan.minAmount} – $${plan.maxAmount} | ${plan.status}</span></div>
                     <button onclick="deletePlan('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
                 `;
                 plansListDiv.appendChild(card);
@@ -529,20 +515,35 @@
             }
         });
 
-        // ---------- 6. GLOBAL SETTINGS (investment return interval) ----------
+        // ---------- 7. GLOBAL SETTINGS ----------
         async function loadGlobalSettings() {
             const settingsRef = doc(db, "settings", "global");
             const snap = await getDoc(settingsRef);
-            let interval = 6;
-            if (snap.exists()) interval = snap.data().investmentReturnHours || 6;
-            document.getElementById('returnIntervalInput').value = interval;
+            if (snap.exists()) {
+                document.getElementById('returnIntervalInput').value = snap.data().investmentReturnHours || 6;
+                document.getElementById('depositLinkInput').value = snap.data().depositLink || "https://lipwa.com";
+            } else {
+                document.getElementById('depositLinkInput').value = "https://lipwa.com";
+            }
         }
+
         window.updateReturnInterval = async () => {
             const hours = parseInt(document.getElementById('returnIntervalInput').value);
             if (isNaN(hours) || hours < 1) return showMessage("Minimum 1 hour", true);
             try {
                 await setDoc(doc(db, "settings", "global"), { investmentReturnHours: hours }, { merge: true });
                 showMessage(`Return interval updated to ${hours} hours.`);
+            } catch (err) {
+                showMessage(err.message, true);
+            }
+        };
+
+        window.updateDepositLink = async () => {
+            const link = document.getElementById('depositLinkInput').value.trim();
+            if (!link) return showMessage("Link cannot be empty", true);
+            try {
+                await setDoc(doc(db, "settings", "global"), { depositLink: link }, { merge: true });
+                showMessage("Deposit link updated.");
             } catch (err) {
                 showMessage(err.message, true);
             }
@@ -563,6 +564,7 @@
             currentAdmin = user;
             loadPendingWithdrawals();
             loadApprovedWithdrawals();
+            loadPendingDeposits();
             loadUsers();
             loadPlans();
             loadPaymentLinks();
@@ -583,57 +585,79 @@
         <div class="grid md:grid-cols-2 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-2xl font-semibold mb-4">⏳ Pending Withdrawals</h2>
-                <div id="pendingWithdrawals"></div>
+                <div id="pendingWithdrawals" class="max-h-96 overflow-y-auto"></div>
             </div>
             <div class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-2xl font-semibold mb-4">✅ Approved (waiting for payment)</h2>
-                <div id="approvedWithdrawals"></div>
+                <div id="approvedWithdrawals" class="max-h-96 overflow-y-auto"></div>
             </div>
         </div>
 
-        <!-- Users Management (full actions) -->
+        <!-- Deposit Requests -->
         <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <h2 class="text-2xl font-semibold mb-4">👥 All Users – Adjust Wallet / Freeze / Delete / Payment Link</h2>
-            <div id="usersList"></div>
+            <h2 class="text-2xl font-semibold mb-4">💰 Pending Deposit Requests (Manual Reports)</h2>
+            <div id="pendingDeposits" class="max-h-96 overflow-y-auto"></div>
         </div>
 
-        <!-- Payment Links & Investment Returns -->
+        <!-- Users Management -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+            <h2 class="text-2xl font-semibold mb-4">👥 All Users – Adjust Wallet / Freeze / Delete / Payment Link</h2>
+            <div id="usersList" class="max-h-96 overflow-y-auto"></div>
+        </div>
+
+        <!-- Payment Links & Investment Returns & Global Settings -->
         <div class="grid md:grid-cols-2 gap-6 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-2xl font-semibold mb-4">🔗 Payment Links (deposit)</h2>
-                <div id="paymentLinksList" class="mb-2"></div>
+                <div id="paymentLinksList" class="mb-2 max-h-64 overflow-y-auto"></div>
                 <p class="text-xs text-gray-500">Use "Payment Link" button per user to create a deposit link.</p>
             </div>
             <div class="bg-white p-6 rounded-xl shadow-md">
-                <h2 class="text-2xl font-semibold mb-4">📈 Investments & Returns (6-24h interval)</h2>
-                <div class="mb-3 flex gap-2 items-center">
-                    <label class="text-sm">Return interval (hours):</label>
-                    <input type="number" id="returnIntervalInput" class="border p-1 w-20 rounded" value="6">
-                    <button onclick="updateReturnInterval()" class="bg-gray-700 text-white px-3 py-1 rounded text-sm">Set</button>
-                    <button onclick="processAllReturns()" class="bg-blue-700 text-white px-3 py-1 rounded text-sm">🔄 Process All Eligible</button>
-                </div>
-                <div id="investmentsList" class="max-h-96 overflow-y-auto"></div>
+                <h2 class="text-2xl font-semibold mb-4">📈 Investments (time-based)</h2>
+                <div id="investmentsList" class="max-h-64 overflow-y-auto"></div>
             </div>
         </div>
 
-        <!-- Investment Plans -->
-        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <h2 class="text-2xl font-semibold mb-4">📦 Investment Plans</h2>
-            <div id="plansList" class="mb-4"></div>
-            <h3 class="text-xl font-semibold mt-6 mb-3">➕ Add New Plan</h3>
-            <form id="addPlanForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="text" id="planName" placeholder="Plan Name" class="border p-2 rounded" required>
-                <input type="text" id="planDesc" placeholder="Description" class="border p-2 rounded">
-                <input type="number" id="minAmount" step="0.01" placeholder="Min Amount" class="border p-2 rounded" required>
-                <input type="number" id="maxAmount" step="0.01" placeholder="Max Amount" class="border p-2 rounded" required>
-                <input type="number" id="duration" placeholder="Duration (days)" class="border p-2 rounded" required>
-                <input type="number" id="dailyProfit" step="0.01" placeholder="Daily Profit (%)" class="border p-2 rounded" required>
-                <select id="planStatus" class="border p-2 rounded">
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
-                <button type="submit" class="bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Create Plan</button>
-            </form>
+        <!-- Global Settings & Investment Plans -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">⚙️ Global Settings</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block font-medium mb-1">Deposit Link (Lipwa URL)</label>
+                        <div class="flex gap-2">
+                            <input type="url" id="depositLinkInput" class="flex-1 border rounded p-2">
+                            <button onclick="updateDepositLink()" class="bg-indigo-600 text-white px-4 py-2 rounded">Save</button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">This link appears on user's Add Funds page.</p>
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Investment Return Interval (hours)</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="returnIntervalInput" class="border p-2 w-24 rounded" value="6">
+                            <button onclick="updateReturnInterval()" class="bg-gray-700 text-white px-3 py-1 rounded">Set</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">📦 Investment Plans</h2>
+                <div id="plansList" class="mb-4 max-h-48 overflow-y-auto"></div>
+                <h3 class="text-xl font-semibold mt-4 mb-3">➕ Add New Plan</h3>
+                <form id="addPlanForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="planName" placeholder="Plan Name" class="border p-2 rounded" required>
+                    <input type="text" id="planDesc" placeholder="Description" class="border p-2 rounded">
+                    <input type="number" id="minAmount" step="0.01" placeholder="Min Amount" class="border p-2 rounded" required>
+                    <input type="number" id="maxAmount" step="0.01" placeholder="Max Amount" class="border p-2 rounded" required>
+                    <input type="number" id="duration" placeholder="Duration (days)" class="border p-2 rounded" required>
+                    <input type="number" id="dailyProfit" step="0.01" placeholder="Daily Profit (%)" class="border p-2 rounded" required>
+                    <select id="planStatus" class="border p-2 rounded">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <button type="submit" class="bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Create Plan</button>
+                </form>
+            </div>
         </div>
     </div>
 </body>
