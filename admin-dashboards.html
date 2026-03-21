@@ -26,7 +26,7 @@
                     </div>
                     <span class="font-bold text-xl text-gray-800">Urban<span class="text-indigo-600">Dollar</span> Admin</span>
                 </div>
-                <button onclick="logout()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Logout</button>
+                <button onclick="window.logout()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Logout</button>
             </div>
         </div>
     </nav>
@@ -35,13 +35,16 @@
         <!-- Sidebar -->
         <div class="md:w-64 bg-white shadow-sm min-h-screen p-4">
             <div class="space-y-2">
-                <button onclick="showTab('stats')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Dashboard</button>
-                <button onclick="showTab('users')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Manage Users</button>
-                <button onclick="showTab('products')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Manage Products</button>
-                <button onclick="showTab('withdrawals')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Withdrawals</button>
-                <button onclick="showTab('giftcodes')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Gift Codes</button>
-                <button onclick="showTab('tasks')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Daily Task Settings</button>
-                <button onclick="showTab('settings')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Settings</button>
+                <button onclick="window.showTab('stats')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Dashboard</button>
+                <button onclick="window.showTab('users')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Manage Users</button>
+                <button onclick="window.showTab('products')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Manage Products</button>
+                <button onclick="window.showTab('withdrawals')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Withdrawals</button>
+                <button onclick="window.showTab('giftcodes')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Gift Codes</button>
+                <button onclick="window.showTab('tasks')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Daily Task Settings</button>
+                <button onclick="window.showTab('contacts')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Contact Messages</button>
+                <button onclick="window.showTab('deposits')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Deposit Requests</button>
+                <button onclick="window.showTab('referralBonuses')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Referral Bonuses</button>
+                <button onclick="window.showTab('settings')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Settings</button>
             </div>
         </div>
 
@@ -63,19 +66,28 @@
             <div id="usersTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Manage Users</h2><div id="adminUsersList" class="space-y-4"></div></div>
 
             <!-- Products Tab -->
-            <div id="productsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Manage Products</h2><button onclick="showAddProductForm()" class="mb-4 bg-green-600 text-white px-4 py-2 rounded-lg">Add New Product</button><div id="adminProductsList" class="space-y-4"></div><div id="addProductForm" class="hidden mt-6 bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-bold mb-4">Add Product</h3><div class="space-y-3"><input type="text" id="prodName" placeholder="Name" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodPrice" placeholder="Price (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodDuration" placeholder="Duration (days)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodROI" placeholder="ROI (%)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodDailyIncome" placeholder="Daily Income (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="text" id="prodImageUrl" placeholder="Image URL" class="w-full border rounded-lg px-4 py-2"><button onclick="addProduct()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Product</button><button onclick="hideAddProductForm()" class="ml-2 bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div>
+            <div id="productsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Manage Products</h2><button onclick="window.showAddProductForm()" class="mb-4 bg-green-600 text-white px-4 py-2 rounded-lg">Add New Product</button><div id="adminProductsList" class="space-y-4"></div><div id="addProductForm" class="hidden mt-6 bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-bold mb-4">Add Product</h3><div class="space-y-3"><input type="text" id="prodName" placeholder="Name" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodPrice" placeholder="Price (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodDuration" placeholder="Duration (days)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodROI" placeholder="ROI (%)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodDailyIncome" placeholder="Daily Income (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="text" id="prodImageUrl" placeholder="Image URL" class="w-full border rounded-lg px-4 py-2"><button onclick="window.addProduct()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Product</button><button onclick="window.hideAddProductForm()" class="ml-2 bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div>
 
             <!-- Withdrawals Tab -->
             <div id="withdrawalsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Pending Withdrawals</h2><div id="adminWithdrawalsList" class="space-y-4"></div></div>
 
             <!-- Gift Codes Tab -->
-            <div id="giftcodesTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Gift Codes</h2><div class="bg-white p-6 rounded-xl shadow-sm mb-6"><h3 class="text-lg font-bold mb-4">Generate New Code</h3><div class="space-y-3"><input type="number" id="giftAmount" placeholder="Amount (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="date" id="giftExpiry" class="w-full border rounded-lg px-4 py-2"><input type="number" id="giftMaxUses" placeholder="Max Uses (0 = unlimited)" class="w-full border rounded-lg px-4 py-2"><button onclick="generateGiftCode()" class="bg-purple-600 text-white px-4 py-2 rounded-lg">Generate Code</button></div></div><div id="adminGiftCodesList" class="space-y-4"></div></div>
+            <div id="giftcodesTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Gift Codes</h2><div class="bg-white p-6 rounded-xl shadow-sm mb-6"><h3 class="text-lg font-bold mb-4">Generate New Code</h3><div class="space-y-3"><input type="number" id="giftAmount" placeholder="Amount (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="date" id="giftExpiry" class="w-full border rounded-lg px-4 py-2"><input type="number" id="giftMaxUses" placeholder="Max Uses (0 = unlimited)" class="w-full border rounded-lg px-4 py-2"><button onclick="window.generateGiftCode()" class="bg-purple-600 text-white px-4 py-2 rounded-lg">Generate Code</button></div></div><div id="adminGiftCodesList" class="space-y-4"></div></div>
 
-            <!-- Tasks Tab -->
-            <div id="tasksTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Daily Task Configuration</h2><div class="bg-white p-6 rounded-xl shadow-sm"><div class="space-y-4"><div><label class="block text-gray-700 mb-2">Commission Amount (Ksh)</label><input type="number" id="taskCommissionAdmin" class="w-full border rounded-lg px-4 py-2"></div><div><label class="block text-gray-700 mb-2">Task Status</label><select id="taskStatusAdmin" class="w-full border rounded-lg px-4 py-2"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><button onclick="saveTaskSettings()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Settings</button></div></div></div>
+            <!-- Daily Task Settings Tab -->
+            <div id="tasksTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Daily Task Configuration</h2><div class="bg-white p-6 rounded-xl shadow-sm"><div class="space-y-4"><div><label class="block text-gray-700 mb-2">Commission Amount (Ksh)</label><input type="number" id="taskCommissionAdmin" class="w-full border rounded-lg px-4 py-2"></div><div><label class="block text-gray-700 mb-2">Task Status</label><select id="taskStatusAdmin" class="w-full border rounded-lg px-4 py-2"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><button onclick="window.saveTaskSettings()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Settings</button></div></div></div>
+
+            <!-- Contact Messages Tab -->
+            <div id="contactsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Contact Messages</h2><div id="adminContactsList" class="space-y-4"></div></div>
+
+            <!-- Deposit Requests Tab -->
+            <div id="depositsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Deposit Requests</h2><div id="adminDepositsList" class="space-y-4"></div></div>
+
+            <!-- Referral Bonuses Tab -->
+            <div id="referralBonusesTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Referral Bonus Claims</h2><div id="adminReferralBonusesList" class="space-y-4"></div></div>
 
             <!-- Settings Tab -->
-            <div id="settingsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Platform Settings</h2><div class="bg-white p-6 rounded-xl shadow-sm"><div class="space-y-4"><div><label class="block text-gray-700 mb-2">Referral Bonus Percentage (%)</label><input type="number" id="referralPercentAdmin" class="w-full border rounded-lg px-4 py-2" value="15"></div><button onclick="saveSettings()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Settings</button></div></div></div>
+            <div id="settingsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Platform Settings</h2><div class="bg-white p-6 rounded-xl shadow-sm space-y-4"><div><label class="block text-gray-700 mb-2">Referral Bonus Percentage (%)</label><input type="number" id="referralPercentAdmin" class="w-full border rounded-lg px-4 py-2" value="15"></div><div><label class="block text-gray-700 mb-2">Payment Link (e.g., Lipa Na M-Pesa)</label><input type="url" id="paymentLinkAdmin" class="w-full border rounded-lg px-4 py-2" placeholder="https://..."></div><button onclick="window.saveSettings()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Settings</button></div></div>
         </div>
     </div>
 
@@ -102,6 +114,7 @@
 
         let currentUserId = null;
 
+        // Helper functions
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -114,33 +127,40 @@
             return 'Ksh ' + amount.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
+        // Logout
         async function logout() {
             await signOut(auth);
             window.location.href = 'index.html';
         }
 
-        // Tab switching function
+        // Tab switching
         async function showTab(tab) {
             // Hide all tabs
             document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
             // Show selected tab
             const activeTab = document.getElementById(tab + 'Tab');
             if (activeTab) activeTab.classList.remove('hidden');
-            
             // Update sidebar active state
             document.querySelectorAll('.admin-nav').forEach(btn => btn.classList.remove('bg-indigo-50', 'text-indigo-600'));
-            event.target.classList.add('bg-indigo-50', 'text-indigo-600');
-
-            // Load data for the selected tab
+            // The clicked button is passed via event, but we can't rely on event in module; we'll find by text content? Instead, we'll rely on the fact that the button that called this has class admin-nav; we can select the one with the matching text? Simpler: just add class to all? Better to add a separate active class based on tab name.
+            const buttons = document.querySelectorAll('.admin-nav');
+            const tabNames = ['stats', 'users', 'products', 'withdrawals', 'giftcodes', 'tasks', 'contacts', 'deposits', 'referralBonuses', 'settings'];
+            const idx = tabNames.indexOf(tab);
+            if (idx !== -1) buttons[idx].classList.add('bg-indigo-50', 'text-indigo-600');
+            // Load data
             if (tab === 'stats') await loadAdminStats();
             else if (tab === 'users') await loadAdminUsers();
             else if (tab === 'products') await loadAdminProducts();
             else if (tab === 'withdrawals') await loadAdminWithdrawals();
             else if (tab === 'giftcodes') await loadAdminGiftCodes();
             else if (tab === 'tasks') await loadAdminTaskSettings();
+            else if (tab === 'contacts') await loadAdminContacts();
+            else if (tab === 'deposits') await loadAdminDeposits();
+            else if (tab === 'referralBonuses') await loadAdminReferralBonuses();
+            else if (tab === 'settings') await loadAdminSettings();
         }
 
-        // --- Data Loading Functions ---
+        // Data loading functions
         async function loadAdminStats() {
             const usersSnap = await getDocs(collection(db, 'users'));
             document.getElementById('adminTotalUsers').innerText = usersSnap.size;
@@ -169,20 +189,20 @@
                         <p class="text-sm text-gray-500">${user.email}</p>
                         <p class="text-sm">Balance: ${formatCurrency(user.availableBalance)} | Invested: ${formatCurrency(user.totalInvested)}</p>
                     </div>
-                    <button onclick="editUserBalance('${docSnap.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm">Edit Balance</button>
+                    <button onclick="window.editUserBalance('${docSnap.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm">Edit Balance</button>
                 `;
                 container.appendChild(div);
             });
         }
 
-        window.editUserBalance = async function(uid) {
+        async function editUserBalance(uid) {
             const newBalance = prompt('Enter new available balance (Ksh):');
             if (newBalance !== null && !isNaN(parseFloat(newBalance))) {
                 await updateDoc(doc(db, 'users', uid), { availableBalance: parseFloat(newBalance) });
                 showToast('Balance updated');
                 loadAdminUsers();
             }
-        };
+        }
 
         async function loadAdminProducts() {
             const container = document.getElementById('adminProductsList');
@@ -199,19 +219,19 @@
                         <p>Price: ${formatCurrency(prod.price)} | Daily: ${formatCurrency(prod.dailyIncome)}</p>
                         <p>Status: ${prod.status ? 'Active' : 'Inactive'}</p>
                     </div>
-                    <button onclick="deleteProduct('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
+                    <button onclick="window.deleteProduct('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
                 `;
                 container.appendChild(div);
             });
         }
 
-        window.showAddProductForm = function() {
+        function showAddProductForm() {
             document.getElementById('addProductForm').classList.remove('hidden');
-        };
-        window.hideAddProductForm = function() {
+        }
+        function hideAddProductForm() {
             document.getElementById('addProductForm').classList.add('hidden');
-        };
-        window.addProduct = async function() {
+        }
+        async function addProduct() {
             const name = document.getElementById('prodName').value;
             const price = parseFloat(document.getElementById('prodPrice').value);
             const duration = parseInt(document.getElementById('prodDuration').value);
@@ -227,16 +247,15 @@
             showToast('Product added');
             hideAddProductForm();
             loadAdminProducts();
-            // Clear fields
             ['prodName','prodPrice','prodDuration','prodROI','prodDailyIncome','prodImageUrl'].forEach(id => document.getElementById(id).value = '');
-        };
-        window.deleteProduct = async function(id) {
+        }
+        async function deleteProduct(id) {
             if (confirm('Delete this product?')) {
                 await deleteDoc(doc(db, 'products', id));
                 showToast('Product deleted');
                 loadAdminProducts();
             }
-        };
+        }
 
         async function loadAdminWithdrawals() {
             const container = document.getElementById('adminWithdrawalsList');
@@ -253,8 +272,8 @@
                     <p><strong>Method:</strong> ${w.method}</p>
                     <p><strong>Details:</strong> ${w.accountDetails}</p>
                     <div class="mt-2 flex gap-2">
-                        <button onclick="approveWithdrawal('${docSnap.id}', ${w.amount}, '${w.userId}')" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Approve</button>
-                        <button onclick="rejectWithdrawal('${docSnap.id}', ${w.amount}, '${w.userId}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Reject</button>
+                        <button onclick="window.approveWithdrawal('${docSnap.id}', ${w.amount}, '${w.userId}')" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Approve</button>
+                        <button onclick="window.rejectWithdrawal('${docSnap.id}', ${w.amount}, '${w.userId}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Reject</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -262,7 +281,7 @@
             if (pendingSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No pending withdrawals</p>';
         }
 
-        window.approveWithdrawal = async function(id, amount, userId) {
+        async function approveWithdrawal(id, amount, userId) {
             const batch = writeBatch(db);
             batch.update(doc(db, 'withdrawals', id), { status: 'approved', processedAt: serverTimestamp() });
             batch.update(doc(db, 'users', userId), { pendingBalance: increment(-amount), totalWithdrawn: increment(amount) });
@@ -270,8 +289,8 @@
             showToast('Withdrawal approved');
             loadAdminWithdrawals();
             loadAdminStats();
-        };
-        window.rejectWithdrawal = async function(id, amount, userId) {
+        }
+        async function rejectWithdrawal(id, amount, userId) {
             const batch = writeBatch(db);
             batch.update(doc(db, 'withdrawals', id), { status: 'rejected', processedAt: serverTimestamp() });
             batch.update(doc(db, 'users', userId), { pendingBalance: increment(-amount), availableBalance: increment(amount), totalBalance: increment(amount) });
@@ -279,7 +298,7 @@
             showToast('Withdrawal rejected, funds returned');
             loadAdminWithdrawals();
             loadAdminStats();
-        };
+        }
 
         async function loadAdminGiftCodes() {
             const container = document.getElementById('adminGiftCodesList');
@@ -296,14 +315,14 @@
                         <p>Amount: ${formatCurrency(code.amount)} | Uses: ${code.usedCount || 0}/${code.maxUses || '∞'}</p>
                         <p>Status: ${code.status} | Expiry: ${code.expiryDate ? code.expiryDate.toDate().toLocaleDateString() : 'Never'}</p>
                     </div>
-                    <button onclick="deleteGiftCode('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
+                    <button onclick="window.deleteGiftCode('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
                 `;
                 container.appendChild(div);
             });
             if (codesSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No gift codes</p>';
         }
 
-        window.generateGiftCode = async function() {
+        async function generateGiftCode() {
             const amount = parseFloat(document.getElementById('giftAmount').value);
             const expiry = document.getElementById('giftExpiry').value;
             const maxUses = parseInt(document.getElementById('giftMaxUses').value) || 0;
@@ -320,13 +339,13 @@
             });
             showToast(`Gift code generated: ${code}`);
             loadAdminGiftCodes();
-        };
-        window.deleteGiftCode = async function(code) {
+        }
+        async function deleteGiftCode(code) {
             if (confirm('Delete this gift code?')) {
                 await deleteDoc(doc(db, 'giftCodes', code));
                 loadAdminGiftCodes();
             }
-        };
+        }
 
         async function loadAdminTaskSettings() {
             const taskDoc = await getDoc(doc(db, 'tasks', 'daily'));
@@ -339,7 +358,7 @@
                 document.getElementById('taskStatusAdmin').value = 'active';
             }
         }
-        window.saveTaskSettings = async function() {
+        async function saveTaskSettings() {
             const commission = parseFloat(document.getElementById('taskCommissionAdmin').value);
             const status = document.getElementById('taskStatusAdmin').value;
             await setDoc(doc(db, 'tasks', 'daily'), {
@@ -350,38 +369,163 @@
                 lastReset: serverTimestamp()
             });
             showToast('Task settings saved');
-        };
-        window.saveSettings = async function() {
+        }
+
+        // Contact Messages
+        async function loadAdminContacts() {
+            const container = document.getElementById('adminContactsList');
+            container.innerHTML = '<div class="loader"></div>';
+            const messagesSnap = await getDocs(query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc')));
+            container.innerHTML = '';
+            messagesSnap.forEach(docSnap => {
+                const msg = docSnap.data();
+                const date = msg.createdAt ? msg.createdAt.toDate().toLocaleString() : 'Unknown';
+                const div = document.createElement('div');
+                div.className = 'bg-white p-4 rounded-xl shadow-sm';
+                div.innerHTML = `
+                    <p><strong>From:</strong> ${msg.userName} (${msg.userEmail})</p>
+                    <p><strong>Subject:</strong> ${msg.subject}</p>
+                    <p><strong>Message:</strong> ${msg.message}</p>
+                    <p class="text-sm text-gray-500">${date} - Status: ${msg.status}</p>
+                    <button onclick="window.markMessageRead('${docSnap.id}')" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm">Mark as Read</button>
+                `;
+                container.appendChild(div);
+            });
+            if (messagesSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No messages</p>';
+        }
+        async function markMessageRead(id) {
+            await updateDoc(doc(db, 'contactMessages', id), { status: 'read' });
+            showToast('Message marked as read');
+            loadAdminContacts();
+        }
+
+        // Deposit Requests
+        async function loadAdminDeposits() {
+            const container = document.getElementById('adminDepositsList');
+            container.innerHTML = '<div class="loader"></div>';
+            const requestsSnap = await getDocs(query(collection(db, 'depositRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'desc')));
+            container.innerHTML = '';
+            requestsSnap.forEach(docSnap => {
+                const req = docSnap.data();
+                const date = req.createdAt ? req.createdAt.toDate().toLocaleString() : 'Unknown';
+                const div = document.createElement('div');
+                div.className = 'bg-white p-4 rounded-xl shadow-sm';
+                div.innerHTML = `
+                    <p><strong>User ID:</strong> ${req.userId}</p>
+                    <p><strong>Amount:</strong> ${formatCurrency(req.amount)}</p>
+                    <p><strong>Message:</strong> ${req.message}</p>
+                    <p class="text-sm text-gray-500">${date}</p>
+                    <div class="mt-2 flex gap-2">
+                        <button onclick="window.approveDeposit('${docSnap.id}', ${req.amount}, '${req.userId}')" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Approve</button>
+                        <button onclick="window.rejectDeposit('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Reject</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            if (requestsSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No pending deposit requests</p>';
+        }
+        async function approveDeposit(requestId, amount, userId) {
+            const batch = writeBatch(db);
+            batch.update(doc(db, 'depositRequests', requestId), { status: 'approved', processedAt: serverTimestamp() });
+            const userRef = doc(db, 'users', userId);
+            batch.update(userRef, { availableBalance: increment(amount), totalBalance: increment(amount) });
+            const transRef = doc(collection(db, 'transactions'));
+            batch.set(transRef, {
+                userId: userId,
+                type: 'deposit',
+                amount: amount,
+                status: 'completed',
+                description: 'Deposit approved by admin',
+                timestamp: serverTimestamp()
+            });
+            await batch.commit();
+            showToast(`Deposit of ${formatCurrency(amount)} approved and added to user balance`);
+            loadAdminDeposits();
+            loadAdminStats();
+        }
+        async function rejectDeposit(requestId) {
+            await updateDoc(doc(db, 'depositRequests', requestId), { status: 'rejected', processedAt: serverTimestamp() });
+            showToast('Deposit request rejected');
+            loadAdminDeposits();
+        }
+
+        // Referral Bonuses
+        async function loadAdminReferralBonuses() {
+            const container = document.getElementById('adminReferralBonusesList');
+            container.innerHTML = '<div class="loader"></div>';
+            const claimsSnap = await getDocs(query(collection(db, 'referralBonusClaims'), where('status', '==', 'pending'), orderBy('createdAt', 'desc')));
+            container.innerHTML = '';
+            claimsSnap.forEach(docSnap => {
+                const claim = docSnap.data();
+                const date = claim.createdAt ? claim.createdAt.toDate().toLocaleString() : 'Unknown';
+                const div = document.createElement('div');
+                div.className = 'bg-white p-4 rounded-xl shadow-sm';
+                div.innerHTML = `
+                    <p><strong>Referrer ID:</strong> ${claim.referrerId}</p>
+                    <p><strong>Referred User ID:</strong> ${claim.referredUserId}</p>
+                    <p><strong>Amount:</strong> ${formatCurrency(claim.amount)}</p>
+                    <p class="text-sm text-gray-500">${date}</p>
+                    <div class="mt-2 flex gap-2">
+                        <button onclick="window.approveReferralBonus('${docSnap.id}', ${claim.amount}, '${claim.referrerId}')" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Approve</button>
+                        <button onclick="window.rejectReferralBonus('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Reject</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            if (claimsSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No pending referral bonus claims</p>';
+        }
+        async function approveReferralBonus(claimId, amount, referrerId) {
+            const batch = writeBatch(db);
+            batch.update(doc(db, 'referralBonusClaims', claimId), { status: 'approved', processedAt: serverTimestamp() });
+            const userRef = doc(db, 'users', referrerId);
+            batch.update(userRef, {
+                availableBalance: increment(amount),
+                totalBalance: increment(amount),
+                referralBonus: increment(amount)
+            });
+            const transRef = doc(collection(db, 'transactions'));
+            batch.set(transRef, {
+                userId: referrerId,
+                type: 'referral_bonus',
+                amount: amount,
+                status: 'completed',
+                description: 'Referral bonus approved by admin',
+                timestamp: serverTimestamp()
+            });
+            await batch.commit();
+            showToast(`Referral bonus of ${formatCurrency(amount)} approved and credited`);
+            loadAdminReferralBonuses();
+            loadAdminStats();
+        }
+        async function rejectReferralBonus(claimId) {
+            await updateDoc(doc(db, 'referralBonusClaims', claimId), { status: 'rejected', processedAt: serverTimestamp() });
+            showToast('Referral bonus claim rejected');
+            loadAdminReferralBonuses();
+        }
+
+        // Settings
+        async function loadAdminSettings() {
+            const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
+            if (settingsDoc.exists()) {
+                const settings = settingsDoc.data();
+                document.getElementById('referralPercentAdmin').value = settings.referralBonusPercentage || 15;
+                document.getElementById('paymentLinkAdmin').value = settings.paymentLink || '';
+            }
+        }
+        async function saveSettings() {
             const referralPercent = parseFloat(document.getElementById('referralPercentAdmin').value);
+            const paymentLink = document.getElementById('paymentLinkAdmin').value;
             await setDoc(doc(db, 'settings', 'platform'), {
                 referralBonusPercentage: referralPercent,
+                paymentLink: paymentLink,
                 updatedAt: serverTimestamp()
             });
             showToast('Settings saved');
-        };
-
-        // Auth guard
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUserId = user.uid;
-                const userDoc = await getDoc(doc(db, 'users', currentUserId));
-                if (userDoc.exists() && userDoc.data().role === 'admin') {
-                    // Load the default tab (stats) and make it active
-                    document.getElementById('statsTab').classList.remove('hidden');
-                    document.querySelector('.admin-nav').classList.add('bg-indigo-50', 'text-indigo-600');
-                    await loadAdminStats();
-                } else {
-                    await signOut(auth);
-                    window.location.href = 'index.html';
-                }
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
+        }
 
         // Expose functions to global window object
-        window.showTab = showTab;
         window.logout = logout;
+        window.showTab = showTab;
         window.editUserBalance = editUserBalance;
         window.showAddProductForm = showAddProductForm;
         window.hideAddProductForm = hideAddProductForm;
@@ -392,7 +536,30 @@
         window.generateGiftCode = generateGiftCode;
         window.deleteGiftCode = deleteGiftCode;
         window.saveTaskSettings = saveTaskSettings;
+        window.markMessageRead = markMessageRead;
+        window.approveDeposit = approveDeposit;
+        window.rejectDeposit = rejectDeposit;
+        window.approveReferralBonus = approveReferralBonus;
+        window.rejectReferralBonus = rejectReferralBonus;
         window.saveSettings = saveSettings;
+
+        // Auth guard
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                const userDoc = await getDoc(doc(db, 'users', currentUserId));
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    document.getElementById('statsTab').classList.remove('hidden');
+                    document.querySelectorAll('.admin-nav')[0].classList.add('bg-indigo-50', 'text-indigo-600');
+                    await loadAdminStats();
+                } else {
+                    await signOut(auth);
+                    window.location.href = 'index.html';
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
     </script>
 </body>
 </html>
