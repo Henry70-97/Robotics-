@@ -2,543 +2,485 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>UrbanPay • User Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UrbanDollar | User Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .sidebar { transition: transform 0.3s; transform: translateX(-100%); z-index: 1000; }
-        .sidebar.open { transform: translateX(0); }
-        .overlay { transition: opacity 0.3s; opacity: 0; pointer-events: none; }
-        .overlay.active { opacity: 1; pointer-events: auto; }
-        .nav-item.active { background-color: #4f46e5; color: white; }
-        .section { display: none; }
-        .section.active-section { display: block; }
-        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .bottom-nav a.active { color: #2563eb; border-bottom-color: #2563eb; }
+        .nav-item { transition: all 0.2s; }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Sidebar (unchanged) -->
-    <div id="sidebarOverlay" class="overlay fixed inset-0 bg-black bg-opacity-50 z-40"></div>
-    <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 flex flex-col">
-        <div class="p-5 border-b flex justify-between items-center"><h2 class="text-2xl font-bold text-indigo-700">UrbanPay</h2><button id="closeSidebarBtn" class="text-gray-500"><i class="fas fa-times"></i></button></div>
-        <nav class="flex-1 overflow-y-auto py-4">
-            <ul class="space-y-1 px-3">
-                <li><button data-section="invest" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"><i class="fas fa-chart-line w-5"></i> Invest</button></li>
-                <li><button data-section="addfunds" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"><i class="fas fa-plus-circle w-5"></i> Add Funds</button></li>
-                <li><button data-section="withdrawals" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"><i class="fas fa-money-bill-wave w-5"></i> Withdrawals</button></li>
-                <li><button data-section="transactions" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"><i class="fas fa-exchange-alt w-5"></i> Transactions</button></li>
-                <li><button data-section="contact" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"><i class="fas fa-envelope w-5"></i> Contact</button></li>
-                <li><button data-section="invite" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"><i class="fas fa-user-friends w-5"></i> Invite</button></li>
-                <li><button data-section="myaccount" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"><i class="fas fa-user-circle w-5"></i> My Account</button></li>
-                <li><button data-section="team" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3"><i class="fas fa-users w-5"></i> Team</button></li>
-            </ul>
-        </nav>
-        <div class="p-4 border-t"><button onclick="logout()" class="w-full bg-red-50 text-red-600 py-2 rounded-lg flex items-center justify-center gap-2"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
-    </aside>
-
+<body class="bg-gray-100 pb-16">
     <!-- Main Content -->
-    <div class="min-h-screen">
-        <header class="bg-white shadow-sm sticky top-0 z-30">
-            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-                <div class="flex items-center gap-3"><button id="hamburgerBtn" class="text-gray-600 text-2xl"><i class="fas fa-bars"></i></button><h1 class="text-xl font-bold text-indigo-700 hidden sm:block">UrbanPay Dashboard</h1></div>
-                <div class="flex items-center gap-4"><div class="text-right hidden sm:block"><p class="text-xs text-gray-500">Balance</p><p id="topBalance" class="font-bold">$0.00</p></div><div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center"><i class="fas fa-user text-indigo-700"></i></div></div>
-            </div>
-        </header>
-
-        <div class="max-w-7xl mx-auto px-4 py-8">
-            <div id="messageBox" class="mb-4"></div>
-
-            <!-- INVEST SECTION -->
-            <div id="investSection" class="section active-section">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm"><h2 class="text-gray-500">Balance</h2><p id="balance" class="text-3xl font-bold">$0.00</p><p id="pendingBalanceDisplay" class="text-sm text-yellow-600">Pending: $0.00</p></div>
-                    <div class="bg-white p-6 rounded-2xl shadow-sm"><h2 class="text-gray-500">Total Invested</h2><p id="totalInvested" class="text-3xl font-bold">$0.00</p></div>
-                    <div class="bg-white p-6 rounded-2xl shadow-sm"><h2 class="text-gray-500">Total Profit</h2><p id="totalProfit" class="text-3xl font-bold">$0.00</p></div>
-                </div>
-                <div class="bg-white rounded-2xl shadow-sm p-6 mb-8">
-                    <h2 class="text-xl font-bold mb-4">📈 Investment Plans</h2>
-                    <div id="plansContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
-                </div>
-                <div class="bg-white rounded-2xl shadow-sm p-6">
-                    <h2 class="text-xl font-bold mb-4">⏳ Your Active Investments</h2>
-                    <div id="activeInvestments" class="space-y-3"></div>
-                </div>
-            </div>
-
-            <!-- ADD FUNDS SECTION -->
-            <div id="addfundsSection" class="section">
-                <div class="bg-white rounded-2xl shadow-sm p-6">
-                    <h2 class="text-2xl font-bold mb-2">💰 Add Funds</h2>
-                    <p class="text-gray-600 mb-4">Minimum deposit: <strong>$5</strong> via Mpesa</p>
-                    <div id="depositLinkContainer" class="mb-6 p-3 bg-gray-50 rounded-lg flex items-center gap-3 flex-wrap">
-                        <span class="font-semibold">Payment Link:</span>
-                        <a id="depositLink" href="#" target="_blank" class="text-indigo-600 underline break-all">Loading...</a>
-                        <button id="copyLinkBtn" class="bg-gray-200 px-3 py-1 rounded text-sm"><i class="fas fa-copy"></i> Copy</button>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-4 mb-8">
-                        <button id="manualDepositBtn" class="bg-yellow-600 text-white px-6 py-2 rounded-xl hover:bg-yellow-700"><i class="fas fa-exclamation-triangle"></i> Already deposited but not reflecting</button>
-                    </div>
-                    <h3 class="font-semibold text-lg">📋 Your Deposit Requests</h3>
-                    <div id="userDepositRequests" class="mt-3 space-y-2"></div>
-                </div>
-            </div>
-
-            <!-- WITHDRAWALS SECTION (with email verification) -->
-            <div id="withdrawalsSection" class="section">
-                <div class="bg-white rounded-2xl shadow-sm p-6">
-                    <h2 class="text-2xl font-bold mb-2">💸 Withdrawal Requests</h2>
-                    <div id="withdrawEmailStatus" class="mb-4 p-3 rounded-lg bg-blue-50"></div>
-                    <form id="withdrawalForm" class="space-y-4 max-w-md mb-8">
-                        <div><input type="number" id="withdrawAmount" step="0.01" class="w-full border rounded-xl p-3" placeholder="Amount ($)" required></div>
-                        <div><select id="withdrawMethod" class="w-full border rounded-xl p-3" required><option value="Mpesa">Mpesa</option><option value="Bank Transfer">Bank Transfer</option><option value="Crypto">Crypto</option></select></div>
-                        <div><textarea id="accountDetails" rows="2" class="w-full border rounded-xl p-3" placeholder="Account details" required></textarea></div>
-                        <button type="submit" id="withdrawSubmitBtn" class="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 disabled:opacity-50" disabled>Submit Request</button>
-                    </form>
-                    <h3 class="font-semibold text-lg">📜 Withdrawal History</h3>
-                    <div id="withdrawalHistory" class="mt-3 space-y-2"></div>
-                </div>
-            </div>
-
-            <!-- TRANSACTIONS SECTION -->
-            <div id="transactionsSection" class="section">
-                <div class="bg-white rounded-2xl shadow-sm p-6"><h2 class="text-2xl font-bold mb-4">📜 Transaction History</h2><div id="transactionsList" class="space-y-2 max-h-96 overflow-y-auto"></div></div>
-            </div>
-
-            <!-- CONTACT SECTION -->
-            <div id="contactSection" class="section">
-                <div class="bg-white rounded-2xl shadow-sm p-6"><h2 class="text-2xl font-bold mb-4">📞 Contact Support</h2><form id="contactForm" class="space-y-4 max-w-lg"><input type="text" placeholder="Subject" class="w-full border rounded-xl p-3" required><textarea rows="4" placeholder="Message" class="w-full border rounded-xl p-3" required></textarea><button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-xl">Send</button></form></div>
-            </div>
-
-            <!-- INVITE SECTION -->
-            <div id="inviteSection" class="section">
-                <div class="bg-white rounded-2xl shadow-sm p-6">
-                    <h2 class="text-2xl font-bold mb-2">🤝 Invite Friends, Earn 10%</h2>
-                    <p class="text-gray-600 mb-4">Share your unique referral link. When your friend deposits and it's approved, you get 10% of their deposit instantly!</p>
-                    <div class="bg-gray-50 p-4 rounded-xl flex flex-wrap items-center gap-3"><input id="referralLinkInput" type="text" readonly class="flex-1 bg-transparent border-0 p-2 text-sm font-mono"><button id="copyReferralBtn" class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg"><i class="fas fa-copy"></i> Copy</button></div>
-                    <div class="mt-4"><h3 class="font-bold">Your Referral Code:</h3><p id="refCodeDisplay" class="text-lg font-mono bg-gray-100 inline-block px-3 py-1 rounded mt-1"></p></div>
-                </div>
-            </div>
-
-            <!-- MY ACCOUNT SECTION -->
-            <div id="myaccountSection" class="section">
-                <div class="bg-white rounded-2xl shadow-sm p-6">
-                    <h2 class="text-2xl font-bold mb-4">👤 Account Details</h2>
-                    <div class="space-y-3"><div><span class="font-semibold">Email:</span> <span id="userEmailDisplay"></span></div><div><span class="font-semibold">Status:</span> <span id="userStatusDisplay"></span></div><div><span class="font-semibold">Referral Code:</span> <span id="accountRefCode"></span></div><div><span class="font-semibold">Total Referral Bonus:</span> <span id="totalReferralBonus"></span></div></div>
-                    <hr class="my-6"><button onclick="resetPassword()" class="bg-gray-200 px-4 py-2 rounded-lg">Send password reset email</button>
-                </div>
-            </div>
-
-            <!-- TEAM SECTION -->
-            <div id="teamSection" class="section">
-                <div class="bg-white rounded-2xl shadow-sm p-6"><h2 class="text-2xl font-bold mb-4">👥 Your Team (Referrals)</h2><div id="teamListContainer" class="space-y-3 max-h-96 overflow-y-auto"></div></div>
-            </div>
-        </div>
+    <div id="appContent" class="container mx-auto px-4 py-6 max-w-4xl">
+        <!-- Dynamic content will be injected here -->
     </div>
 
-    <!-- Investment Modal (time-based) -->
-    <div id="investModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 w-96 max-w-md">
-            <h3 class="text-xl font-bold mb-4">Choose Investment Duration</h3>
-            <div id="planInfo" class="mb-4 text-sm text-gray-600"></div>
-            <div class="space-y-2 mb-4">
-                <label class="flex items-center gap-2 p-2 border rounded cursor-pointer"><input type="radio" name="durationOption" value="6-10" data-profit="15"> 6–10 hours → 15% profit</label>
-                <label class="flex items-center gap-2 p-2 border rounded cursor-pointer"><input type="radio" name="durationOption" value="11-15" data-profit="20"> 11–15 hours → 20% profit</label>
-                <label class="flex items-center gap-2 p-2 border rounded cursor-pointer"><input type="radio" name="durationOption" value="16-24" data-profit="30"> 16–24 hours → 30% profit</label>
-            </div>
-            <input type="number" id="investAmount" step="0.01" class="w-full border rounded p-2 mb-4" placeholder="Investment amount">
-            <input type="hidden" id="modalPlanId">
-            <input type="hidden" id="modalPlanName">
-            <input type="hidden" id="modalMin">
-            <input type="hidden" id="modalMax">
-            <div class="flex justify-end gap-2"><button onclick="closeModal()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button><button onclick="submitInvestment()" class="px-4 py-2 bg-indigo-600 text-white rounded">Invest</button></div>
-        </div>
-    </div>
-
-    <!-- Manual Deposit Modal -->
-    <div id="manualDepositModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 w-96 max-w-md">
-            <h3 class="text-xl font-bold mb-4">Report a Deposit</h3>
-            <p class="text-sm text-gray-600 mb-3">If you made a payment but it's not showing, enter details below. Admin will verify and credit your account.</p>
-            <input type="number" id="manualAmount" placeholder="Amount ($)" class="w-full border rounded p-2 mb-3" step="0.01" required>
-            <input type="text" id="manualTransactionId" placeholder="Transaction ID / Reference" class="w-full border rounded p-2 mb-3" required>
-            <textarea id="manualMessage" placeholder="Additional message (optional)" class="w-full border rounded p-2 mb-3" rows="2"></textarea>
-            <div class="flex justify-end gap-2"><button onclick="closeManualModal()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button><button onclick="submitManualDeposit()" class="px-4 py-2 bg-yellow-600 text-white rounded">Submit Report</button></div>
-        </div>
-    </div>
-
-    <!-- Email Verification Modal -->
-    <div id="verifyEmailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 w-96 max-w-md text-center">
-            <h3 class="text-xl font-bold mb-2">Verify Your Email</h3>
-            <p class="text-sm text-gray-600 mb-4">To withdraw, you must verify your email address. We'll send a verification link to:</p>
-            <p id="verifyEmailAddress" class="font-mono bg-gray-100 p-2 rounded mb-4"></p>
-            <div id="verifySpinner" class="hidden justify-center mb-3"><div class="spinner"></div></div>
-            <button id="sendVerifyBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg w-full">Send Verification Email</button>
-            <button onclick="closeVerifyModal()" class="mt-3 text-gray-500 text-sm">Cancel</button>
+    <!-- Bottom Navigation -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+        <div class="flex justify-around max-w-md mx-auto">
+            <a href="#" data-tab="dashboard" class="nav-item flex-1 text-center py-3 text-gray-500 hover:text-blue-600 transition">
+                <i class="fas fa-tachometer-alt text-xl"></i>
+                <span class="text-xs block">Dashboard</span>
+            </a>
+            <a href="#" data-tab="products" class="nav-item flex-1 text-center py-3 text-gray-500 hover:text-blue-600 transition">
+                <i class="fas fa-box-open text-xl"></i>
+                <span class="text-xs block">Products</span>
+            </a>
+            <a href="#" data-tab="subscriptions" class="nav-item flex-1 text-center py-3 text-gray-500 hover:text-blue-600 transition">
+                <i class="fas fa-calendar-alt text-xl"></i>
+                <span class="text-xs block">Subscriptions</span>
+            </a>
+            <a href="#" data-tab="profile" class="nav-item flex-1 text-center py-3 text-gray-500 hover:text-blue-600 transition">
+                <i class="fas fa-user text-xl"></i>
+                <span class="text-xs block">Profile</span>
+            </a>
+            <a href="#" data-tab="wallet" class="nav-item flex-1 text-center py-3 text-gray-500 hover:text-blue-600 transition">
+                <i class="fas fa-wallet text-xl"></i>
+                <span class="text-xs block">Wallet</span>
+            </a>
         </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, collection, query, where, orderBy, limit, addDoc, updateDoc, runTransaction, Timestamp, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, addDoc, deleteDoc, Timestamp, increment, arrayUnion, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20", authDomain: "urbanpay-c5aee.firebaseapp.com", projectId: "urbanpay-c5aee", storageBucket: "urbanpay-c5aee.firebasestorage.app", messagingSenderId: "648155825006", appId: "1:648155825006:web:16d6ea4dfab808920b777f" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
+            authDomain: "urbanpay-c5aee.firebaseapp.com",
+            projectId: "urbanpay-c5aee",
+            storageBucket: "urbanpay-c5aee.firebasestorage.app",
+            messagingSenderId: "648155825006",
+            appId: "1:648155825006:web:16d6ea4dfab808920b777f",
+            measurementId: "G-CTKZN6VHPS"
+        };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
         let currentUser = null;
-        let userData = null;
+        let currentUserData = null;
+        let currentTab = "dashboard";
 
-        function showMessage(msg, isError = false) {
-            const box = document.getElementById('messageBox');
-            box.innerHTML = `<div class="p-3 rounded-lg ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">${msg}</div>`;
-            setTimeout(() => box.innerHTML = '', 5000);
-        }
+        // Helper functions
+        function formatMoney(amount) { return `Ksh ${amount.toLocaleString()}`; }
 
-        // Sidebar and section logic
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('active'); }
-        function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('active'); }
-        document.getElementById('hamburgerBtn').onclick = openSidebar;
-        document.getElementById('closeSidebarBtn').onclick = closeSidebar;
-        overlay.onclick = closeSidebar;
-
-        const sections = ['invest', 'addfunds', 'withdrawals', 'transactions', 'contact', 'invite', 'myaccount', 'team'];
-        function showSection(sectionId) {
-            sections.forEach(sec => document.getElementById(sec+'Section').classList.remove('active-section'));
-            document.getElementById(sectionId+'Section').classList.add('active-section');
-            closeSidebar();
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`.nav-item[data-section="${sectionId}"]`).classList.add('active');
-        }
-        document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => showSection(btn.getAttribute('data-section'))));
-
-        // Load user data (balance, pendingBalance, etc.)
-        async function loadUserData() {
-            if (!currentUser) return;
-            const userRef = doc(db, "users", currentUser.uid);
-            const snap = await getDoc(userRef);
-            if (snap.exists()) {
-                userData = snap.data();
-                const balance = userData.balance || 0;
-                const pending = userData.pendingBalance || 0;
-                document.getElementById('balance').innerText = `$${balance.toFixed(2)}`;
-                document.getElementById('topBalance').innerText = `$${balance.toFixed(2)}`;
-                document.getElementById('pendingBalanceDisplay').innerHTML = `Pending: $${pending.toFixed(2)}`;
-                document.getElementById('totalInvested').innerText = `$${(userData.totalInvested || 0).toFixed(2)}`;
-                document.getElementById('totalProfit').innerText = `$${(userData.totalProfit || 0).toFixed(2)}`;
-                document.getElementById('userEmailDisplay').innerText = userData.email;
-                document.getElementById('userStatusDisplay').innerText = userData.status || 'active';
-                document.getElementById('totalReferralBonus').innerText = `$${(userData.totalReferralBonus || 0).toFixed(2)}`;
-                // Referral code
-                let refCode = userData.referralCode;
-                if (!refCode) {
-                    refCode = currentUser.uid.substring(0,8).toUpperCase();
-                    await updateDoc(userRef, { referralCode: refCode });
-                    userData.referralCode = refCode;
+        // Load sample products if none exist
+        async function seedProducts() {
+            const productsRef = collection(db, "products");
+            const snapshot = await getDocs(productsRef);
+            if (snapshot.empty) {
+                const sampleProducts = [
+                    { name: "Sika Deer", price: 9000, durationDays: 180, roi: 700, dailyIncome: 350, imageUrl: "https://picsum.photos/id/200/200/150", status: true, createdAt: serverTimestamp() },
+                    { name: "Golden Eagle", price: 5000, durationDays: 90, roi: 500, dailyIncome: 277, imageUrl: "https://picsum.photos/id/201/200/150", status: true, createdAt: serverTimestamp() },
+                    { name: "Swift Fox", price: 2000, durationDays: 30, roi: 300, dailyIncome: 200, imageUrl: "https://picsum.photos/id/202/200/150", status: true, createdAt: serverTimestamp() }
+                ];
+                for (const p of sampleProducts) {
+                    await addDoc(productsRef, p);
                 }
-                const inviteLink = `${window.location.origin}/register.html?ref=${refCode}`;
-                document.getElementById('referralLinkInput').value = inviteLink;
-                document.getElementById('refCodeDisplay').innerText = refCode;
-                document.getElementById('accountRefCode').innerText = refCode;
+                console.log("Sample products added.");
             }
         }
 
-        // Load active investment plans (static, but we now allow time-based returns)
-        async function loadPlans() {
-            const q = query(collection(db, "plans"), where("status", "==", "active"));
-            const snap = await getDocs(q);
-            const container = document.getElementById('plansContainer');
-            container.innerHTML = '';
-            if(snap.empty) { container.innerHTML = '<div class="col-span-full text-gray-500">No active plans.</div>'; return; }
-            snap.forEach(docSnap => {
-                const plan = docSnap.data();
-                container.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl shadow border">
-                        <h3 class="font-bold text-lg">${plan.name}</h3>
-                        <p class="text-sm text-gray-600">${plan.description || ''}</p>
-                        <p class="text-indigo-600 font-semibold mt-2">${plan.dailyProfit}% daily (base)</p>
-                        <p class="text-sm">Min: $${plan.minAmount} | Max: $${plan.maxAmount}</p>
-                        <p class="text-sm">Duration: ${plan.duration} days</p>
-                        <button onclick="showInvestModal('${docSnap.id}', '${plan.name}', ${plan.minAmount}, ${plan.maxAmount})" class="mt-3 w-full bg-indigo-600 text-white py-1 rounded-lg hover:bg-indigo-700">Invest</button>
-                    </div>`;
-            });
+        // Load dashboard content
+        async function loadDashboard() {
+            if (!currentUserData) return;
+            const html = `
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Welcome back, ${currentUserData.displayName}!</h2>
+                    <p class="text-gray-500">Here's your portfolio overview</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="text-gray-500 mb-2">Total Balance</div>
+                        <div class="text-3xl font-bold text-gray-800">${formatMoney(currentUserData.totalBalance)}</div>
+                        <div class="text-green-500 text-sm">+0%</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="text-gray-500 mb-2">Active Packages</div>
+                        <div class="text-3xl font-bold text-gray-800">${currentUserData.activePackagesCount}</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="text-gray-500 mb-2">Daily Task Commission</div>
+                        <div class="text-3xl font-bold text-gray-800">${formatMoney(currentUserData.dailyTaskCommission)}</div>
+                        <div class="text-red-500 text-sm">-5% commission</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="text-gray-500 mb-2">Referral Bonus</div>
+                        <div class="text-3xl font-bold text-gray-800">${formatMoney(currentUserData.referralBonus)}</div>
+                        <div class="text-red-500 text-sm">-15% referral bonus</div>
+                    </div>
+                </div>
+                <div class="mt-6 bg-white rounded-xl shadow-md p-6">
+                    <h3 class="text-xl font-semibold mb-4">Available Balance</h3>
+                    <div class="text-3xl font-bold text-blue-600">${formatMoney(currentUserData.availableBalance)}</div>
+                    <hr class="my-4">
+                    <div class="flex justify-between text-gray-600">
+                        <span>Total Invested</span>
+                        <span class="font-semibold">${formatMoney(currentUserData.totalInvested)}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600 mt-2">
+                        <span>Total Returns</span>
+                        <span class="font-semibold">${formatMoney(currentUserData.totalReturns)}</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById("appContent").innerHTML = html;
         }
 
-        // Show invest modal with time-based options
-        window.showInvestModal = (planId, planName, minAmount, maxAmount) => {
-            document.getElementById('modalPlanId').value = planId;
-            document.getElementById('modalPlanName').value = planName;
-            document.getElementById('modalMin').value = minAmount;
-            document.getElementById('modalMax').value = maxAmount;
-            document.getElementById('planInfo').innerHTML = `Plan: ${planName}<br>Range: $${minAmount} – $${maxAmount}`;
-            document.getElementById('investModal').classList.remove('hidden');
-        };
-        window.closeModal = () => document.getElementById('investModal').classList.add('hidden');
-
-        window.submitInvestment = async () => {
-            const planId = document.getElementById('modalPlanId').value;
-            const planName = document.getElementById('modalPlanName').value;
-            const amount = parseFloat(document.getElementById('investAmount').value);
-            const min = parseFloat(document.getElementById('modalMin').value);
-            const max = parseFloat(document.getElementById('modalMax').value);
-            const selectedDuration = document.querySelector('input[name="durationOption"]:checked');
-            if (!selectedDuration) return showMessage("Please choose a return duration", true);
-            if (isNaN(amount) || amount < min || amount > max) return showMessage(`Amount must be between $${min} and $${max}`, true);
-            if (userData.balance < amount) return showMessage("Insufficient balance", true);
-
-            const durationRange = selectedDuration.value;
-            let profitPercent;
-            let returnHours;
-            if (durationRange === '6-10') { profitPercent = 15; returnHours = 8; }
-            else if (durationRange === '11-15') { profitPercent = 20; returnHours = 13; }
-            else { profitPercent = 30; returnHours = 20; }
-
-            const userRef = doc(db, "users", currentUser.uid);
-            const startDate = new Date();
-            const endDate = new Date(startDate);
-            endDate.setHours(endDate.getHours() + returnHours);
-
-            try {
-                await runTransaction(db, async (transaction) => {
-                    const userSnap = await transaction.get(userRef);
-                    const currBalance = userSnap.data().balance;
-                    if (currBalance < amount) throw new Error("Insufficient balance");
-                    transaction.update(userRef, { balance: currBalance - amount, totalInvested: (userSnap.data().totalInvested || 0) + amount });
-                    const investmentRef = doc(collection(db, "investments"));
-                    transaction.set(investmentRef, {
-                        userId: currentUser.uid, planId, planName, amount, profitPercent, returnHours,
-                        startDate: Timestamp.fromDate(startDate), endDate: Timestamp.fromDate(endDate),
-                        createdAt: serverTimestamp(), status: 'active', completed: false
+        // Products: list and purchase
+        async function loadProducts() {
+            const productsRef = collection(db, "products");
+            const q = query(productsRef, where("status", "==", true));
+            const snapshot = await getDocs(q);
+            let productsHtml = `<div class="bg-white rounded-xl shadow-md p-6"><h2 class="text-xl font-bold mb-4">Available Products</h2><div class="grid gap-4">`;
+            snapshot.forEach(docSnap => {
+                const p = docSnap.data();
+                productsHtml += `
+                    <div class="border rounded-lg p-4 flex flex-col md:flex-row gap-4">
+                        <img src="${p.imageUrl}" class="w-32 h-32 object-cover rounded" alt="${p.name}">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold">${p.name}</h3>
+                            <p>Price: ${formatMoney(p.price)}</p>
+                            <p>Duration: ${p.durationDays} days</p>
+                            <p>ROI: ${p.roi}%</p>
+                            <p>Daily Income: ${formatMoney(p.dailyIncome)}</p>
+                            <button onclick="purchaseProduct('${docSnap.id}', ${p.price})" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Buy Now</button>
+                        </div>
+                    </div>
+                `;
+            });
+            productsHtml += `</div></div>`;
+            document.getElementById("appContent").innerHTML = productsHtml;
+            window.purchaseProduct = async (productId, price) => {
+                if (currentUserData.availableBalance < price) {
+                    alert("Insufficient balance");
+                    return;
+                }
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const userRef = doc(db, "users", currentUser.uid);
+                        const productRef = doc(db, "products", productId);
+                        const productSnap = await transaction.get(productRef);
+                        if (!productSnap.exists()) throw new Error("Product not found");
+                        const product = productSnap.data();
+                        const userSnap = await transaction.get(userRef);
+                        const userBal = userSnap.data().availableBalance;
+                        if (userBal < price) throw new Error("Insufficient balance");
+                        
+                        // Deduct balance
+                        transaction.update(userRef, {
+                            availableBalance: increment(-price),
+                            totalInvested: increment(price),
+                            activePackagesCount: increment(1)
+                        });
+                        
+                        // Create subscription
+                        const endDate = new Date();
+                        endDate.setDate(endDate.getDate() + product.durationDays);
+                        const subscriptionRef = doc(collection(db, "subscriptions"));
+                        transaction.set(subscriptionRef, {
+                            userId: currentUser.uid,
+                            productId: productId,
+                            productName: product.name,
+                            productImage: product.imageUrl,
+                            dailyIncome: product.dailyIncome,
+                            durationDays: product.durationDays,
+                            startDate: serverTimestamp(),
+                            endDate: Timestamp.fromDate(endDate),
+                            lastClaimDate: null,
+                            totalEarned: 0,
+                            status: "active"
+                        });
+                        
+                        // Record transaction
+                        const transRef = doc(collection(db, "transactions"));
+                        transaction.set(transRef, {
+                            userId: currentUser.uid,
+                            type: "package_purchase",
+                            amount: price,
+                            status: "completed",
+                            description: `Purchased ${product.name}`,
+                            timestamp: serverTimestamp()
+                        });
                     });
-                    const transRef = doc(collection(db, "transactions"));
-                    transaction.set(transRef, { userId: currentUser.uid, type: 'investment', amount, status: 'completed', description: `Invested in ${planName} (${durationRange}h)`, createdAt: serverTimestamp() });
-                });
-                showMessage("Investment successful!");
-                closeModal();
-                await loadUserData();
-                await loadActiveInvestments();
-                loadTransactions();
-            } catch(err) { showMessage(err.message, true); }
-        };
-
-        // Load active investments (show profit based on time)
-        async function loadActiveInvestments() {
-            const q = query(collection(db, "investments"), where("userId", "==", currentUser.uid), where("status", "==", "active"), orderBy("startDate", "desc"));
-            const snap = await getDocs(q);
-            const container = document.getElementById('activeInvestments');
-            container.innerHTML = '';
-            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">No active investments</div>'; return; }
-            const now = new Date();
-            for (const docSnap of snap.docs) {
-                const inv = docSnap.data();
-                const start = inv.startDate.toDate();
-                const end = inv.endDate.toDate();
-                const hoursRemaining = Math.max(0, (end - now) / (1000 * 3600));
-                const profitAmount = (inv.amount * inv.profitPercent / 100);
-                const statusText = now >= end ? "Ready to claim" : `${hoursRemaining.toFixed(1)} hours left`;
-                container.innerHTML += `
-                    <div class="border p-3 rounded-lg bg-gray-50">
-                        <div class="flex justify-between"><span class="font-semibold">${inv.planName}</span><span>$${inv.amount}</span></div>
-                        <div class="text-sm">Start: ${start.toLocaleString()} | End: ${end.toLocaleString()}</div>
-                        <div class="text-sm text-green-600">Expected profit: $${profitAmount.toFixed(2)} (${inv.profitPercent}%)</div>
-                        <div class="text-xs text-gray-500">${statusText}</div>
-                    </div>`;
-            }
+                    alert("Purchase successful!");
+                    refreshUserData();
+                    loadProducts(); // refresh product list (though not necessary)
+                } catch (error) {
+                    alert("Purchase failed: " + error.message);
+                }
+            };
         }
 
-        // Load deposit requests (including manual reports)
-        async function loadDepositRequests() {
-            const q = query(collection(db, "deposits"), where("userId", "==", currentUser.uid), orderBy("createdAt", "desc"));
-            const snap = await getDocs(q);
-            const container = document.getElementById('userDepositRequests');
-            container.innerHTML = '';
-            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">No deposit requests</div>'; return; }
-            snap.forEach(doc => {
-                const d = doc.data();
-                container.innerHTML += `<div class="flex justify-between border-b py-2"><span>$${d.amount} - ${d.method || 'Manual'} ${d.transactionId ? '('+d.transactionId+')' : ''}</span><span class="text-xs font-semibold ${d.status === 'pending' ? 'text-yellow-600' : 'text-green-600'}">${d.status}</span></div>`;
-            });
-        }
-
-        // Load withdrawal history
-        async function loadWithdrawalHistory() {
-            const q = query(collection(db, "withdrawals"), where("userId", "==", currentUser.uid), orderBy("createdAt", "desc"));
-            const snap = await getDocs(q);
-            const container = document.getElementById('withdrawalHistory');
-            container.innerHTML = '';
-            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">No withdrawal requests</div>'; return; }
-            snap.forEach(doc => {
-                const w = doc.data();
-                container.innerHTML += `<div class="border p-2 rounded flex justify-between"><span>$${w.amount} - ${w.method}</span><span class="text-sm font-semibold ${w.status === 'pending' ? 'text-yellow-600' : w.status === 'completed' ? 'text-green-600' : 'text-red-600'}">${w.status}</span></div>`;
-            });
-        }
-
-        // Load transactions
-        async function loadTransactions() {
-            const q = query(collection(db, "transactions"), where("userId", "==", currentUser.uid), orderBy("createdAt", "desc"), limit(20));
-            const snap = await getDocs(q);
-            const container = document.getElementById('transactionsList');
-            container.innerHTML = '';
-            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">No transactions</div>'; return; }
-            snap.forEach(doc => {
-                const t = doc.data();
-                const date = t.createdAt ? t.createdAt.toDate().toLocaleString() : 'Just now';
-                container.innerHTML += `<div class="flex justify-between border-b py-2"><span>${t.type}</span><span class="${t.type === 'investment' ? 'text-red-600' : 'text-green-600'}">$${t.amount}</span><span class="text-xs text-gray-500">${date}</span></div>`;
-            });
-        }
-
-        // Load team (referrals)
-        async function loadTeam() {
-            const q = query(collection(db, "users"), where("referrerId", "==", currentUser.uid));
-            const snap = await getDocs(q);
-            const container = document.getElementById('teamListContainer');
-            container.innerHTML = '';
-            if(snap.empty) { container.innerHTML = '<div class="text-gray-500">No referrals yet.</div>'; return; }
-            for (const docSnap of snap.docs) {
-                const referred = docSnap.data();
-                // get investments of this referred user
-                const invQuery = query(collection(db, "investments"), where("userId", "==", docSnap.id), orderBy("createdAt", "desc"), limit(3));
-                const invSnap = await getDocs(invQuery);
-                let invHtml = '';
-                invSnap.forEach(inv => { invHtml += `<div class="text-xs">- $${inv.data().amount} in ${inv.data().planName}</div>`; });
-                container.innerHTML += `
-                    <div class="bg-gray-50 p-3 rounded">
-                        <div><span class="font-semibold">${referred.email}</span> (${referred.status || 'active'})</div>
-                        <div class="text-sm text-gray-600">Joined: ${referred.createdAt?.toDate().toLocaleDateString() || 'recent'}</div>
-                        <div class="text-sm">Investments: ${invHtml || 'None yet'}</div>
-                    </div>`;
-            }
-        }
-
-        // Deposit link from settings
-        async function loadDepositLink() {
-            const settingsRef = doc(db, "settings", "global");
-            const snap = await getDoc(settingsRef);
-            let link = "https://lipwa.com"; // default
-            if (snap.exists() && snap.data().depositLink) link = snap.data().depositLink;
-            const linkEl = document.getElementById('depositLink');
-            linkEl.href = link;
-            linkEl.textContent = link;
-        }
-        document.getElementById('copyLinkBtn').addEventListener('click', () => { const inp = document.getElementById('depositLink'); navigator.clipboard.writeText(inp.href); showMessage("Link copied!"); });
-
-        // Manual deposit modal
-        const manualModal = document.getElementById('manualDepositModal');
-        window.openManualModal = () => manualModal.classList.remove('hidden');
-        window.closeManualModal = () => manualModal.classList.add('hidden');
-        document.getElementById('manualDepositBtn').addEventListener('click', openManualModal);
-        window.submitManualDeposit = async () => {
-            const amount = parseFloat(document.getElementById('manualAmount').value);
-            const txId = document.getElementById('manualTransactionId').value.trim();
-            const msg = document.getElementById('manualMessage').value;
-            if (isNaN(amount) || amount < 5) return showMessage("Amount must be at least $5", true);
-            if (!txId) return showMessage("Transaction ID required", true);
-            await addDoc(collection(db, "deposits"), {
-                userId: currentUser.uid, amount, method: 'Manual Report', transactionId: txId, message: msg,
-                status: 'pending', createdAt: serverTimestamp()
-            });
-            showMessage("Deposit report submitted. Admin will verify.");
-            closeManualModal();
-            document.getElementById('manualAmount').value = '';
-            document.getElementById('manualTransactionId').value = '';
-            document.getElementById('manualMessage').value = '';
-            loadDepositRequests();
-        };
-
-        // Withdrawal email verification
-        let emailVerified = false;
-        async function checkEmailVerification() {
-            await currentUser.reload();
-            emailVerified = currentUser.emailVerified;
-            const statusDiv = document.getElementById('withdrawEmailStatus');
-            const submitBtn = document.getElementById('withdrawSubmitBtn');
-            if (emailVerified) {
-                statusDiv.innerHTML = '<i class="fas fa-check-circle text-green-600"></i> Email verified. You can withdraw.';
-                submitBtn.disabled = false;
+        // Subscriptions
+        async function loadSubscriptions() {
+            const subsRef = collection(db, "subscriptions");
+            const q = query(subsRef, where("userId", "==", currentUser.uid), where("status", "==", "active"));
+            const snapshot = await getDocs(q);
+            let subsHtml = `<div class="bg-white rounded-xl shadow-md p-6"><h2 class="text-xl font-bold mb-4">Active Subscriptions</h2>`;
+            if (snapshot.empty) {
+                subsHtml += `<p>No active subscriptions.</p>`;
             } else {
-                statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-600"></i> Your email is not verified. <button id="verifyNowBtn" class="text-indigo-600 underline ml-2">Verify Now</button>';
-                submitBtn.disabled = true;
-                document.getElementById('verifyNowBtn')?.addEventListener('click', () => openVerifyModal());
+                subsHtml += `<div class="space-y-4">`;
+                snapshot.forEach(docSnap => {
+                    const sub = docSnap.data();
+                    const remainingDays = Math.max(0, Math.ceil((sub.endDate.toDate() - new Date()) / (1000 * 3600 * 24)));
+                    const lastClaimDate = sub.lastClaimDate ? sub.lastClaimDate.toDate() : null;
+                    const today = new Date().toDateString();
+                    const canClaim = !lastClaimDate || lastClaimDate.toDateString() !== today;
+                    subsHtml += `
+                        <div class="border rounded-lg p-4">
+                            <div class="flex items-center gap-4">
+                                <img src="${sub.productImage}" class="w-16 h-16 object-cover rounded">
+                                <div>
+                                    <h3 class="font-bold">${sub.productName}</h3>
+                                    <p>Daily Income: ${formatMoney(sub.dailyIncome)}</p>
+                                    <p>Remaining: ${remainingDays} days</p>
+                                    <p>Total Earned: ${formatMoney(sub.totalEarned)}</p>
+                                    ${canClaim ? `<button onclick="claimIncome('${docSnap.id}', ${sub.dailyIncome})" class="mt-2 bg-green-600 text-white px-3 py-1 rounded text-sm">Claim Daily Income</button>` : `<span class="text-gray-400 text-sm">Already claimed today</span>`}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                subsHtml += `</div>`;
+            }
+            subsHtml += `</div>`;
+            document.getElementById("appContent").innerHTML = subsHtml;
+            window.claimIncome = async (subscriptionId, amount) => {
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const subRef = doc(db, "subscriptions", subscriptionId);
+                        const userRef = doc(db, "users", currentUser.uid);
+                        const subSnap = await transaction.get(subRef);
+                        if (!subSnap.exists()) throw new Error("Subscription not found");
+                        const subData = subSnap.data();
+                        if (subData.status !== "active") throw new Error("Subscription not active");
+                        const lastClaim = subData.lastClaimDate ? subData.lastClaimDate.toDate() : null;
+                        const today = new Date().toDateString();
+                        if (lastClaim && lastClaim.toDateString() === today) throw new Error("Already claimed today");
+                        
+                        // Update subscription
+                        transaction.update(subRef, {
+                            totalEarned: increment(amount),
+                            lastClaimDate: serverTimestamp()
+                        });
+                        // Update user
+                        transaction.update(userRef, {
+                            availableBalance: increment(amount),
+                            totalReturns: increment(amount)
+                        });
+                        // Record transaction
+                        const transRef = doc(collection(db, "transactions"));
+                        transaction.set(transRef, {
+                            userId: currentUser.uid,
+                            type: "daily_income",
+                            amount: amount,
+                            status: "completed",
+                            description: `Daily income from ${subData.productName}`,
+                            timestamp: serverTimestamp()
+                        });
+                    });
+                    alert("Income claimed!");
+                    refreshUserData();
+                    loadSubscriptions();
+                } catch (error) {
+                    alert("Claim failed: " + error.message);
+                }
+            };
+        }
+
+        // Profile
+        async function loadProfile() {
+            const html = `
+                <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                    <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-3xl font-bold text-blue-600 mx-auto">${currentUserData.displayName.charAt(0).toUpperCase()}</div>
+                    <h2 class="text-xl font-bold mt-4">${currentUserData.displayName}</h2>
+                    <p class="text-gray-500">${currentUserData.email}</p>
+                    <button onclick="signOutUser()" class="mt-4 bg-red-500 text-white px-4 py-2 rounded">Sign Out</button>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6 mt-6">
+                    <h3 class="font-semibold mb-2">Referral Link</h3>
+                    <div class="flex gap-2">
+                        <input type="text" readonly value="https://urbandollar.com/register?ref=${currentUserData.referralCode}" class="flex-1 p-2 border rounded bg-gray-50">
+                        <button onclick="copyToClipboard(this.previousElementSibling.value)" class="bg-gray-200 px-4 rounded">Copy</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6 mt-6">
+                    <div class="flex justify-between"><span>Total Invested</span><span>${formatMoney(currentUserData.totalInvested)}</span></div>
+                    <div class="flex justify-between mt-2"><span>Active Packages</span><span>${currentUserData.activePackagesCount}</span></div>
+                </div>
+            `;
+            document.getElementById("appContent").innerHTML = html;
+            window.signOutUser = () => signOut(auth);
+            window.copyToClipboard = (text) => {
+                navigator.clipboard.writeText(text);
+                alert("Copied!");
+            };
+        }
+
+        // Wallet
+        async function loadWallet() {
+            const html = `
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">My Wallet</h2>
+                        <button onclick="refreshWallet()" class="text-blue-600"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <div class="text-gray-500">Total Balance</div>
+                        <div class="text-4xl font-bold text-blue-600">${formatMoney(currentUserData.totalBalance)}</div>
+                        <div class="flex justify-between mt-4 text-sm">
+                            <span>Pending: ${formatMoney(currentUserData.pendingBalance)}</span>
+                            <span>Available: ${formatMoney(currentUserData.availableBalance)}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between mt-6">
+                        <div><span class="text-gray-500">Total Earnings</span><br><span class="font-bold">${formatMoney(currentUserData.totalReturns)}</span></div>
+                        <div><span class="text-gray-500">Total Withdrawals</span><br><span class="font-bold">${formatMoney(currentUserData.totalWithdrawn)}</span></div>
+                    </div>
+                    <div class="flex gap-4 mt-6">
+                        <button onclick="mockAddFunds()" class="flex-1 bg-green-600 text-white py-2 rounded">Add Funds</button>
+                        <button onclick="mockWithdraw()" class="flex-1 bg-red-600 text-white py-2 rounded">Withdraw</button>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">Redeem Gift Code</h3>
+                        <div class="flex gap-2">
+                            <input id="giftCode" type="text" placeholder="Enter code" class="flex-1 p-2 border rounded">
+                            <button onclick="redeemGiftCode()" class="bg-blue-600 text-white px-4 rounded">Redeem</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById("appContent").innerHTML = html;
+            window.refreshWallet = () => refreshUserData().then(loadWallet);
+            window.mockAddFunds = () => {
+                let amount = prompt("Enter amount to add (Ksh):");
+                if (amount && !isNaN(amount)) {
+                    // Simulate deposit (real integration would use payment gateway)
+                    updateDoc(doc(db, "users", currentUser.uid), {
+                        availableBalance: increment(Number(amount))
+                    }).then(() => refreshUserData().then(loadWallet));
+                }
+            };
+            window.mockWithdraw = () => {
+                let amount = prompt("Enter amount to withdraw (Ksh):");
+                if (amount && !isNaN(amount) && Number(amount) <= currentUserData.availableBalance) {
+                    // Create withdrawal request
+                    addDoc(collection(db, "withdrawals"), {
+                        userId: currentUser.uid,
+                        amount: Number(amount),
+                        status: "pending",
+                        createdAt: serverTimestamp()
+                    }).then(() => {
+                        updateDoc(doc(db, "users", currentUser.uid), {
+                            availableBalance: increment(-Number(amount)),
+                            pendingBalance: increment(Number(amount))
+                        }).then(() => refreshUserData().then(loadWallet));
+                    });
+                } else {
+                    alert("Invalid amount or insufficient balance.");
+                }
+            };
+            window.redeemGiftCode = async () => {
+                const code = document.getElementById("giftCode").value.trim();
+                if (!code) return;
+                const codesRef = collection(db, "giftCodes");
+                const q = query(codesRef, where("code", "==", code), where("status", "==", "active"));
+                const snapshot = await getDocs(q);
+                if (snapshot.empty) {
+                    alert("Invalid or expired code.");
+                    return;
+                }
+                const codeDoc = snapshot.docs[0];
+                const codeData = codeDoc.data();
+                if (codeData.expiryDate && codeData.expiryDate.toDate() < new Date()) {
+                    alert("Code expired.");
+                    return;
+                }
+                if (codeData.maxUses && codeData.usedCount >= codeData.maxUses) {
+                    alert("Code already used max times.");
+                    return;
+                }
+                await runTransaction(db, async (transaction) => {
+                    transaction.update(doc(db, "users", currentUser.uid), {
+                        availableBalance: increment(codeData.amount)
+                    });
+                    transaction.update(codeDoc.ref, {
+                        usedCount: increment(1)
+                    });
+                    if (codeData.maxUses && codeData.usedCount + 1 >= codeData.maxUses) {
+                        transaction.update(codeDoc.ref, { status: "expired" });
+                    }
+                    const redeemedRef = doc(collection(db, "redeemedCodes"));
+                    transaction.set(redeemedRef, {
+                        userId: currentUser.uid,
+                        codeId: codeDoc.id,
+                        redeemedAt: serverTimestamp()
+                    });
+                });
+                alert(`Redeemed ${formatMoney(codeData.amount)}!`);
+                refreshUserData().then(loadWallet);
+            };
+        }
+
+        async function refreshUserData() {
+            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+            currentUserData = userDoc.data();
+            // Update totalBalance as available + pending
+            currentUserData.totalBalance = currentUserData.availableBalance + currentUserData.pendingBalance;
+        }
+
+        function setActiveTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'text-blue-600'));
+            const activeLink = document.querySelector(`[data-tab="${tab}"]`);
+            if (activeLink) {
+                activeLink.classList.add('active', 'text-blue-600');
+            }
+            switch (tab) {
+                case 'dashboard': loadDashboard(); break;
+                case 'products': loadProducts(); break;
+                case 'subscriptions': loadSubscriptions(); break;
+                case 'profile': loadProfile(); break;
+                case 'wallet': loadWallet(); break;
             }
         }
 
-        const verifyModal = document.getElementById('verifyEmailModal');
-        const verifyEmailAddressSpan = document.getElementById('verifyEmailAddress');
-        const sendVerifyBtn = document.getElementById('sendVerifyBtn');
-        const verifySpinner = document.getElementById('verifySpinner');
-        window.openVerifyModal = () => {
-            verifyEmailAddressSpan.innerText = currentUser.email;
-            verifyModal.classList.remove('hidden');
-        };
-        window.closeVerifyModal = () => verifyModal.classList.add('hidden');
-        sendVerifyBtn.onclick = async () => {
-            sendVerifyBtn.disabled = true;
-            verifySpinner.classList.remove('hidden');
-            try {
-                await sendEmailVerification(currentUser);
-                showMessage("Verification email sent! Check your inbox.");
-                closeVerifyModal();
-                // after a delay, re-check status
-                setTimeout(checkEmailVerification, 5000);
-            } catch (err) {
-                showMessage(err.message, true);
-            } finally {
-                sendVerifyBtn.disabled = false;
-                verifySpinner.classList.add('hidden');
-            }
-        };
-
-        // Withdrawal form
-        const withdrawalForm = document.getElementById('withdrawalForm');
-        withdrawalForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!emailVerified) { showMessage("Please verify your email first.", true); return; }
-            const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            const method = document.getElementById('withdrawMethod').value;
-            const accountDetails = document.getElementById('accountDetails').value;
-            if (isNaN(amount) || amount <= 0) return showMessage("Valid amount required", true);
-            if (amount > (userData.balance || 0)) return showMessage("Insufficient balance", true);
-            await addDoc(collection(db, "withdrawals"), {
-                userId: currentUser.uid, amount, method, accountDetails,
-                status: 'pending', createdAt: serverTimestamp()
-            });
-            showMessage("Withdrawal request submitted.");
-            withdrawalForm.reset();
-            loadWithdrawalHistory();
-        });
-
-        // Contact form (dummy)
-        document.getElementById('contactForm')?.addEventListener('submit', (e) => { e.preventDefault(); showMessage("Message sent! We'll reply soon."); e.target.reset(); });
-
-        // Copy referral link
-        document.getElementById('copyReferralBtn').addEventListener('click', () => {
-            const inp = document.getElementById('referralLinkInput');
-            inp.select();
-            document.execCommand('copy');
-            showMessage("Referral link copied!");
-        });
-
-        // Reset password
-        window.resetPassword = async () => { await sendPasswordResetEmail(auth, currentUser.email); showMessage("Password reset email sent!"); };
-
-        // Auth state
+        // Initialize
         onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href = "register.html"; return; }
-            currentUser = user;
-            await loadUserData();
-            await loadPlans();
-            await loadActiveInvestments();
-            await loadTransactions();
-            await loadWithdrawalHistory();
-            await loadDepositRequests();
-            await loadTeam();
-            await loadDepositLink();
-            await checkEmailVerification();
-            showSection('invest');
+            if (user) {
+                currentUser = user;
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (!userDoc.exists()) {
+                    // Should not happen if registration was used
+                    alert("User profile not found. Please register first.");
+                    signOut(auth);
+                    window.location.href = "registration.html";
+                    return;
+                }
+                currentUserData = userDoc.data();
+                if (currentUserData.role === "admin") {
+                    window.location.href = "admin-dashboard.html";
+                    return;
+                }
+                await seedProducts();
+                refreshUserData().then(() => setActiveTab('dashboard'));
+                // Setup navigation
+                document.querySelectorAll('[data-tab]').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        setActiveTab(el.dataset.tab);
+                    });
+                });
+            } else {
+                window.location.href = "registration.html";
+            }
         });
     </script>
 </body>
