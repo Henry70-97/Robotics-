@@ -128,9 +128,9 @@
                 if (userDoc.exists()) {
                     const role = userDoc.data().role;
                     if (role === 'admin') {
-                        window.location.href = 'admin-dashboard.html';
+                        window.location.href = 'admin-dashboards.html';
                     } else {
-                        window.location.href = 'user-dashboard.html';
+                        window.location.href = 'user-dashboards.html';
                     }
                 } else {
                     showToast('User data missing', true);
@@ -188,7 +188,7 @@
                 await updateProfile(userCred.user, { displayName: name });
                 showToast('Account created successfully! Redirecting...');
                 setTimeout(() => {
-                    window.location.href = 'user-dashboard.html';
+                    window.location.href = 'user-dashboards.html';
                 }, 1500);
             } catch (error) {
                 showToast(error.message, true);
@@ -202,9 +202,9 @@
                 if (userDoc.exists()) {
                     const role = userDoc.data().role;
                     if (role === 'admin') {
-                        window.location.href = 'admin-dashboard.html';
+                        window.location.href = 'admin-dashboards.html';
                     } else {
-                        window.location.href = 'user-dashboard.html';
+                        window.location.href = 'user-dashboards.html';
                     }
                 } else {
                     await auth.signOut();
