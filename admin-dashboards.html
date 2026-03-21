@@ -16,6 +16,7 @@
         .hidden { display: none; }
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: white; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 24px; }
+        .admin-reply { background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 8px; margin: 8px 0; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -79,8 +80,14 @@
             <!-- Daily Task Settings Tab -->
             <div id="tasksTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Daily Task Configuration</h2><div class="bg-white p-6 rounded-xl shadow-sm"><div class="space-y-4"><div><label class="block text-gray-700 mb-2">Commission Amount (Ksh)</label><input type="number" id="taskCommissionAdmin" class="w-full border rounded-lg px-4 py-2"></div><div><label class="block text-gray-700 mb-2">Task Status</label><select id="taskStatusAdmin" class="w-full border rounded-lg px-4 py-2"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><button onclick="window.saveTaskSettings()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Settings</button></div></div></div>
 
-            <!-- Contact Messages Tab -->
-            <div id="contactsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Contact Messages</h2><div id="adminContactsList" class="space-y-4"></div></div>
+            <!-- Contact Messages Tab (Enhanced) -->
+            <div id="contactsTab" class="admin-tab hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Contact Messages</h2>
+                    <button onclick="window.openNewMessageModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg">+ New Message</button>
+                </div>
+                <div id="adminContactsList" class="space-y-4"></div>
+            </div>
 
             <!-- Deposit Requests Tab -->
             <div id="depositsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Deposit Requests</h2><div id="adminDepositsList" class="space-y-4"></div></div>
@@ -90,6 +97,44 @@
 
             <!-- Settings Tab -->
             <div id="settingsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Platform Settings</h2><div class="bg-white p-6 rounded-xl shadow-sm space-y-4"><div><label class="block text-gray-700 mb-2">Referral Bonus Percentage (%)</label><input type="number" id="referralPercentAdmin" class="w-full border rounded-lg px-4 py-2" value="15"></div><div><label class="block text-gray-700 mb-2">Payment Link (e.g., Lipa Na M-Pesa)</label><input type="url" id="paymentLinkAdmin" class="w-full border rounded-lg px-4 py-2" placeholder="https://..."></div><button onclick="window.saveSettings()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Settings</button></div></div>
+        </div>
+    </div>
+
+    <!-- Modal for Replying to Message -->
+    <div id="replyModal" class="hidden modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Reply to Message</h2>
+            <div class="space-y-3">
+                <input type="text" id="replyMessageId" hidden>
+                <input type="text" id="replyUserId" hidden>
+                <label class="block text-gray-700">Your Reply</label>
+                <textarea id="replyText" rows="4" class="w-full border rounded-lg px-4 py-2" placeholder="Type your reply..."></textarea>
+                <div class="flex gap-2">
+                    <button onclick="window.sendReply()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Send Reply</button>
+                    <button onclick="window.closeReplyModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Sending New Message -->
+    <div id="newMessageModal" class="hidden modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Send New Message</h2>
+            <div class="space-y-3">
+                <label class="block text-gray-700">Select User</label>
+                <select id="newMessageUserId" class="w-full border rounded-lg px-4 py-2">
+                    <option value="">Loading users...</option>
+                </select>
+                <label class="block text-gray-700">Subject</label>
+                <input type="text" id="newMessageSubject" class="w-full border rounded-lg px-4 py-2" placeholder="Subject">
+                <label class="block text-gray-700">Message</label>
+                <textarea id="newMessageText" rows="4" class="w-full border rounded-lg px-4 py-2" placeholder="Type your message..."></textarea>
+                <div class="flex gap-2">
+                    <button onclick="window.sendNewMessage()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Send Message</button>
+                    <button onclick="window.closeNewMessageModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -341,7 +386,7 @@
         async function loadAdminWithdrawals() {
             const container = document.getElementById('adminWithdrawalsList');
             container.innerHTML = '<div class="loader"></div>';
-            const pendingSnap = await getDocs(query(collection(db, 'withdrawals'), where('status', '==', 'pending')));
+            const pendingSnap = await getDocs(query(collection(db, 'withdrawals'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), limit(50)));
             container.innerHTML = '';
             pendingSnap.forEach(docSnap => {
                 const w = docSnap.data();
@@ -454,39 +499,139 @@
             showToast('Task settings saved');
         }
 
-        // Contact Messages
+        // Contact Messages with replies
         async function loadAdminContacts() {
             const container = document.getElementById('adminContactsList');
             container.innerHTML = '<div class="loader"></div>';
-            const messagesSnap = await getDocs(query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc')));
+            const messagesSnap = await getDocs(query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc'), limit(50)));
             container.innerHTML = '';
-            messagesSnap.forEach(docSnap => {
+            for (const docSnap of messagesSnap.docs) {
                 const msg = docSnap.data();
                 const date = msg.createdAt ? msg.createdAt.toDate().toLocaleString() : 'Unknown';
+                // Fetch replies for this message
+                const repliesQuery = query(collection(db, 'contactReplies'), where('messageId', '==', docSnap.id), orderBy('timestamp', 'asc'));
+                const repliesSnap = await getDocs(repliesQuery);
+                let repliesHtml = '';
+                repliesSnap.forEach(reply => {
+                    const replyData = reply.data();
+                    const replyDate = replyData.timestamp ? replyData.timestamp.toDate().toLocaleString() : '';
+                    const isAdmin = replyData.fromAdmin;
+                    repliesHtml += `
+                        <div class="admin-reply ml-4 mt-2">
+                            <p class="text-xs text-gray-500">${isAdmin ? 'Admin' : 'User'} - ${replyDate}</p>
+                            <p class="text-sm">${replyData.replyText}</p>
+                        </div>
+                    `;
+                });
                 const div = document.createElement('div');
                 div.className = 'bg-white p-4 rounded-xl shadow-sm';
                 div.innerHTML = `
-                    <p><strong>From:</strong> ${msg.userName} (${msg.userEmail})</p>
-                    <p><strong>Subject:</strong> ${msg.subject}</p>
-                    <p><strong>Message:</strong> ${msg.message}</p>
-                    <p class="text-sm text-gray-500">${date} - Status: ${msg.status}</p>
-                    <button onclick="window.markMessageRead('${docSnap.id}')" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm">Mark as Read</button>
+                    <div>
+                        <p><strong>From:</strong> ${msg.userName} (${msg.userEmail})</p>
+                        <p><strong>Subject:</strong> ${msg.subject}</p>
+                        <p><strong>Message:</strong> ${msg.message}</p>
+                        <p class="text-sm text-gray-500">${date} - Status: ${msg.status}</p>
+                        ${repliesHtml}
+                        <button onclick="window.openReplyModal('${docSnap.id}', '${msg.userId}')" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded text-sm">Reply</button>
+                        <button onclick="window.markMessageRead('${docSnap.id}')" class="mt-2 bg-green-500 text-white px-3 py-1 rounded text-sm">Mark as Read</button>
+                    </div>
                 `;
                 container.appendChild(div);
-            });
+            }
             if (messagesSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No messages</p>';
         }
+
+        function openReplyModal(messageId, userId) {
+            document.getElementById('replyMessageId').value = messageId;
+            document.getElementById('replyUserId').value = userId;
+            document.getElementById('replyModal').classList.remove('hidden');
+        }
+
+        function closeReplyModal() {
+            document.getElementById('replyModal').classList.add('hidden');
+            document.getElementById('replyText').value = '';
+        }
+
+        async function sendReply() {
+            const messageId = document.getElementById('replyMessageId').value;
+            const userId = document.getElementById('replyUserId').value;
+            const replyText = document.getElementById('replyText').value.trim();
+            if (!replyText) { showToast('Please enter a reply', true); return; }
+            try {
+                await addDoc(collection(db, 'contactReplies'), {
+                    messageId: messageId,
+                    userId: userId,
+                    fromAdmin: true,
+                    adminId: currentUserId,
+                    replyText: replyText,
+                    timestamp: serverTimestamp()
+                });
+                showToast('Reply sent');
+                closeReplyModal();
+                loadAdminContacts();
+            } catch (error) { showToast(error.message, true); }
+        }
+
+        // New Message to User
+        async function openNewMessageModal() {
+            // Load users for dropdown
+            const usersSnap = await getDocs(collection(db, 'users'));
+            const select = document.getElementById('newMessageUserId');
+            select.innerHTML = '<option value="">Select a user</option>';
+            usersSnap.forEach(docSnap => {
+                const user = docSnap.data();
+                select.innerHTML += `<option value="${docSnap.id}">${user.displayName} (${user.email})</option>`;
+            });
+            document.getElementById('newMessageModal').classList.remove('hidden');
+        }
+
+        function closeNewMessageModal() {
+            document.getElementById('newMessageModal').classList.add('hidden');
+            document.getElementById('newMessageUserId').value = '';
+            document.getElementById('newMessageSubject').value = '';
+            document.getElementById('newMessageText').value = '';
+        }
+
+        async function sendNewMessage() {
+            const userId = document.getElementById('newMessageUserId').value;
+            const subject = document.getElementById('newMessageSubject').value.trim();
+            const message = document.getElementById('newMessageText').value.trim();
+            if (!userId || !subject || !message) {
+                showToast('Please fill all fields', true);
+                return;
+            }
+            try {
+                // Get user details for the message
+                const userDoc = await getDoc(doc(db, 'users', userId));
+                if (!userDoc.exists()) throw new Error('User not found');
+                const user = userDoc.data();
+                await addDoc(collection(db, 'contactMessages'), {
+                    userId: userId,
+                    userName: user.displayName,
+                    userEmail: user.email,
+                    subject: subject,
+                    message: message,
+                    fromAdmin: true,
+                    status: 'unread',
+                    createdAt: serverTimestamp()
+                });
+                showToast('Message sent to user');
+                closeNewMessageModal();
+                loadAdminContacts();
+            } catch (error) { showToast(error.message, true); }
+        }
+
         async function markMessageRead(id) {
             await updateDoc(doc(db, 'contactMessages', id), { status: 'read' });
             showToast('Message marked as read');
             loadAdminContacts();
         }
 
-        // Deposit Requests
+        // Deposit Requests (optimized)
         async function loadAdminDeposits() {
             const container = document.getElementById('adminDepositsList');
             container.innerHTML = '<div class="loader"></div>';
-            const requestsSnap = await getDocs(query(collection(db, 'depositRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'desc')));
+            const requestsSnap = await getDocs(query(collection(db, 'depositRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), limit(50)));
             container.innerHTML = '';
             requestsSnap.forEach(docSnap => {
                 const req = docSnap.data();
@@ -507,6 +652,7 @@
             });
             if (requestsSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No pending deposit requests</p>';
         }
+
         async function approveDeposit(requestId, amount, userId) {
             const batch = writeBatch(db);
             batch.update(doc(db, 'depositRequests', requestId), { status: 'approved', processedAt: serverTimestamp() });
@@ -532,11 +678,11 @@
             loadAdminDeposits();
         }
 
-        // Referral Bonuses
+        // Referral Bonuses (optimized)
         async function loadAdminReferralBonuses() {
             const container = document.getElementById('adminReferralBonusesList');
             container.innerHTML = '<div class="loader"></div>';
-            const claimsSnap = await getDocs(query(collection(db, 'referralBonusClaims'), where('status', '==', 'pending'), orderBy('createdAt', 'desc')));
+            const claimsSnap = await getDocs(query(collection(db, 'referralBonusClaims'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), limit(50)));
             container.innerHTML = '';
             claimsSnap.forEach(docSnap => {
                 const claim = docSnap.data();
@@ -557,6 +703,7 @@
             });
             if (claimsSnap.empty) container.innerHTML = '<p class="text-center text-gray-500">No pending referral bonus claims</p>';
         }
+
         async function approveReferralBonus(claimId, amount, referrerId) {
             const batch = writeBatch(db);
             batch.update(doc(db, 'referralBonusClaims', claimId), { status: 'approved', processedAt: serverTimestamp() });
@@ -623,6 +770,12 @@
         window.generateGiftCode = generateGiftCode;
         window.deleteGiftCode = deleteGiftCode;
         window.saveTaskSettings = saveTaskSettings;
+        window.openReplyModal = openReplyModal;
+        window.closeReplyModal = closeReplyModal;
+        window.sendReply = sendReply;
+        window.openNewMessageModal = openNewMessageModal;
+        window.closeNewMessageModal = closeNewMessageModal;
+        window.sendNewMessage = sendNewMessage;
         window.markMessageRead = markMessageRead;
         window.approveDeposit = approveDeposit;
         window.rejectDeposit = rejectDeposit;
