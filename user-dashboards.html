@@ -34,6 +34,53 @@
         }
         .whatsapp-float:hover { transform: scale(1.1); }
         .countdown { font-family: monospace; font-size: 0.9rem; color: #f59e0b; }
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 50;
+        }
+        .bottom-nav button {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 0;
+            color: #6b7280;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+        }
+        .bottom-nav button.active {
+            color: #4f46e5;
+        }
+        .bottom-nav svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+        }
+        .bottom-nav span {
+            font-size: 12px;
+        }
+        @media (min-width: 768px) {
+            .bottom-nav { display: none; }
+        }
+        /* Collapsible sections */
+        .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        .collapsible-content {
+            transition: max-height 0.3s ease-out;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -62,6 +109,7 @@
                     <a href="#" onclick="navigateTo('wallet')" class="text-gray-600 hover:text-indigo-600">Wallet</a>
                     <a href="#" onclick="navigateTo('referral')" class="text-gray-600 hover:text-indigo-600">Referrals</a>
                     <a href="#" onclick="navigateTo('tasks')" class="text-gray-600 hover:text-indigo-600">Daily Task</a>
+                    <a href="#" onclick="navigateTo('messages')" class="text-gray-600 hover:text-indigo-600">Messages</a>
                     <a href="#" onclick="navigateTo('contacts')" class="text-gray-600 hover:text-indigo-600">Contact</a>
                     <a href="#" onclick="navigateTo('profile')" class="text-gray-600 hover:text-indigo-600">Profile</a>
                     <button onclick="logout()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Logout</button>
@@ -83,6 +131,7 @@
                 <a href="#" onclick="navigateTo('wallet'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Wallet</a>
                 <a href="#" onclick="navigateTo('referral'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Referrals</a>
                 <a href="#" onclick="navigateTo('tasks'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Daily Task</a>
+                <a href="#" onclick="navigateTo('messages'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Messages</a>
                 <a href="#" onclick="navigateTo('contacts'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Contact</a>
                 <a href="#" onclick="navigateTo('profile'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Profile</a>
                 <button onclick="logout(); toggleMobileMenu()" class="w-full text-left py-2 text-red-500">Logout</button>
@@ -90,7 +139,7 @@
         </div>
     </nav>
 
-    <main class="pt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    <main class="pt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 md:pb-12">
         <!-- Dashboard Page -->
         <div id="dashboardPage" class="space-y-6">
             <h1 class="text-3xl font-bold">Welcome back, <span id="userName">User</span>!</h1>
@@ -100,9 +149,10 @@
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Daily Task Commission</p><p id="dailyTaskCommission" class="text-2xl font-bold text-yellow-600">Ksh 0</p></div>
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Referral Bonus</p><p id="referralBonus" class="text-2xl font-bold text-purple-600">Ksh 0</p></div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Available Balance</p><p id="availableBalance" class="text-2xl font-bold">Ksh 0</p></div>
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Total Invested</p><p id="totalInvested" class="text-2xl font-bold">Ksh 0</p></div>
+                <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Total Withdrawn</p><p id="totalWithdrawn" class="text-2xl font-bold">Ksh 0</p></div>
             </div>
             <div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Recent Activity</h2><div id="recentActivity" class="space-y-2"></div></div>
         </div>
@@ -130,21 +180,55 @@
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Available Balance</p><p id="walletAvailableBalance" class="text-2xl font-bold text-green-600">Ksh 0</p></div>
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Pending Balance</p><p id="walletPendingBalance" class="text-2xl font-bold text-yellow-600">Ksh 0</p></div>
             </div>
-            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
-                <h2 class="text-xl font-bold mb-4">Add Funds</h2>
-                <div id="paymentLinkContainer" class="mb-4 p-3 bg-blue-50 rounded-lg">
-                    <p class="text-sm text-gray-600">Use the payment link below to make a deposit:</p>
-                    <a id="paymentLink" href="#" target="_blank" class="text-blue-600 underline break-all">Loading...</a>
-                    <button id="addFundsButton" class="mt-2 w-full bg-indigo-600 text-white py-2 rounded-lg">Proceed to Payment</button>
+
+            <!-- Add Funds Section (collapsible) -->
+            <div class="bg-white rounded-xl shadow-sm mb-4">
+                <div class="collapsible-header p-4 flex justify-between items-center" onclick="toggleSection('addFundsSection')">
+                    <h2 class="text-xl font-bold">Add Funds</h2>
+                    <svg class="w-6 h-6 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
                 </div>
-                <div class="border-t pt-4">
-                    <p class="text-sm text-gray-600 mb-2">Or request manual deposit (will be added after admin approval):</p>
-                    <input type="number" id="depositAmount" placeholder="Amount (Ksh)" class="w-full border rounded-lg px-4 py-2 mb-3">
-                    <textarea id="depositMessage" rows="3" placeholder="Paste payment confirmation message (transaction ID, screenshot link, etc.)" class="w-full border rounded-lg px-4 py-2 mb-3"></textarea>
-                    <button onclick="requestDeposit()" class="w-full bg-indigo-600 text-white py-2 rounded-lg">Submit Deposit Request</button>
+                <div id="addFundsSection" class="collapsible-content hidden p-4 pt-0">
+                    <div id="paymentLinkContainer" class="mb-4 p-3 bg-blue-50 rounded-lg">
+                        <p class="text-sm text-gray-600">Use the payment link below to make a deposit:</p>
+                        <a id="paymentLink" href="#" target="_blank" class="text-blue-600 underline break-all">Loading...</a>
+                        <button id="addFundsButton" class="mt-2 w-full bg-indigo-600 text-white py-2 rounded-lg">Proceed to Payment</button>
+                    </div>
+                    <div class="border-t pt-4">
+                        <p class="text-sm text-gray-600 mb-2">Or request manual deposit (will be added after admin approval):</p>
+                        <input type="number" id="depositAmount" placeholder="Amount (Ksh)" class="w-full border rounded-lg px-4 py-2 mb-3">
+                        <textarea id="depositMessage" rows="3" placeholder="Paste payment confirmation message (transaction ID, screenshot link, etc.)" class="w-full border rounded-lg px-4 py-2 mb-3"></textarea>
+                        <button onclick="requestDeposit()" class="w-full bg-indigo-600 text-white py-2 rounded-lg">Submit Deposit Request</button>
+                    </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Withdraw Funds</h2><input type="number" id="withdrawAmount" class="w-full border rounded-lg px-4 py-2 mb-3" placeholder="Amount (Ksh)"><select id="withdrawMethod" class="w-full border rounded-lg px-4 py-2 mb-3"><option value="mpesa">M-Pesa</option><option value="bank">Bank Transfer</option></select><textarea id="withdrawDetails" class="w-full border rounded-lg px-4 py-2 mb-3" rows="2" placeholder="Account details"></textarea><button onclick="requestWithdrawal()" class="w-full bg-yellow-500 text-white py-2 rounded-lg">Request Withdrawal</button></div>
+
+            <!-- Withdraw Section (collapsible) -->
+            <div class="bg-white rounded-xl shadow-sm mb-4">
+                <div class="collapsible-header p-4 flex justify-between items-center" onclick="toggleSection('withdrawSection')">
+                    <h2 class="text-xl font-bold">Withdraw Funds</h2>
+                    <svg class="w-6 h-6 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
+                <div id="withdrawSection" class="collapsible-content hidden p-4 pt-0">
+                    <div id="withdrawalVerificationInfo" class="mb-3 p-3 bg-yellow-50 rounded-lg text-sm">
+                        <p>⚠️ For security, you must verify your email before withdrawing.</p>
+                        <button id="verifyEmailBtn" onclick="sendVerificationEmail()" class="mt-2 bg-yellow-500 text-white px-4 py-1 rounded text-sm">Verify Email</button>
+                    </div>
+                    <input type="number" id="withdrawAmount" class="w-full border rounded-lg px-4 py-2 mb-3" placeholder="Amount (Ksh)">
+                    <select id="withdrawMethod" class="w-full border rounded-lg px-4 py-2 mb-3">
+                        <option value="mpesa">M-Pesa</option>
+                        <option value="bank">Bank Transfer</option>
+                    </select>
+                    <textarea id="withdrawDetails" class="w-full border rounded-lg px-4 py-2 mb-3" rows="2" placeholder="Account details (Phone number for M-Pesa, Bank account details)"></textarea>
+                    <p class="text-xs text-gray-500 mb-2">Note: For withdrawals above Ksh 500, a 5% transaction fee will apply.</p>
+                    <button onclick="requestWithdrawal()" id="withdrawSubmitBtn" class="w-full bg-yellow-500 text-white py-2 rounded-lg">Request Withdrawal</button>
+                </div>
+            </div>
+
+            <!-- Gift Code Section -->
             <div class="bg-white rounded-xl p-6 shadow-sm mt-6"><h2 class="text-xl font-bold mb-4">Redeem Gift Code</h2><div class="flex gap-2"><input type="text" id="giftCodeInput" class="flex-1 border rounded-lg px-4 py-2" placeholder="Enter gift code"><button onclick="redeemGiftCode()" class="bg-purple-600 text-white px-6 py-2 rounded-lg">Redeem</button></div></div>
             <div class="bg-white rounded-xl p-6 shadow-sm mt-6"><h2 class="text-xl font-bold mb-4">Transaction History</h2><div id="transactionList" class="space-y-2 max-h-96 overflow-y-auto"></div></div>
         </div>
@@ -187,7 +271,13 @@
             </div>
         </div>
 
-        <!-- Contacts Page -->
+        <!-- Messages Page (Admin messages) -->
+        <div id="messagesPage" class="hidden">
+            <h1 class="text-3xl font-bold mb-6">Messages from Admin</h1>
+            <div id="adminMessagesList" class="space-y-4"></div>
+        </div>
+
+        <!-- Contacts Page (User to admin) -->
         <div id="contactsPage" class="hidden">
             <h1 class="text-3xl font-bold mb-6">Contact Support</h1>
             <div class="bg-white rounded-xl p-6 shadow-sm max-w-2xl">
@@ -204,11 +294,35 @@
         <div id="profilePage" class="hidden"><h1 class="text-3xl font-bold mb-6">Profile Settings</h1><div class="bg-white rounded-xl p-6 shadow-sm max-w-lg"><div class="mb-4"><label class="block text-gray-700 mb-2">Display Name</label><input type="text" id="profileName" class="w-full border rounded-lg px-4 py-2"></div><div class="mb-4"><label class="block text-gray-700 mb-2">Email</label><input type="email" id="profileEmail" class="w-full border rounded-lg px-4 py-2 bg-gray-50" readonly></div><div class="mb-4"><label class="block text-gray-700 mb-2">New Password (leave blank to keep current)</label><input type="password" id="profilePassword" class="w-full border rounded-lg px-4 py-2"></div><button onclick="updateProfile()" class="w-full bg-indigo-600 text-white py-2 rounded-lg">Update Profile</button></div></div>
     </main>
 
+    <!-- Bottom Navigation (Mobile) -->
+    <div class="bottom-nav md:hidden">
+        <button onclick="navigateTo('dashboard')" class="active" data-page="dashboard">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span>Home</span>
+        </button>
+        <button onclick="navigateTo('products')" data-page="products">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            <span>Invest</span>
+        </button>
+        <button onclick="navigateTo('wallet')" data-page="wallet">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            <span>Wallet</span>
+        </button>
+        <button onclick="navigateTo('referral')" data-page="referral">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <span>Refer</span>
+        </button>
+        <button onclick="navigateTo('profile')" data-page="profile">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span>Profile</span>
+        </button>
+    </div>
+
     <div id="toast" class="toast hidden"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut, updateProfile, updatePassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit, onSnapshot, increment, serverTimestamp, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -244,9 +358,14 @@
         }
 
         function navigateTo(page) {
-            const pages = ['dashboard', 'products', 'subscriptions', 'wallet', 'referral', 'tasks', 'contacts', 'profile'];
+            const pages = ['dashboard', 'products', 'subscriptions', 'wallet', 'referral', 'tasks', 'messages', 'contacts', 'profile'];
             pages.forEach(p => document.getElementById(p + 'Page').classList.add('hidden'));
             document.getElementById(page + 'Page').classList.remove('hidden');
+            // Update bottom nav active state
+            document.querySelectorAll('.bottom-nav button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-page') === page) btn.classList.add('active');
+            });
             window.scrollTo(0, 0);
             const mobileMenu = document.getElementById('mobileMenu');
             if (!mobileMenu.classList.contains('hidden')) mobileMenu.classList.add('hidden');
@@ -274,14 +393,12 @@
                 const inv = docSnap.data();
                 const endTime = inv.endTime.toDate();
                 if (endTime <= now) {
-                    // Investment matured
                     batch.update(docSnap.ref, { status: 'completed' });
                     batch.update(doc(db, 'users', currentUserId), {
                         availableBalance: increment(inv.totalReturn),
                         totalBalance: increment(inv.totalReturn),
                         totalReturns: increment(inv.profit)
                     });
-                    // Add transaction record
                     const transRef = doc(collection(db, 'transactions'));
                     batch.set(transRef, {
                         userId: currentUserId,
@@ -295,14 +412,10 @@
                     showToast(`Your hourly investment of ${formatCurrency(inv.amount)} has matured! ${formatCurrency(inv.totalReturn)} added to your balance.`, false);
                 }
             }
-            if (processed) {
-                await batch.commit();
-                loadUserData(); // refresh user data
-                loadTransactions(); // refresh transactions
-            }
+            if (processed) await batch.commit();
         }
 
-        // Check user frozen status and disable actions if needed
+        // Check user frozen status
         function isUserFrozen() {
             if (currentUserData && currentUserData.status === 'frozen') {
                 showToast('Your account is frozen. Please contact admin for assistance.', true);
@@ -321,7 +434,6 @@
                     updateUserUI();
                     loadReferralInfo();
                     loadPendingCommission();
-                    // Process hourly investments after user data is loaded
                     processHourlyInvestments();
                 }
             });
@@ -335,6 +447,7 @@
             document.getElementById('referralBonus').textContent = formatCurrency(currentUserData.referralBonus || 0);
             document.getElementById('availableBalance').textContent = formatCurrency(currentUserData.availableBalance || 0);
             document.getElementById('totalInvested').textContent = formatCurrency(currentUserData.totalInvested || 0);
+            document.getElementById('totalWithdrawn').textContent = formatCurrency(currentUserData.totalWithdrawn || 0);
             document.getElementById('walletTotalBalance').textContent = formatCurrency(currentUserData.totalBalance || 0);
             document.getElementById('walletAvailableBalance').textContent = formatCurrency(currentUserData.availableBalance || 0);
             document.getElementById('walletPendingBalance').textContent = formatCurrency(currentUserData.pendingBalance || 0);
@@ -342,7 +455,7 @@
             document.getElementById('profileEmail').value = currentUserData.email || '';
         }
 
-        // Products with investment type toggle
+        // Products loading (unchanged, but ensure hourly ROI works)
         async function loadProducts() {
             const container = document.getElementById('productsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -406,7 +519,6 @@
             let roi = 15;
             if (hours >= 16) roi = 20;
             document.getElementById(`roi_${productId}`).innerText = roi + '%';
-            // Need to get price from the button's onclick attribute; we can extract from the card
             const card = document.getElementById(`hours_${productId}`).closest('.bg-white');
             const priceText = card.querySelector('p:first-of-type').innerText.match(/[\d,]+/)[0];
             const price = parseFloat(priceText.replace(/,/g, ''));
@@ -427,34 +539,23 @@
             }
             try {
                 if (type === 'daily') {
-                    // Daily income subscription
                     const startDate = new Date();
                     const endDate = new Date(startDate);
-                    endDate.setDate(endDate.getDate() + 30); // default 30 days
+                    endDate.setDate(endDate.getDate() + 30);
                     const batch = writeBatch(db);
                     const userRef = doc(db, 'users', currentUserId);
                     batch.update(userRef, { availableBalance: increment(-price), totalInvested: increment(price), activePackagesCount: increment(1), totalBalance: increment(-price) });
                     const subRef = doc(collection(db, 'subscriptions'));
                     batch.set(subRef, { userId: currentUserId, productId, productName, productImage, dailyIncome, durationDays: 30, startDate, endDate, lastClaimDate: null, totalEarned: 0, status: 'active' });
-                    // Add purchase commission (10% of price)
                     const commissionAmount = price * 0.10;
                     const commissionRef = doc(collection(db, 'purchaseCommissions'));
                     batch.set(commissionRef, { userId: currentUserId, productName, amount: commissionAmount, isClaimed: false, createdAt: serverTimestamp() });
-                    // Add transaction record
                     const transRef = doc(collection(db, 'transactions'));
-                    batch.set(transRef, {
-                        userId: currentUserId,
-                        type: 'package_purchase',
-                        amount: price,
-                        status: 'completed',
-                        description: `Purchase of ${productName}`,
-                        timestamp: serverTimestamp()
-                    });
+                    batch.set(transRef, { userId: currentUserId, type: 'package_purchase', amount: price, status: 'completed', description: `Purchase of ${productName}`, timestamp: serverTimestamp() });
                     await batch.commit();
                     showToast('Package purchased successfully!');
                     loadSubscriptions();
                 } else {
-                    // Hourly investment
                     const roi = hours >= 16 ? 20 : 15;
                     const profit = price * roi / 100;
                     const totalReturn = price + profit;
@@ -464,28 +565,9 @@
                     const userRef = doc(db, 'users', currentUserId);
                     batch.update(userRef, { availableBalance: increment(-price), totalInvested: increment(price), totalBalance: increment(-price) });
                     const investRef = doc(collection(db, 'hourlyInvestments'));
-                    batch.set(investRef, {
-                        userId: currentUserId,
-                        productName,
-                        amount: price,
-                        hours,
-                        roi,
-                        profit,
-                        totalReturn,
-                        startTime: serverTimestamp(),
-                        endTime,
-                        status: 'active'
-                    });
-                    // Add transaction for investment (not profit yet)
+                    batch.set(investRef, { userId: currentUserId, productName, amount: price, hours, roi, profit, totalReturn, startTime: serverTimestamp(), endTime, status: 'active' });
                     const transRef = doc(collection(db, 'transactions'));
-                    batch.set(transRef, {
-                        userId: currentUserId,
-                        type: 'hourly_investment',
-                        amount: price,
-                        status: 'completed',
-                        description: `Hourly investment of ${formatCurrency(price)} for ${hours} hours (${roi}% profit)`,
-                        timestamp: serverTimestamp()
-                    });
+                    batch.set(transRef, { userId: currentUserId, type: 'hourly_investment', amount: price, status: 'completed', description: `Hourly investment of ${formatCurrency(price)} for ${hours} hours (${roi}% profit)`, timestamp: serverTimestamp() });
                     await batch.commit();
                     showToast(`Hourly investment of ${formatCurrency(price)} placed for ${hours} hours. You'll receive ${formatCurrency(totalReturn)} after completion.`);
                 }
@@ -569,16 +651,8 @@
                 batch.update(subRef, { totalEarned: increment(dailyIncome), lastClaimDate: serverTimestamp() });
                 const userRef = doc(db, 'users', currentUserId);
                 batch.update(userRef, { availableBalance: increment(dailyIncome), totalReturns: increment(dailyIncome), totalBalance: increment(dailyIncome) });
-                // Add transaction record
                 const transRef = doc(collection(db, 'transactions'));
-                batch.set(transRef, {
-                    userId: currentUserId,
-                    type: 'daily_income',
-                    amount: dailyIncome,
-                    status: 'completed',
-                    description: `Daily income from ${subData.productName}`,
-                    timestamp: serverTimestamp()
-                });
+                batch.set(transRef, { userId: currentUserId, type: 'daily_income', amount: dailyIncome, status: 'completed', description: `Daily income from ${subData.productName}`, timestamp: serverTimestamp() });
                 await batch.commit();
                 showToast(`Claimed ${formatCurrency(dailyIncome)} successfully!`);
                 loadSubscriptions();
@@ -589,74 +663,79 @@
         // Wallet functions
         async function loadPaymentLink() {
             const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
-            let link = 'https://lipana.dev'; // default fallback
-            if (settingsDoc.exists() && settingsDoc.data().paymentLink) {
-                link = settingsDoc.data().paymentLink;
-            }
+            let link = 'https://lipana.dev';
+            if (settingsDoc.exists() && settingsDoc.data().paymentLink) link = settingsDoc.data().paymentLink;
             const linkEl = document.getElementById('paymentLink');
             linkEl.href = link;
             linkEl.textContent = link;
             const btn = document.getElementById('addFundsButton');
-            btn.onclick = () => {
-                if (link && link !== '#') {
-                    window.open(link, '_blank');
-                } else {
-                    showToast('Payment link not configured by admin', true);
-                }
-            };
+            btn.onclick = () => { if (link && link !== '#') window.open(link, '_blank'); else showToast('Payment link not configured', true); };
         }
 
         window.requestDeposit = async function() {
             if (isUserFrozen()) return;
             const amount = parseFloat(document.getElementById('depositAmount').value);
             const message = document.getElementById('depositMessage').value.trim();
-            if (isNaN(amount) || amount <= 0 || !message) {
-                showToast('Please enter amount and payment confirmation', true);
-                return;
-            }
+            if (isNaN(amount) || amount <= 0 || !message) { showToast('Please enter amount and payment confirmation', true); return; }
             try {
-                await addDoc(collection(db, 'depositRequests'), {
-                    userId: currentUserId,
-                    amount: amount,
-                    message: message,
-                    status: 'pending',
-                    createdAt: serverTimestamp()
-                });
+                await addDoc(collection(db, 'depositRequests'), { userId: currentUserId, amount, message, status: 'pending', createdAt: serverTimestamp() });
                 showToast('Deposit request sent to admin. Funds will be added after approval.');
                 document.getElementById('depositAmount').value = '';
                 document.getElementById('depositMessage').value = '';
             } catch (error) { showToast(error.message, true); }
         };
 
+        window.sendVerificationEmail = async function() {
+            if (auth.currentUser) {
+                await sendEmailVerification(auth.currentUser);
+                showToast('Verification email sent. Please check your inbox.');
+            }
+        };
+
+        async function isEmailVerified() {
+            await auth.currentUser.reload();
+            return auth.currentUser.emailVerified;
+        }
+
         window.requestWithdrawal = async function() {
             if (isUserFrozen()) return;
-            const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            const method = document.getElementById('withdrawMethod').value;
-            const details = document.getElementById('withdrawDetails').value;
-            if (isNaN(amount) || amount <= 0 || !details) { showToast('Please fill all fields', true); return; }
-            if (amount > currentUserData.availableBalance) { showToast('Insufficient available balance', true); return; }
+            const btn = document.getElementById('withdrawSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div> Processing...';
             try {
+                const verified = await isEmailVerified();
+                if (!verified) {
+                    showToast('Please verify your email before withdrawing. Check your inbox for verification link.', true);
+                    btn.disabled = false;
+                    btn.innerHTML = 'Request Withdrawal';
+                    return;
+                }
+                const amount = parseFloat(document.getElementById('withdrawAmount').value);
+                const method = document.getElementById('withdrawMethod').value;
+                const details = document.getElementById('withdrawDetails').value.trim();
+                if (isNaN(amount) || amount <= 0 || !details) { showToast('Please fill all fields', true); btn.disabled = false; btn.innerHTML = 'Request Withdrawal'; return; }
+                if (amount > currentUserData.availableBalance) { showToast('Insufficient available balance', true); btn.disabled = false; btn.innerHTML = 'Request Withdrawal'; return; }
+                let fee = 0;
+                if (amount > 500) fee = amount * 0.05;
+                const netAmount = amount - fee;
+                const confirmMsg = `Withdrawal Details:\nAmount: ${formatCurrency(amount)}\nFee: ${formatCurrency(fee)}\nNet to receive: ${formatCurrency(netAmount)}\nMethod: ${method}\nDetails: ${details}\n\nConfirm withdrawal?`;
+                if (!confirm(confirmMsg)) { btn.disabled = false; btn.innerHTML = 'Request Withdrawal'; return; }
                 const batch = writeBatch(db);
                 const userRef = doc(db, 'users', currentUserId);
                 batch.update(userRef, { availableBalance: increment(-amount), pendingBalance: increment(amount), totalBalance: increment(-amount) });
                 const withdrawRef = doc(collection(db, 'withdrawals'));
-                batch.set(withdrawRef, { userId: currentUserId, amount, method, accountDetails: details, status: 'pending', createdAt: serverTimestamp() });
-                // Add transaction record for pending withdrawal
+                batch.set(withdrawRef, { userId: currentUserId, amount: amount, fee: fee, netAmount: netAmount, method, accountDetails: details, status: 'pending', createdAt: serverTimestamp() });
                 const transRef = doc(collection(db, 'transactions'));
-                batch.set(transRef, {
-                    userId: currentUserId,
-                    type: 'withdrawal_request',
-                    amount: amount,
-                    status: 'pending',
-                    description: `Withdrawal request via ${method}`,
-                    timestamp: serverTimestamp()
-                });
+                batch.set(transRef, { userId: currentUserId, type: 'withdrawal_request', amount: amount, fee: fee, status: 'pending', description: `Withdrawal request via ${method}`, timestamp: serverTimestamp() });
                 await batch.commit();
                 showToast('Withdrawal request submitted');
                 document.getElementById('withdrawAmount').value = '';
                 document.getElementById('withdrawDetails').value = '';
                 loadUserData();
-            } catch (error) { showToast(error.message, true); }
+            } catch (error) { showToast(error.message, true); } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Request Withdrawal';
+            }
         };
 
         window.redeemGiftCode = async function() {
@@ -675,16 +754,8 @@
                 batch.update(codeRef, { usedCount: increment(1), status: (codeData.maxUses && codeData.usedCount+1 >= codeData.maxUses) ? 'expired' : 'active' });
                 const userRef = doc(db, 'users', currentUserId);
                 batch.update(userRef, { availableBalance: increment(codeData.amount), totalBalance: increment(codeData.amount) });
-                // Add transaction record
                 const transRef = doc(collection(db, 'transactions'));
-                batch.set(transRef, {
-                    userId: currentUserId,
-                    type: 'gift_code',
-                    amount: codeData.amount,
-                    status: 'completed',
-                    description: `Redeemed gift code ${code}`,
-                    timestamp: serverTimestamp()
-                });
+                batch.set(transRef, { userId: currentUserId, type: 'gift_code', amount: codeData.amount, status: 'completed', description: `Redeemed gift code ${code}`, timestamp: serverTimestamp() });
                 await batch.commit();
                 showToast(`Redeemed ${formatCurrency(codeData.amount)} from gift code`);
                 document.getElementById('giftCodeInput').value = '';
@@ -708,23 +779,18 @@
                     div.innerHTML = `<div><p class="font-medium">${t.type.replace('_', ' ').toUpperCase()}</p><p class="text-xs text-gray-400">${date}</p><p class="text-xs">${t.description || ''}</p></div><div class="text-right"><p class="font-bold ${t.amount >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(Math.abs(t.amount))}</p><p class="text-xs ${t.status === 'completed' ? 'text-green-500' : 'text-yellow-500'}">${t.status}</p></div>`;
                     container.appendChild(div);
                 });
-            } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading transactions</p>'; }
+            } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading transactions</p>'; console.error(error); }
         }
 
         // Referral
         async function loadReferralInfo() {
             if (!currentUserData) return;
-            // Build referral link pointing to signup page (index.html) with referral code
-            const baseUrl = window.location.origin;
-            const signupPath = '/index.html'; // adjust if your signup page is different
-            const link = `${baseUrl}${signupPath}?ref=${currentUserData.referralCode || ''}`;
+            const link = `${window.location.origin}/index.html?ref=${currentUserData.referralCode || ''}`;
             document.getElementById('referralLink').value = link;
-            // Get referred users
             const q = query(collection(db, 'users'), where('referredBy', '==', currentUserId));
             const snapshot = await getDocs(q);
             document.getElementById('referralCount').innerText = snapshot.size;
             document.getElementById('referralBonusTotal').innerText = formatCurrency(currentUserData.referralBonus || 0);
-            // Build referred users list with their first package purchase amount
             const container = document.getElementById('referredUsersList');
             container.innerHTML = '';
             for (const docSnap of snapshot.docs) {
@@ -739,10 +805,7 @@
                 if (bonusSnap.empty && purchaseAmount > 0) claimable = true;
                 const div = document.createElement('div');
                 div.className = 'border rounded-lg p-3 flex justify-between items-center';
-                div.innerHTML = `
-                    <div><p class="font-semibold">${referred.displayName}</p><p class="text-sm text-gray-500">First purchase: ${formatCurrency(purchaseAmount)}</p></div>
-                    ${claimable ? `<button onclick="claimReferralBonus('${docSnap.id}', ${purchaseAmount})" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Claim Bonus (15%)</button>` : '<span class="text-gray-400">Bonus claimed</span>'}
-                `;
+                div.innerHTML = `<div><p class="font-semibold">${referred.displayName}</p><p class="text-sm text-gray-500">First purchase: ${formatCurrency(purchaseAmount)}</p></div>${claimable ? `<button onclick="claimReferralBonus('${docSnap.id}', ${purchaseAmount})" class="bg-green-600 text-white px-3 py-1 rounded text-sm">Claim Bonus (15%)</button>` : '<span class="text-gray-400">Bonus claimed</span>'}`;
                 container.appendChild(div);
             }
         }
@@ -751,13 +814,7 @@
             if (isUserFrozen()) return;
             const bonusAmount = purchaseAmount * 0.15;
             try {
-                await addDoc(collection(db, 'referralBonusClaims'), {
-                    referrerId: currentUserId,
-                    referredUserId: referredUserId,
-                    amount: bonusAmount,
-                    status: 'pending',
-                    createdAt: serverTimestamp()
-                });
+                await addDoc(collection(db, 'referralBonusClaims'), { referrerId: currentUserId, referredUserId, amount: bonusAmount, status: 'pending', createdAt: serverTimestamp() });
                 showToast(`Bonus claim (${formatCurrency(bonusAmount)}) sent to admin for approval.`);
                 loadReferralInfo();
             } catch (error) { showToast(error.message, true); }
@@ -780,8 +837,7 @@
             pendingCommission = total;
             document.getElementById('pendingCommissionAmount').innerText = formatCurrency(total);
             const btn = document.getElementById('claimTaskBtn');
-            if (total <= 0) btn.disabled = true;
-            else btn.disabled = false;
+            btn.disabled = total <= 0;
         }
 
         window.claimCommission = async function() {
@@ -791,31 +847,45 @@
                 const q = query(collection(db, 'purchaseCommissions'), where('userId', '==', currentUserId), where('isClaimed', '==', false));
                 const snapshot = await getDocs(q);
                 const batch = writeBatch(db);
-                snapshot.forEach(doc => {
-                    batch.update(doc.ref, { isClaimed: true, claimedAt: serverTimestamp() });
-                });
+                snapshot.forEach(doc => batch.update(doc.ref, { isClaimed: true, claimedAt: serverTimestamp() }));
                 const userRef = doc(db, 'users', currentUserId);
-                batch.update(userRef, {
-                    availableBalance: increment(pendingCommission),
-                    totalBalance: increment(pendingCommission),
-                    dailyTaskCommission: increment(pendingCommission)
-                });
-                // Add transaction record
+                batch.update(userRef, { availableBalance: increment(pendingCommission), totalBalance: increment(pendingCommission), dailyTaskCommission: increment(pendingCommission) });
                 const transRef = doc(collection(db, 'transactions'));
-                batch.set(transRef, {
-                    userId: currentUserId,
-                    type: 'commission_claim',
-                    amount: pendingCommission,
-                    status: 'completed',
-                    description: 'Claimed purchase commission',
-                    timestamp: serverTimestamp()
-                });
+                batch.set(transRef, { userId: currentUserId, type: 'commission_claim', amount: pendingCommission, status: 'completed', description: 'Claimed purchase commission', timestamp: serverTimestamp() });
                 await batch.commit();
                 showToast(`Claimed ${formatCurrency(pendingCommission)} commission!`);
                 loadPendingCommission();
                 loadUserData();
             } catch (error) { showToast(error.message, true); }
         };
+
+        // Admin Messages
+        async function loadAdminMessages() {
+            const container = document.getElementById('adminMessagesList');
+            container.innerHTML = '<div class="loader"></div>';
+            try {
+                // Get messages where fromAdmin is true
+                const q = query(collection(db, 'contactMessages'), where('userId', '==', currentUserId), where('fromAdmin', '==', true), orderBy('createdAt', 'desc'), limit(50));
+                const snapshot = await getDocs(q);
+                container.innerHTML = '';
+                if (snapshot.empty) { container.innerHTML = '<p class="text-center text-gray-500">No messages from admin</p>'; return; }
+                snapshot.forEach(docSnap => {
+                    const msg = docSnap.data();
+                    const date = msg.createdAt ? msg.createdAt.toDate().toLocaleString() : 'Unknown';
+                    const div = document.createElement('div');
+                    div.className = 'bg-white rounded-xl p-4 shadow-sm border-l-4 border-indigo-500';
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="font-semibold text-indigo-600">Admin</p>
+                            <p class="text-xs text-gray-400">${date}</p>
+                        </div>
+                        <p class="font-medium text-gray-800">${msg.subject}</p>
+                        <p class="text-gray-600 mt-1">${msg.message}</p>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading messages</p>'; }
+        }
 
         // Contact
         window.sendContactMessage = async function() {
@@ -831,6 +901,7 @@
                     subject: subject,
                     message: message,
                     status: 'unread',
+                    fromAdmin: false,
                     createdAt: serverTimestamp()
                 });
                 showToast('Message sent! Admin will respond soon.');
@@ -857,6 +928,15 @@
             } catch (error) { showToast(error.message, true); }
         };
 
+        // Collapsible sections
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.classList.toggle('hidden');
+            const header = section.previousElementSibling;
+            const icon = header.querySelector('svg');
+            if (icon) icon.style.transform = section.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
         // Auth state
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -872,6 +952,7 @@
                     loadReferralInfo();
                     loadPendingCommission();
                     loadPaymentLink();
+                    loadAdminMessages();
                     navigateTo('dashboard');
                 } else if (userDoc.exists() && userDoc.data().role === 'admin') {
                     window.location.href = 'admin-dashboard.html';
@@ -887,6 +968,7 @@
         window.navigateTo = navigateTo;
         window.toggleMobileMenu = toggleMobileMenu;
         window.logout = logout;
+        window.toggleSection = toggleSection;
     </script>
 </body>
 </html>
