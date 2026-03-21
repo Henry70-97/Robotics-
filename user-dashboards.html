@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>UrbanDollar - User Dashboard</title>
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,6 +14,11 @@
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #6366f1; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none; }
+        /* Ensure mobile menu appears above content */
+        #mobileMenu { z-index: 100; position: absolute; width: 100%; left: 0; right: 0; }
+        @media (min-width: 768px) {
+            #mobileMenu { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -27,6 +32,7 @@
                     </div>
                     <span class="font-bold text-xl text-gray-800">Urban<span class="text-indigo-600">Dollar</span></span>
                 </div>
+                <!-- Desktop menu -->
                 <div class="hidden md:flex items-center gap-6">
                     <a href="#" onclick="navigateTo('dashboard')" class="text-gray-600 hover:text-indigo-600">Dashboard</a>
                     <a href="#" onclick="navigateTo('products')" class="text-gray-600 hover:text-indigo-600">Products</a>
@@ -37,20 +43,24 @@
                     <a href="#" onclick="navigateTo('profile')" class="text-gray-600 hover:text-indigo-600">Profile</a>
                     <button onclick="logout()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Logout</button>
                 </div>
-                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-gray-100">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <!-- Mobile menu button -->
+                <button id="menuButton" onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-gray-100 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
                 </button>
             </div>
         </div>
-        <div id="mobileMenu" class="hidden md:hidden bg-white border-t">
+        <!-- Mobile menu (hidden initially) -->
+        <div id="mobileMenu" class="hidden bg-white border-t shadow-lg">
             <div class="px-4 py-2 space-y-2">
-                <a href="#" onclick="navigateTo('dashboard'); toggleMobileMenu()" class="block py-2">Dashboard</a>
-                <a href="#" onclick="navigateTo('products'); toggleMobileMenu()" class="block py-2">Products</a>
-                <a href="#" onclick="navigateTo('subscriptions'); toggleMobileMenu()" class="block py-2">Subscriptions</a>
-                <a href="#" onclick="navigateTo('wallet'); toggleMobileMenu()" class="block py-2">Wallet</a>
-                <a href="#" onclick="navigateTo('referral'); toggleMobileMenu()" class="block py-2">Referrals</a>
-                <a href="#" onclick="navigateTo('tasks'); toggleMobileMenu()" class="block py-2">Daily Task</a>
-                <a href="#" onclick="navigateTo('profile'); toggleMobileMenu()" class="block py-2">Profile</a>
+                <a href="#" onclick="navigateTo('dashboard'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Dashboard</a>
+                <a href="#" onclick="navigateTo('products'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Products</a>
+                <a href="#" onclick="navigateTo('subscriptions'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Subscriptions</a>
+                <a href="#" onclick="navigateTo('wallet'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Wallet</a>
+                <a href="#" onclick="navigateTo('referral'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Referrals</a>
+                <a href="#" onclick="navigateTo('tasks'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Daily Task</a>
+                <a href="#" onclick="navigateTo('profile'); toggleMobileMenu()" class="block py-2 text-gray-600 hover:text-indigo-600">Profile</a>
                 <button onclick="logout(); toggleMobileMenu()" class="w-full text-left py-2 text-red-500">Logout</button>
             </div>
         </div>
@@ -97,9 +107,18 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit, onSnapshot, increment, serverTimestamp, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, orderBy, limit, onSnapshot, increment, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = { /* same config */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
+            authDomain: "urbanpay-c5aee.firebaseapp.com",
+            projectId: "urbanpay-c5aee",
+            storageBucket: "urbanpay-c5aee.firebasestorage.app",
+            messagingSenderId: "648155825006",
+            appId: "1:648155825006:web:16d6ea4dfab808920b777f",
+            measurementId: "G-CTKZN6VHPS"
+        };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -125,10 +144,17 @@
             pages.forEach(p => document.getElementById(p + 'Page').classList.add('hidden'));
             document.getElementById(page + 'Page').classList.remove('hidden');
             window.scrollTo(0, 0);
+            // Also close mobile menu if open
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (!mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+            }
         }
 
         function toggleMobileMenu() {
-            document.getElementById('mobileMenu').classList.toggle('hidden');
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+            console.log('Mobile menu toggled, now hidden?', menu.classList.contains('hidden'));
         }
 
         async function logout() {
@@ -446,6 +472,7 @@
             }
         });
 
+        // Expose functions globally
         window.navigateTo = navigateTo;
         window.toggleMobileMenu = toggleMobileMenu;
         window.logout = logout;
