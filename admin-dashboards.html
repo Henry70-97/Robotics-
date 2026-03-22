@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ... (styles same as before) ... */
         body { font-family: 'DM Sans', sans-serif; background-color: #f9fafb; }
         .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .admin-nav.active { background-color: #eef2ff; color: #4f46e5; }
@@ -35,7 +36,7 @@
     </nav>
 
     <div class="flex flex-col md:flex-row pt-16">
-        <!-- Sidebar -->
+        <!-- Sidebar (same as before) -->
         <div class="md:w-64 bg-white shadow-sm min-h-screen p-4">
             <div class="space-y-2">
                 <button onclick="window.showTab('stats')" class="admin-nav w-full text-left px-4 py-2 rounded-lg hover:bg-indigo-50 transition">Dashboard</button>
@@ -53,7 +54,7 @@
 
         <!-- Content -->
         <div class="flex-1 p-6">
-            <!-- Stats Tab -->
+            <!-- Stats Tab (unchanged) -->
             <div id="statsTab" class="admin-tab">
                 <h2 class="text-2xl font-bold mb-6">Platform Statistics</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -71,8 +72,11 @@
             <!-- Products Tab -->
             <div id="productsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Manage Products</h2><button onclick="window.showAddProductForm()" class="mb-4 bg-green-600 text-white px-4 py-2 rounded-lg">Add New Product</button><div id="adminProductsList" class="space-y-4"></div><div id="addProductForm" class="hidden mt-6 bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-bold mb-4">Add Product</h3><div class="space-y-3"><input type="text" id="prodName" placeholder="Name" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodPrice" placeholder="Price (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodDuration" placeholder="Duration (days)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodROI" placeholder="ROI (%)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="prodDailyIncome" placeholder="Daily Income (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="text" id="prodImageUrl" placeholder="Image URL" class="w-full border rounded-lg px-4 py-2"><button onclick="window.addProduct()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Product</button><button onclick="window.hideAddProductForm()" class="ml-2 bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div>
 
-            <!-- Withdrawals Tab -->
-            <div id="withdrawalsTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Pending Withdrawals</h2><div id="adminWithdrawalsList" class="space-y-4"></div></div>
+            <!-- Withdrawals Tab (fixed) -->
+            <div id="withdrawalsTab" class="admin-tab hidden">
+                <h2 class="text-2xl font-bold mb-6">Pending Withdrawals</h2>
+                <div id="adminWithdrawalsList" class="space-y-4"></div>
+            </div>
 
             <!-- Gift Codes Tab -->
             <div id="giftcodesTab" class="admin-tab hidden"><h2 class="text-2xl font-bold mb-6">Gift Codes</h2><div class="bg-white p-6 rounded-xl shadow-sm mb-6"><h3 class="text-lg font-bold mb-4">Generate New Code</h3><div class="space-y-3"><input type="number" id="giftAmount" placeholder="Amount (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="date" id="giftExpiry" class="w-full border rounded-lg px-4 py-2"><input type="number" id="giftMaxUses" placeholder="Max Uses (0 = unlimited)" class="w-full border rounded-lg px-4 py-2"><button onclick="window.generateGiftCode()" class="bg-purple-600 text-white px-4 py-2 rounded-lg">Generate Code</button></div></div><div id="adminGiftCodesList" class="space-y-4"></div></div>
@@ -100,67 +104,10 @@
         </div>
     </div>
 
-    <!-- Modal for Replying to Message -->
-    <div id="replyModal" class="hidden modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">Reply to Message</h2>
-            <div class="space-y-3">
-                <input type="text" id="replyMessageId" hidden>
-                <input type="text" id="replyUserId" hidden>
-                <label class="block text-gray-700">Your Reply</label>
-                <textarea id="replyText" rows="4" class="w-full border rounded-lg px-4 py-2" placeholder="Type your reply..."></textarea>
-                <div class="flex gap-2">
-                    <button onclick="window.sendReply()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Send Reply</button>
-                    <button onclick="window.closeReplyModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal for Sending New Message -->
-    <div id="newMessageModal" class="hidden modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">Send New Message</h2>
-            <div class="space-y-3">
-                <label class="block text-gray-700">Select User</label>
-                <select id="newMessageUserId" class="w-full border rounded-lg px-4 py-2">
-                    <option value="">Loading users...</option>
-                </select>
-                <label class="block text-gray-700">Subject</label>
-                <input type="text" id="newMessageSubject" class="w-full border rounded-lg px-4 py-2" placeholder="Subject">
-                <label class="block text-gray-700">Message</label>
-                <textarea id="newMessageText" rows="4" class="w-full border rounded-lg px-4 py-2" placeholder="Type your message..."></textarea>
-                <div class="flex gap-2">
-                    <button onclick="window.sendNewMessage()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Send Message</button>
-                    <button onclick="window.closeNewMessageModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Product Modal -->
-    <div id="editProductModal" class="hidden modal">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4">Edit Product</h2>
-            <div class="space-y-3">
-                <input type="text" id="editProdId" hidden>
-                <input type="text" id="editProdName" placeholder="Name" class="w-full border rounded-lg px-4 py-2">
-                <input type="number" id="editProdPrice" placeholder="Price (Ksh)" class="w-full border rounded-lg px-4 py-2">
-                <input type="number" id="editProdDuration" placeholder="Duration (days)" class="w-full border rounded-lg px-4 py-2">
-                <input type="number" id="editProdROI" placeholder="ROI (%)" class="w-full border rounded-lg px-4 py-2">
-                <input type="number" id="editProdDailyIncome" placeholder="Daily Income (Ksh)" class="w-full border rounded-lg px-4 py-2">
-                <input type="text" id="editProdImageUrl" placeholder="Image URL" class="w-full border rounded-lg px-4 py-2">
-                <select id="editProdStatus" class="w-full border rounded-lg px-4 py-2">
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                </select>
-                <div class="flex gap-2">
-                    <button onclick="window.updateProduct()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Changes</button>
-                    <button onclick="window.closeEditModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modals (same as before) -->
+    <div id="replyModal" class="hidden modal"><div class="modal-content"><h2 class="text-xl font-bold mb-4">Reply to Message</h2><div class="space-y-3"><input type="text" id="replyMessageId" hidden><input type="text" id="replyUserId" hidden><label class="block text-gray-700">Your Reply</label><textarea id="replyText" rows="4" class="w-full border rounded-lg px-4 py-2"></textarea><div class="flex gap-2"><button onclick="window.sendReply()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Send Reply</button><button onclick="window.closeReplyModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div></div>
+    <div id="newMessageModal" class="hidden modal"><div class="modal-content"><h2 class="text-xl font-bold mb-4">Send New Message</h2><div class="space-y-3"><label class="block text-gray-700">Select User</label><select id="newMessageUserId" class="w-full border rounded-lg px-4 py-2"><option value="">Loading users...</option></select><label class="block text-gray-700">Subject</label><input type="text" id="newMessageSubject" class="w-full border rounded-lg px-4 py-2"><label class="block text-gray-700">Message</label><textarea id="newMessageText" rows="4" class="w-full border rounded-lg px-4 py-2"></textarea><div class="flex gap-2"><button onclick="window.sendNewMessage()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Send Message</button><button onclick="window.closeNewMessageModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div></div>
+    <div id="editProductModal" class="hidden modal"><div class="modal-content"><h2 class="text-xl font-bold mb-4">Edit Product</h2><div class="space-y-3"><input type="text" id="editProdId" hidden><input type="text" id="editProdName" placeholder="Name" class="w-full border rounded-lg px-4 py-2"><input type="number" id="editProdPrice" placeholder="Price (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="editProdDuration" placeholder="Duration (days)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="editProdROI" placeholder="ROI (%)" class="w-full border rounded-lg px-4 py-2"><input type="number" id="editProdDailyIncome" placeholder="Daily Income (Ksh)" class="w-full border rounded-lg px-4 py-2"><input type="text" id="editProdImageUrl" placeholder="Image URL" class="w-full border rounded-lg px-4 py-2"><select id="editProdStatus" class="w-full border rounded-lg px-4 py-2"><option value="true">Active</option><option value="false">Inactive</option></select><div class="flex gap-2"><button onclick="window.updateProduct()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save Changes</button><button onclick="window.closeEditModal()" class="bg-gray-300 px-4 py-2 rounded-lg">Cancel</button></div></div></div></div>
 
     <div id="toast" class="toast hidden"></div>
 
@@ -223,7 +170,7 @@
             else if (tab === 'settings') await loadAdminSettings();
         }
 
-        // Stats
+        // Stats (unchanged)
         async function loadAdminStats() {
             const usersSnap = await getDocs(collection(db, 'users'));
             document.getElementById('adminTotalUsers').innerText = usersSnap.size;
@@ -237,7 +184,7 @@
             document.getElementById('adminPendingWithdrawals').innerText = pendingWithdrawalsSnap.size;
         }
 
-        // Users management
+        // Users management (unchanged)
         async function loadAdminUsers() {
             const container = document.getElementById('adminUsersList');
             container.innerHTML = '<div class="loader"></div>';
@@ -282,7 +229,7 @@
             }
         }
 
-        // Products management
+        // Products management (unchanged)
         async function loadAdminProducts() {
             const container = document.getElementById('adminProductsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -350,12 +297,8 @@
             loadAdminProducts();
         }
 
-        function showAddProductForm() {
-            document.getElementById('addProductForm').classList.remove('hidden');
-        }
-        function hideAddProductForm() {
-            document.getElementById('addProductForm').classList.add('hidden');
-        }
+        function showAddProductForm() { document.getElementById('addProductForm').classList.remove('hidden'); }
+        function hideAddProductForm() { document.getElementById('addProductForm').classList.add('hidden'); }
         async function addProduct() {
             const name = document.getElementById('prodName').value;
             const price = parseFloat(document.getElementById('prodPrice').value);
@@ -382,7 +325,7 @@
             }
         }
 
-        // Withdrawals
+        // Withdrawals – FIXED with console logs
         async function loadAdminWithdrawals() {
             const container = document.getElementById('adminWithdrawalsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -393,7 +336,7 @@
                 const div = document.createElement('div');
                 div.className = 'bg-white p-4 rounded-xl shadow-sm';
                 div.innerHTML = `
-                    <p><strong>User:</strong> ${w.userId}</p>
+                    <p><strong>User ID:</strong> ${w.userId}</p>
                     <p><strong>Amount:</strong> ${formatCurrency(w.amount)}</p>
                     <p><strong>Method:</strong> ${w.method}</p>
                     <p><strong>Details:</strong> ${w.accountDetails}</p>
@@ -408,37 +351,79 @@
         }
 
         async function approveWithdrawal(id, amount, userId) {
-            const batch = writeBatch(db);
-            batch.update(doc(db, 'withdrawals', id), { status: 'approved', processedAt: serverTimestamp() });
-            batch.update(doc(db, 'users', userId), { pendingBalance: increment(-amount), totalWithdrawn: increment(amount) });
-            // Also update the corresponding transaction
-            const txQuery = query(collection(db, 'transactions'), where('userId', '==', userId), where('type', '==', 'withdrawal_request'), where('status', '==', 'pending'), orderBy('timestamp', 'desc'), limit(1));
-            const txSnap = await getDocs(txQuery);
-            if (!txSnap.empty) {
-                batch.update(txSnap.docs[0].ref, { status: 'completed', processedAt: serverTimestamp() });
+            console.log('Approving withdrawal:', id, amount, userId);
+            try {
+                const batch = writeBatch(db);
+                // Update withdrawal document
+                batch.update(doc(db, 'withdrawals', id), { status: 'approved', processedAt: serverTimestamp() });
+                // Update user balance
+                batch.update(doc(db, 'users', userId), { pendingBalance: increment(-amount), totalWithdrawn: increment(amount) });
+                // Find and update the associated transaction
+                const txQuery = query(collection(db, 'transactions'), where('userId', '==', userId), where('type', '==', 'withdrawal_request'), where('status', '==', 'pending'), orderBy('timestamp', 'desc'), limit(1));
+                const txSnap = await getDocs(txQuery);
+                console.log('Found transactions:', txSnap.size);
+                if (!txSnap.empty) {
+                    batch.update(txSnap.docs[0].ref, { status: 'completed', processedAt: serverTimestamp() });
+                } else {
+                    // Optionally, create a transaction if none exists (fallback)
+                    console.warn('No pending transaction found for this withdrawal, creating one');
+                    const transRef = doc(collection(db, 'transactions'));
+                    batch.set(transRef, {
+                        userId: userId,
+                        type: 'withdrawal_request',
+                        amount: amount,
+                        status: 'completed',
+                        description: 'Withdrawal approved (transaction created by admin)',
+                        timestamp: serverTimestamp()
+                    });
+                }
+                await batch.commit();
+                showToast('Withdrawal approved');
+                loadAdminWithdrawals();
+                loadAdminStats();
+            } catch (error) {
+                console.error('Error approving withdrawal:', error);
+                showToast('Error: ' + error.message, true);
             }
-            await batch.commit();
-            showToast('Withdrawal approved');
-            loadAdminWithdrawals();
-            loadAdminStats();
-        }
-        async function rejectWithdrawal(id, amount, userId) {
-            const batch = writeBatch(db);
-            batch.update(doc(db, 'withdrawals', id), { status: 'rejected', processedAt: serverTimestamp() });
-            batch.update(doc(db, 'users', userId), { pendingBalance: increment(-amount), availableBalance: increment(amount), totalBalance: increment(amount) });
-            // Also update the corresponding transaction
-            const txQuery = query(collection(db, 'transactions'), where('userId', '==', userId), where('type', '==', 'withdrawal_request'), where('status', '==', 'pending'), orderBy('timestamp', 'desc'), limit(1));
-            const txSnap = await getDocs(txQuery);
-            if (!txSnap.empty) {
-                batch.update(txSnap.docs[0].ref, { status: 'rejected', processedAt: serverTimestamp() });
-            }
-            await batch.commit();
-            showToast('Withdrawal rejected, funds returned');
-            loadAdminWithdrawals();
-            loadAdminStats();
         }
 
-        // Gift Codes
+        async function rejectWithdrawal(id, amount, userId) {
+            console.log('Rejecting withdrawal:', id, amount, userId);
+            try {
+                const batch = writeBatch(db);
+                // Update withdrawal document
+                batch.update(doc(db, 'withdrawals', id), { status: 'rejected', processedAt: serverTimestamp() });
+                // Return funds to user
+                batch.update(doc(db, 'users', userId), { pendingBalance: increment(-amount), availableBalance: increment(amount), totalBalance: increment(amount) });
+                // Find and update the associated transaction
+                const txQuery = query(collection(db, 'transactions'), where('userId', '==', userId), where('type', '==', 'withdrawal_request'), where('status', '==', 'pending'), orderBy('timestamp', 'desc'), limit(1));
+                const txSnap = await getDocs(txQuery);
+                console.log('Found transactions:', txSnap.size);
+                if (!txSnap.empty) {
+                    batch.update(txSnap.docs[0].ref, { status: 'rejected', processedAt: serverTimestamp() });
+                } else {
+                    // Create a transaction record for rejection
+                    const transRef = doc(collection(db, 'transactions'));
+                    batch.set(transRef, {
+                        userId: userId,
+                        type: 'withdrawal_request',
+                        amount: amount,
+                        status: 'rejected',
+                        description: 'Withdrawal rejected',
+                        timestamp: serverTimestamp()
+                    });
+                }
+                await batch.commit();
+                showToast('Withdrawal rejected, funds returned');
+                loadAdminWithdrawals();
+                loadAdminStats();
+            } catch (error) {
+                console.error('Error rejecting withdrawal:', error);
+                showToast('Error: ' + error.message, true);
+            }
+        }
+
+        // Gift Codes (unchanged)
         async function loadAdminGiftCodes() {
             const container = document.getElementById('adminGiftCodesList');
             container.innerHTML = '<div class="loader"></div>';
@@ -449,11 +434,7 @@
                 const div = document.createElement('div');
                 div.className = 'bg-white p-4 rounded-xl shadow-sm flex justify-between items-center';
                 div.innerHTML = `
-                    <div>
-                        <p class="font-bold">${docSnap.id}</p>
-                        <p>Amount: ${formatCurrency(code.amount)} | Uses: ${code.usedCount || 0}/${code.maxUses || '∞'}</p>
-                        <p>Status: ${code.status} | Expiry: ${code.expiryDate ? code.expiryDate.toDate().toLocaleDateString() : 'Never'}</p>
-                    </div>
+                    <div><p class="font-bold">${docSnap.id}</p><p>Amount: ${formatCurrency(code.amount)} | Uses: ${code.usedCount || 0}/${code.maxUses || '∞'}</p><p>Status: ${code.status} | Expiry: ${code.expiryDate ? code.expiryDate.toDate().toLocaleDateString() : 'Never'}</p></div>
                     <button onclick="window.deleteGiftCode('${docSnap.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
                 `;
                 container.appendChild(div);
@@ -486,7 +467,7 @@
             }
         }
 
-        // Daily Task Settings
+        // Daily Task Settings (unchanged)
         async function loadAdminTaskSettings() {
             const taskDoc = await getDoc(doc(db, 'tasks', 'daily'));
             if (taskDoc.exists()) {
@@ -511,7 +492,7 @@
             showToast('Task settings saved');
         }
 
-        // Contact Messages with replies
+        // Contact Messages (unchanged)
         async function loadAdminContacts() {
             const container = document.getElementById('adminContactsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -520,7 +501,6 @@
             for (const docSnap of messagesSnap.docs) {
                 const msg = docSnap.data();
                 const date = msg.createdAt ? msg.createdAt.toDate().toLocaleString() : 'Unknown';
-                // Fetch replies for this message
                 const repliesQuery = query(collection(db, 'contactReplies'), where('messageId', '==', docSnap.id), orderBy('timestamp', 'asc'));
                 const repliesSnap = await getDocs(repliesQuery);
                 let repliesHtml = '';
@@ -528,12 +508,7 @@
                     const replyData = reply.data();
                     const replyDate = replyData.timestamp ? replyData.timestamp.toDate().toLocaleString() : '';
                     const isAdmin = replyData.fromAdmin;
-                    repliesHtml += `
-                        <div class="admin-reply ml-4 mt-2">
-                            <p class="text-xs text-gray-500">${isAdmin ? 'Admin' : 'User'} - ${replyDate}</p>
-                            <p class="text-sm">${replyData.replyText}</p>
-                        </div>
-                    `;
+                    repliesHtml += `<div class="admin-reply ml-4 mt-2"><p class="text-xs text-gray-500">${isAdmin ? 'Admin' : 'User'} - ${replyDate}</p><p class="text-sm">${replyData.replyText}</p></div>`;
                 });
                 const div = document.createElement('div');
                 div.className = 'bg-white p-4 rounded-xl shadow-sm';
@@ -558,12 +533,10 @@
             document.getElementById('replyUserId').value = userId;
             document.getElementById('replyModal').classList.remove('hidden');
         }
-
         function closeReplyModal() {
             document.getElementById('replyModal').classList.add('hidden');
             document.getElementById('replyText').value = '';
         }
-
         async function sendReply() {
             const messageId = document.getElementById('replyMessageId').value;
             const userId = document.getElementById('replyUserId').value;
@@ -571,12 +544,7 @@
             if (!replyText) { showToast('Please enter a reply', true); return; }
             try {
                 await addDoc(collection(db, 'contactReplies'), {
-                    messageId: messageId,
-                    userId: userId,
-                    fromAdmin: true,
-                    adminId: currentUserId,
-                    replyText: replyText,
-                    timestamp: serverTimestamp()
+                    messageId, userId, fromAdmin: true, adminId: currentUserId, replyText, timestamp: serverTimestamp()
                 });
                 showToast('Reply sent');
                 closeReplyModal();
@@ -584,9 +552,7 @@
             } catch (error) { showToast(error.message, true); }
         }
 
-        // New Message to User
         async function openNewMessageModal() {
-            // Load users for dropdown
             const usersSnap = await getDocs(collection(db, 'users'));
             const select = document.getElementById('newMessageUserId');
             select.innerHTML = '<option value="">Select a user</option>';
@@ -596,50 +562,36 @@
             });
             document.getElementById('newMessageModal').classList.remove('hidden');
         }
-
         function closeNewMessageModal() {
             document.getElementById('newMessageModal').classList.add('hidden');
             document.getElementById('newMessageUserId').value = '';
             document.getElementById('newMessageSubject').value = '';
             document.getElementById('newMessageText').value = '';
         }
-
         async function sendNewMessage() {
             const userId = document.getElementById('newMessageUserId').value;
             const subject = document.getElementById('newMessageSubject').value.trim();
             const message = document.getElementById('newMessageText').value.trim();
-            if (!userId || !subject || !message) {
-                showToast('Please fill all fields', true);
-                return;
-            }
+            if (!userId || !subject || !message) { showToast('Please fill all fields', true); return; }
             try {
-                // Get user details for the message
                 const userDoc = await getDoc(doc(db, 'users', userId));
                 if (!userDoc.exists()) throw new Error('User not found');
                 const user = userDoc.data();
                 await addDoc(collection(db, 'contactMessages'), {
-                    userId: userId,
-                    userName: user.displayName,
-                    userEmail: user.email,
-                    subject: subject,
-                    message: message,
-                    fromAdmin: true,
-                    status: 'unread',
-                    createdAt: serverTimestamp()
+                    userId, userName: user.displayName, userEmail: user.email, subject, message, fromAdmin: true, status: 'unread', createdAt: serverTimestamp()
                 });
                 showToast('Message sent to user');
                 closeNewMessageModal();
                 loadAdminContacts();
             } catch (error) { showToast(error.message, true); }
         }
-
         async function markMessageRead(id) {
             await updateDoc(doc(db, 'contactMessages', id), { status: 'read' });
             showToast('Message marked as read');
             loadAdminContacts();
         }
 
-        // Deposit Requests (optimized)
+        // Deposit Requests (unchanged)
         async function loadAdminDeposits() {
             const container = document.getElementById('adminDepositsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -671,14 +623,7 @@
             const userRef = doc(db, 'users', userId);
             batch.update(userRef, { availableBalance: increment(amount), totalBalance: increment(amount) });
             const transRef = doc(collection(db, 'transactions'));
-            batch.set(transRef, {
-                userId: userId,
-                type: 'deposit',
-                amount: amount,
-                status: 'completed',
-                description: 'Deposit approved by admin',
-                timestamp: serverTimestamp()
-            });
+            batch.set(transRef, { userId, type: 'deposit', amount, status: 'completed', description: 'Deposit approved by admin', timestamp: serverTimestamp() });
             await batch.commit();
             showToast(`Deposit of ${formatCurrency(amount)} approved and added to user balance`);
             loadAdminDeposits();
@@ -690,7 +635,7 @@
             loadAdminDeposits();
         }
 
-        // Referral Bonuses (optimized)
+        // Referral Bonuses (unchanged)
         async function loadAdminReferralBonuses() {
             const container = document.getElementById('adminReferralBonusesList');
             container.innerHTML = '<div class="loader"></div>';
@@ -720,20 +665,9 @@
             const batch = writeBatch(db);
             batch.update(doc(db, 'referralBonusClaims', claimId), { status: 'approved', processedAt: serverTimestamp() });
             const userRef = doc(db, 'users', referrerId);
-            batch.update(userRef, {
-                availableBalance: increment(amount),
-                totalBalance: increment(amount),
-                referralBonus: increment(amount)
-            });
+            batch.update(userRef, { availableBalance: increment(amount), totalBalance: increment(amount), referralBonus: increment(amount) });
             const transRef = doc(collection(db, 'transactions'));
-            batch.set(transRef, {
-                userId: referrerId,
-                type: 'referral_bonus',
-                amount: amount,
-                status: 'completed',
-                description: 'Referral bonus approved by admin',
-                timestamp: serverTimestamp()
-            });
+            batch.set(transRef, { userId: referrerId, type: 'referral_bonus', amount, status: 'completed', description: 'Referral bonus approved by admin', timestamp: serverTimestamp() });
             await batch.commit();
             showToast(`Referral bonus of ${formatCurrency(amount)} approved and credited`);
             loadAdminReferralBonuses();
@@ -745,7 +679,7 @@
             loadAdminReferralBonuses();
         }
 
-        // Settings
+        // Settings (unchanged)
         async function loadAdminSettings() {
             const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
             if (settingsDoc.exists()) {
