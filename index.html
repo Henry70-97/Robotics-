@@ -105,7 +105,7 @@
             return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        // Fetch referrer name from the entered code
+        // Fetch referrer name from referralCodes collection (publicly readable)
         window.fetchReferrerName = async function() {
             const refCode = document.getElementById('regRefCode').value.trim().toUpperCase();
             const displayElem = document.getElementById('referrerNameDisplay');
@@ -114,12 +114,10 @@
                 return;
             }
             try {
-                const usersRef = collection(db, 'users');
-                const q = query(usersRef, where('referralCode', '==', refCode));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    const referrer = querySnapshot.docs[0].data();
-                    displayElem.textContent = `👤 Referred by: ${referrer.displayName}`;
+                const refDoc = await getDoc(doc(db, 'referralCodes', refCode));
+                if (refDoc.exists()) {
+                    const data = refDoc.data();
+                    displayElem.textContent = `👤 Referred by: ${data.displayName}`;
                     displayElem.classList.remove('hidden');
                     displayElem.classList.add('text-green-600');
                 } else {
@@ -164,7 +162,6 @@
             const password = document.getElementById('loginPassword').value;
             try {
                 const userCred = await signInWithEmailAndPassword(auth, email, password);
-                // Check role in Firestore
                 const userDoc = await getDoc(doc(db, 'users', userCred.user.uid));
                 if (userDoc.exists()) {
                     const role = userDoc.data().role;
@@ -200,14 +197,18 @@
                 let referredBy = null;
 
                 if (refCode) {
-                    const usersRef = collection(db, 'users');
-                    const q = query(usersRef, where('referralCode', '==', refCode));
-                    const querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
-                        referredBy = querySnapshot.docs[0].id;
+                    // Check if referral code exists in referralCodes collection
+                    const refDoc = await getDoc(doc(db, 'referralCodes', refCode));
+                    if (refDoc.exists()) {
+                        referredBy = refDoc.data().userId;
+                    } else {
+                        // Invalid referral code – you may choose to proceed anyway or show error
+                        // Here we just continue without referral
+                        console.log('Invalid referral code, continuing without referral');
                     }
                 }
 
+                // Create user document
                 await setDoc(doc(db, 'users', uid), {
                     email: email,
                     displayName: name,
@@ -224,6 +225,13 @@
                     dailyTaskCommission: 0,
                     role: 'user',
                     status: 'active',
+                    createdAt: new Date()
+                });
+
+                // Create a referralCodes document for this user (so others can refer them)
+                await setDoc(doc(db, 'referralCodes', referralCode), {
+                    userId: uid,
+                    displayName: name,
                     createdAt: new Date()
                 });
 
