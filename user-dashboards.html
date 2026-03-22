@@ -518,10 +518,12 @@
             } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading products</p>'; console.error(error); }
         }
 
+        // Updated hourly ROI tiers: 5-10h = 15%, 11-15h = 20%, 16-24h = 25%
         function updateHourlyROI(productId) {
             const hours = parseInt(document.getElementById(`hours_${productId}`).value) || 5;
             let roi = 15;
-            if (hours >= 16) roi = 20;
+            if (hours >= 11 && hours <= 15) roi = 20;
+            else if (hours >= 16) roi = 25;
             document.getElementById(`roi_${productId}`).innerText = roi + '%';
             const card = document.getElementById(`hours_${productId}`).closest('.bg-white');
             const priceText = card.querySelector('p:first-of-type').innerText.match(/[\d,]+/)[0];
@@ -560,7 +562,10 @@
                     showToast('Package purchased successfully!');
                     loadSubscriptions();
                 } else {
-                    const roi = hours >= 16 ? 20 : 15;
+                    // Hourly investment with new tiers
+                    let roi = 15;
+                    if (hours >= 11 && hours <= 15) roi = 20;
+                    else if (hours >= 16) roi = 25;
                     const profit = price * roi / 100;
                     const totalReturn = price + profit;
                     const endTime = new Date();
@@ -580,7 +585,7 @@
             } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
-        // Subscriptions
+        // Subscriptions (unchanged)
         async function loadSubscriptions() {
             const container = document.getElementById('subscriptionsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -800,8 +805,14 @@
         // Referral
         async function loadReferralInfo() {
             if (!currentUserData) return;
-            const link = `${window.location.origin}/index.html?ref=${currentUserData.referralCode || ''}`;
-            document.getElementById('referralLink').value = link;
+            // Professional-looking link (display only)
+            const professionalLink = `/signup?ref=${currentUserData.referralCode || ''}`;
+            // Actual working link for copying
+            const actualLink = `${window.location.origin}/index.html?ref=${currentUserData.referralCode || ''}`;
+            document.getElementById('referralLink').value = professionalLink;
+            // Store actual link for copy function
+            window.referralActualLink = actualLink;
+            
             const q = query(collection(db, 'users'), where('referredBy', '==', currentUserId));
             const snapshot = await getDocs(q);
             document.getElementById('referralCount').innerText = snapshot.size;
@@ -836,9 +847,16 @@
         };
 
         window.copyReferralLink = function() {
-            const link = document.getElementById('referralLink');
-            link.select();
-            document.execCommand('copy');
+            // Copy the actual working link, not the displayed one
+            const link = window.referralActualLink || document.getElementById('referralLink').value;
+            // If it's the professional link, replace with actual
+            if (link.includes('/signup?')) {
+                const code = link.split('?ref=')[1];
+                const actual = `${window.location.origin}/index.html?ref=${code}`;
+                navigator.clipboard.writeText(actual);
+            } else {
+                navigator.clipboard.writeText(link);
+            }
             showToast('Referral link copied!');
         };
 
