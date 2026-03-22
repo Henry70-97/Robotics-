@@ -34,7 +34,6 @@
         }
         .whatsapp-float:hover { transform: scale(1.1); }
         .countdown { font-family: monospace; font-size: 0.9rem; color: #f59e0b; }
-        /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -72,7 +71,6 @@
         @media (min-width: 768px) {
             .bottom-nav { display: none; }
         }
-        /* Collapsible sections */
         .collapsible-header {
             cursor: pointer;
             user-select: none;
@@ -149,10 +147,11 @@
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Daily Task Commission</p><p id="dailyTaskCommission" class="text-2xl font-bold text-yellow-600">Ksh 0</p></div>
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Referral Bonus</p><p id="referralBonus" class="text-2xl font-bold text-purple-600">Ksh 0</p></div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Available Balance</p><p id="availableBalance" class="text-2xl font-bold">Ksh 0</p></div>
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Total Invested</p><p id="totalInvested" class="text-2xl font-bold">Ksh 0</p></div>
                 <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Total Withdrawn</p><p id="totalWithdrawn" class="text-2xl font-bold">Ksh 0</p></div>
+                <div class="bg-white rounded-xl p-6 shadow-sm"><p class="text-gray-500">Pending Withdrawals</p><p id="pendingWithdrawals" class="text-2xl font-bold text-yellow-600">0</p></div>
             </div>
             <div class="bg-white rounded-xl p-6 shadow-sm"><h2 class="text-xl font-bold mb-4">Recent Activity</h2><div id="recentActivity" class="space-y-2"></div></div>
         </div>
@@ -361,19 +360,16 @@
             const pages = ['dashboard', 'products', 'subscriptions', 'wallet', 'referral', 'tasks', 'messages', 'contacts', 'profile'];
             pages.forEach(p => document.getElementById(p + 'Page').classList.add('hidden'));
             document.getElementById(page + 'Page').classList.remove('hidden');
-            // Update bottom nav active state
-            document.querySelectorAll('.bottom-nav button').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.getAttribute('data-page') === page) btn.classList.add('active');
-            });
+            document.querySelectorAll('.bottom-nav button').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.querySelector(`.bottom-nav button[data-page="${page}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
             window.scrollTo(0, 0);
             const mobileMenu = document.getElementById('mobileMenu');
             if (!mobileMenu.classList.contains('hidden')) mobileMenu.classList.add('hidden');
         }
 
         function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('hidden');
+            document.getElementById('mobileMenu').classList.toggle('hidden');
         }
 
         async function logout() {
@@ -434,6 +430,7 @@
                     updateUserUI();
                     loadReferralInfo();
                     loadPendingCommission();
+                    loadPendingWithdrawals();
                     processHourlyInvestments();
                 }
             });
@@ -455,7 +452,14 @@
             document.getElementById('profileEmail').value = currentUserData.email || '';
         }
 
-        // Products loading (unchanged, but ensure hourly ROI works)
+        async function loadPendingWithdrawals() {
+            if (!currentUserId) return;
+            const q = query(collection(db, 'withdrawals'), where('userId', '==', currentUserId), where('status', '==', 'pending'));
+            const snapshot = await getDocs(q);
+            document.getElementById('pendingWithdrawals').innerText = snapshot.size;
+        }
+
+        // Products (unchanged, but ensure write permissions)
         async function loadProducts() {
             const container = document.getElementById('productsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -492,7 +496,7 @@
                         </div>
                     `;
                     container.appendChild(card);
-                    // Add event listeners
+                    // Event listeners...
                     const radios = card.querySelectorAll(`input[name="type_${id}"]`);
                     radios.forEach(radio => {
                         radio.addEventListener('change', function(e) {
@@ -511,7 +515,7 @@
                         updateHourlyROI(id);
                     }
                 });
-            } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading products</p>'; }
+            } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading products</p>'; console.error(error); }
         }
 
         function updateHourlyROI(productId) {
@@ -573,10 +577,10 @@
                 }
                 loadUserData();
                 loadPendingCommission();
-            } catch (error) { showToast(error.message, true); }
+            } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
-        // Subscriptions with countdown
+        // Subscriptions
         async function loadSubscriptions() {
             const container = document.getElementById('subscriptionsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -608,7 +612,7 @@
                 });
                 document.getElementById('dailyIncomeTotal').textContent = formatCurrency(totalDaily);
                 if (snapshot.empty) container.innerHTML = '<p class="text-center text-gray-500">No active subscriptions</p>';
-            } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading subscriptions</p>'; }
+            } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading subscriptions</p>'; console.error(error); }
         }
 
         function getNextClaimTime(lastClaimDate) {
@@ -657,19 +661,29 @@
                 showToast(`Claimed ${formatCurrency(dailyIncome)} successfully!`);
                 loadSubscriptions();
                 loadUserData();
-            } catch (error) { showToast(error.message, true); }
+            } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
         // Wallet functions
         async function loadPaymentLink() {
-            const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
-            let link = 'https://lipana.dev';
-            if (settingsDoc.exists() && settingsDoc.data().paymentLink) link = settingsDoc.data().paymentLink;
-            const linkEl = document.getElementById('paymentLink');
-            linkEl.href = link;
-            linkEl.textContent = link;
-            const btn = document.getElementById('addFundsButton');
-            btn.onclick = () => { if (link && link !== '#') window.open(link, '_blank'); else showToast('Payment link not configured', true); };
+            try {
+                const settingsDoc = await getDoc(doc(db, 'settings', 'platform'));
+                let link = 'https://lipana.dev';
+                if (settingsDoc.exists() && settingsDoc.data().paymentLink && settingsDoc.data().paymentLink.trim() !== '') {
+                    link = settingsDoc.data().paymentLink;
+                }
+                const linkEl = document.getElementById('paymentLink');
+                linkEl.href = link;
+                linkEl.textContent = link;
+                const btn = document.getElementById('addFundsButton');
+                btn.onclick = () => {
+                    if (link && link !== '#') {
+                        window.open(link, '_blank');
+                    } else {
+                        showToast('Payment link not configured. Please use manual deposit.', true);
+                    }
+                };
+            } catch (error) { console.error(error); }
         }
 
         window.requestDeposit = async function() {
@@ -682,7 +696,7 @@
                 showToast('Deposit request sent to admin. Funds will be added after approval.');
                 document.getElementById('depositAmount').value = '';
                 document.getElementById('depositMessage').value = '';
-            } catch (error) { showToast(error.message, true); }
+            } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
         window.sendVerificationEmail = async function() {
@@ -732,7 +746,8 @@
                 document.getElementById('withdrawAmount').value = '';
                 document.getElementById('withdrawDetails').value = '';
                 loadUserData();
-            } catch (error) { showToast(error.message, true); } finally {
+                loadPendingWithdrawals();
+            } catch (error) { showToast(error.message, true); console.error(error); } finally {
                 btn.disabled = false;
                 btn.innerHTML = 'Request Withdrawal';
             }
@@ -760,7 +775,7 @@
                 showToast(`Redeemed ${formatCurrency(codeData.amount)} from gift code`);
                 document.getElementById('giftCodeInput').value = '';
                 loadUserData();
-            } catch (error) { showToast(error.message, true); }
+            } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
         async function loadTransactions() {
@@ -817,7 +832,7 @@
                 await addDoc(collection(db, 'referralBonusClaims'), { referrerId: currentUserId, referredUserId, amount: bonusAmount, status: 'pending', createdAt: serverTimestamp() });
                 showToast(`Bonus claim (${formatCurrency(bonusAmount)}) sent to admin for approval.`);
                 loadReferralInfo();
-            } catch (error) { showToast(error.message, true); }
+            } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
         window.copyReferralLink = function() {
@@ -856,7 +871,7 @@
                 showToast(`Claimed ${formatCurrency(pendingCommission)} commission!`);
                 loadPendingCommission();
                 loadUserData();
-            } catch (error) { showToast(error.message, true); }
+            } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
         // Admin Messages
@@ -864,7 +879,6 @@
             const container = document.getElementById('adminMessagesList');
             container.innerHTML = '<div class="loader"></div>';
             try {
-                // Get messages where fromAdmin is true
                 const q = query(collection(db, 'contactMessages'), where('userId', '==', currentUserId), where('fromAdmin', '==', true), orderBy('createdAt', 'desc'), limit(50));
                 const snapshot = await getDocs(q);
                 container.innerHTML = '';
@@ -884,7 +898,7 @@
                     `;
                     container.appendChild(div);
                 });
-            } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading messages</p>'; }
+            } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading messages</p>'; console.error(error); }
         }
 
         // Contact
@@ -907,7 +921,7 @@
                 showToast('Message sent! Admin will respond soon.');
                 document.getElementById('contactSubject').value = '';
                 document.getElementById('contactMessage').value = '';
-            } catch (error) { showToast(error.message, true); }
+            } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
         // Profile
@@ -925,7 +939,7 @@
                 showToast('Profile updated');
                 document.getElementById('profilePassword').value = '';
                 loadUserData();
-            } catch (error) { showToast(error.message, true); }
+            } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
         // Collapsible sections
@@ -953,6 +967,7 @@
                     loadPendingCommission();
                     loadPaymentLink();
                     loadAdminMessages();
+                    loadPendingWithdrawals();
                     navigateTo('dashboard');
                 } else if (userDoc.exists() && userDoc.data().role === 'admin') {
                     window.location.href = 'admin-dashboard.html';
