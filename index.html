@@ -7,13 +7,16 @@
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'DM Sans', sans-serif; }
+        body { font-family: 'DM Sans', sans-serif; background-color: #f9fafb; }
         .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #6366f1; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; margin-left: 8px; vertical-align: middle; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #1f2937; color: white; padding: 12px 24px; border-radius: 8px; z-index: 1000; font-size: 14px; }
+        .toast.error { background: #dc2626; }
+        .toast.success { background: #10b981; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div class="text-center mb-8">
             <div class="w-20 h-20 mx-auto rounded-full gradient-bg flex items-center justify-center text-3xl mb-4">
@@ -23,7 +26,6 @@
             <p class="text-gray-500 mt-2">Invest and earn daily returns</p>
         </div>
 
-        <!-- Tab Buttons -->
         <div class="flex gap-4 border-b mb-6">
             <button id="loginTabBtn" class="flex-1 py-2 text-indigo-600 border-b-2 border-indigo-600 font-semibold" onclick="showTab('login')">Login</button>
             <button id="registerTabBtn" class="flex-1 py-2 text-gray-500 hover:text-indigo-600" onclick="showTab('register')">Register</button>
@@ -33,11 +35,11 @@
         <div id="loginForm" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" id="loginEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="your@email.com">
+                <input type="email" id="loginEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" id="loginPassword" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="••••••••">
+                <input type="password" id="loginPassword" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
             </div>
             <button onclick="handleLogin()" id="loginBtn" class="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Login</button>
         </div>
@@ -46,40 +48,38 @@
         <div id="registerForm" class="hidden space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Full Name</label>
-                <input type="text" id="regName" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="John Doe">
+                <input type="text" id="regName" class="w-full px-4 py-2 border rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" id="regEmail" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="your@email.com">
+                <input type="email" id="regEmail" class="w-full px-4 py-2 border rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" id="regPassword" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="••••••••">
+                <input type="password" id="regPassword" class="w-full px-4 py-2 border rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Referral Code (optional)</label>
-                <input type="text" id="regRefCode" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="XXXXXX" onblur="fetchReferrerName()">
+                <input type="text" id="regRefCode" class="w-full px-4 py-2 border rounded-lg" onblur="fetchReferrerName()">
                 <p id="referrerNameDisplay" class="text-xs mt-1 hidden"></p>
             </div>
             <button onclick="handleRegister()" id="registerBtn" class="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Create Account</button>
         </div>
 
-        <!-- Footer with Login Link -->
         <div class="text-center mt-6 pt-4 border-t border-gray-200">
             <p class="text-sm text-gray-600">
                 Already have an account? 
                 <button onclick="showTab('login')" class="text-indigo-600 hover:underline font-medium">Login</button>
             </p>
         </div>
-
-        <p id="message" class="text-center text-sm mt-4 hidden"></p>
     </div>
 
-    <!-- Firebase SDKs -->
+    <div id="toast" class="toast hidden"></div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, updateProfile, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
@@ -96,11 +96,11 @@
         const db = getFirestore(app);
 
         function showToast(message, isError = false) {
-            const msgDiv = document.getElementById('message');
-            msgDiv.textContent = message;
-            msgDiv.className = `text-center text-sm mt-4 ${isError ? 'text-red-600' : 'text-green-600'}`;
-            msgDiv.classList.remove('hidden');
-            setTimeout(() => msgDiv.classList.add('hidden'), 5000);
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${isError ? 'error' : 'success'}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 5000);
         }
 
         function setLoading(buttonId, isLoading) {
@@ -119,7 +119,7 @@
             return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        // Fetch referrer name from referralCodes collection (publicly readable)
+        // Fetch referrer name using public referralCodes collection
         window.fetchReferrerName = async function() {
             const refCode = document.getElementById('regRefCode').value.trim().toUpperCase();
             const displayElem = document.getElementById('referrerNameDisplay');
@@ -128,6 +128,7 @@
                 return;
             }
             try {
+                console.log("Fetching referral code:", refCode);
                 const refDoc = await getDoc(doc(db, 'referralCodes', refCode));
                 if (refDoc.exists()) {
                     const data = refDoc.data();
@@ -140,7 +141,7 @@
                     displayElem.classList.add('text-red-500');
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Error fetching referrer:", error);
                 displayElem.textContent = 'Error checking referral code';
                 displayElem.classList.remove('hidden');
                 displayElem.classList.add('text-red-500');
@@ -166,7 +167,6 @@
                 registerTab.classList.remove('text-gray-500');
                 loginTab.classList.remove('border-b-2', 'border-indigo-600', 'text-indigo-600');
                 loginTab.classList.add('text-gray-500');
-                // Clear referral name display when switching to register tab
                 document.getElementById('referrerNameDisplay').classList.add('hidden');
             }
         };
@@ -184,26 +184,22 @@
                 const userDoc = await getDoc(doc(db, 'users', userCred.user.uid));
                 if (userDoc.exists()) {
                     const role = userDoc.data().role;
-                    if (role === 'admin') {
-                        window.location.href = 'admin-dashboards.html';
-                    } else {
-                        window.location.href = 'user-dashboards.html';
-                    }
+                    window.location.href = role === 'admin' ? 'admin-dashboards.html' : 'user-dashboards.html';
                 } else {
-                    // User document missing – delete auth user and prompt registration
                     await deleteUser(userCred.user);
                     showToast('User data missing. Please register again.', true);
-                    setLoading('loginBtn', false);
                 }
             } catch (error) {
+                console.error("Login error:", error);
                 showToast(error.message, true);
+            } finally {
                 setLoading('loginBtn', false);
             }
         };
 
         window.handleRegister = async function() {
-            const name = document.getElementById('regName').value;
-            const email = document.getElementById('regEmail').value;
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const refCode = document.getElementById('regRefCode').value.trim().toUpperCase();
 
@@ -213,26 +209,35 @@
             }
 
             setLoading('registerBtn', true);
+            console.log("Starting registration for", email);
+
             try {
-                // Create auth user
+                // 1. Create auth user
+                console.log("Creating auth user...");
                 const userCred = await createUserWithEmailAndPassword(auth, email, password);
                 const uid = userCred.user.uid;
-                const referralCode = generateReferralCode();
-                let referredBy = null;
+                console.log("Auth user created:", uid);
 
-                // Check referral code (if provided)
+                // 2. Check referral code
+                let referredBy = null;
                 if (refCode) {
+                    console.log("Checking referral code:", refCode);
                     const refDoc = await getDoc(doc(db, 'referralCodes', refCode));
                     if (refDoc.exists()) {
                         referredBy = refDoc.data().userId;
+                        console.log("Referral found:", referredBy);
+                    } else {
+                        console.log("Referral code invalid, proceeding without referral");
                     }
                 }
 
-                // Create user document
+                // 3. Create user document in Firestore
+                const referralCode = generateReferralCode();
+                console.log("Creating user document...");
                 await setDoc(doc(db, 'users', uid), {
-                    email: email,
+                    email,
                     displayName: name,
-                    referralCode: referralCode,
+                    referralCode,
                     referredBy: referredBy || null,
                     totalBalance: 0,
                     availableBalance: 0,
@@ -247,33 +252,39 @@
                     status: 'active',
                     createdAt: new Date()
                 });
+                console.log("User document created");
 
-                // Create referralCodes document for this user
+                // 4. Create referralCodes entry for this user
+                console.log("Creating referral code entry...");
                 await setDoc(doc(db, 'referralCodes', referralCode), {
                     userId: uid,
                     displayName: name,
                     createdAt: new Date()
                 });
+                console.log("Referral code entry created");
 
-                // Update auth profile
+                // 5. Update auth profile
                 await updateProfile(userCred.user, { displayName: name });
+                console.log("Profile updated");
 
                 showToast('Account created successfully! Redirecting...');
                 setTimeout(() => {
                     window.location.href = 'user-dashboards.html';
                 }, 1500);
             } catch (error) {
-                // If Firestore fails, delete the auth user to avoid orphaned accounts
+                console.error("Registration error:", error);
+                // If Firestore failed, delete the auth user to avoid orphaned account
                 try {
                     const user = auth.currentUser;
                     if (user) await deleteUser(user);
-                } catch (e) { console.error('Failed to delete user', e); }
+                    console.log("Auth user deleted due to Firestore failure");
+                } catch (e) { console.error("Could not delete auth user:", e); }
                 showToast(error.message, true);
                 setLoading('registerBtn', false);
             }
         };
 
-        // Auto-fetch referral code from URL and pre-fill
+        // Auto-fill referral code from URL
         function autoFillReferralCode() {
             const urlParams = new URLSearchParams(window.location.search);
             const refCode = urlParams.get('ref');
@@ -296,13 +307,8 @@
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
                     const role = userDoc.data().role;
-                    if (role === 'admin') {
-                        window.location.href = 'admin-dashboards.html';
-                    } else {
-                        window.location.href = 'user-dashboards.html';
-                    }
+                    window.location.href = role === 'admin' ? 'admin-dashboards.html' : 'user-dashboards.html';
                 } else {
-                    // User document missing – delete auth user
                     await deleteUser(user);
                 }
             }
