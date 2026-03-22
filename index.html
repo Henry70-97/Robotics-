@@ -129,7 +129,7 @@
             }
             try {
                 console.log("Fetching referral code:", refCode);
-                const refDoc = await getDoc(doc(db, 'referralCodes', refCode));
+                const refDoc = await getDoc(doc(db, 'referralCodes', refCode.trim()));
                 if (refDoc.exists()) {
                     const data = refDoc.data();
                     displayElem.textContent = `👤 Referred by: ${data.displayName}`;
@@ -222,7 +222,7 @@
                 let referredBy = null;
                 if (refCode) {
                     console.log("Checking referral code:", refCode);
-                    const refDoc = await getDoc(doc(db, 'referralCodes', refCode));
+                    const refDoc = await getDoc(doc(db, 'referralCodes', refCode.trim()));
                     if (refDoc.exists()) {
                         referredBy = refDoc.data().userId;
                         console.log("Referral found:", referredBy);
@@ -232,7 +232,7 @@
                 }
 
                 // 3. Create user document in Firestore
-                const referralCode = generateReferralCode();
+                const referralCode = generateReferralCode().toUpperCase();
                 console.log("Creating user document...");
                 await setDoc(doc(db, 'users', uid), {
                     email,
