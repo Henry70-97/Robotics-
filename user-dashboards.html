@@ -222,7 +222,7 @@
                         <option value="bank">Bank Transfer</option>
                     </select>
                     <textarea id="withdrawDetails" class="w-full border rounded-lg px-4 py-2 mb-3" rows="2" placeholder="Account details (Phone number for M-Pesa, Bank account details)"></textarea>
-                    <p class="text-xs text-gray-500 mb-2">Note: For withdrawals above Ksh 500, a 5% transaction fee will apply.</p>
+                    <p class="text-xs text-gray-500 mb-2">Note: For withdrawals above Ksh 500, a 5% transaction fee will apply. Minimum withdrawal: Ksh 50.</p>
                     <button onclick="requestWithdrawal()" id="withdrawSubmitBtn" class="w-full bg-yellow-500 text-white py-2 rounded-lg">Request Withdrawal</button>
                 </div>
             </div>
@@ -459,7 +459,7 @@
             document.getElementById('pendingWithdrawals').innerText = snapshot.size;
         }
 
-        // Products (unchanged, but ensure write permissions)
+        // Products
         async function loadProducts() {
             const container = document.getElementById('productsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -562,7 +562,6 @@
                     showToast('Package purchased successfully!');
                     loadSubscriptions();
                 } else {
-                    // Hourly investment with new tiers
                     let roi = 15;
                     if (hours >= 11 && hours <= 15) roi = 20;
                     else if (hours >= 16) roi = 25;
@@ -585,7 +584,7 @@
             } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
-        // Subscriptions (unchanged)
+        // Subscriptions
         async function loadSubscriptions() {
             const container = document.getElementById('subscriptionsList');
             container.innerHTML = '<div class="loader"></div>';
@@ -732,13 +731,34 @@
                 const amount = parseFloat(document.getElementById('withdrawAmount').value);
                 const method = document.getElementById('withdrawMethod').value;
                 const details = document.getElementById('withdrawDetails').value.trim();
-                if (isNaN(amount) || amount <= 0 || !details) { showToast('Please fill all fields', true); btn.disabled = false; btn.innerHTML = 'Request Withdrawal'; return; }
-                if (amount > currentUserData.availableBalance) { showToast('Insufficient available balance', true); btn.disabled = false; btn.innerHTML = 'Request Withdrawal'; return; }
+                if (isNaN(amount) || amount <= 0 || !details) {
+                    showToast('Please fill all fields', true);
+                    btn.disabled = false;
+                    btn.innerHTML = 'Request Withdrawal';
+                    return;
+                }
+                // Minimum withdrawal check
+                if (amount < 50) {
+                    showToast('Minimum withdrawal amount is Ksh 50', true);
+                    btn.disabled = false;
+                    btn.innerHTML = 'Request Withdrawal';
+                    return;
+                }
+                if (amount > currentUserData.availableBalance) {
+                    showToast('Insufficient available balance', true);
+                    btn.disabled = false;
+                    btn.innerHTML = 'Request Withdrawal';
+                    return;
+                }
                 let fee = 0;
                 if (amount > 500) fee = amount * 0.05;
                 const netAmount = amount - fee;
                 const confirmMsg = `Withdrawal Details:\nAmount: ${formatCurrency(amount)}\nFee: ${formatCurrency(fee)}\nNet to receive: ${formatCurrency(netAmount)}\nMethod: ${method}\nDetails: ${details}\n\nConfirm withdrawal?`;
-                if (!confirm(confirmMsg)) { btn.disabled = false; btn.innerHTML = 'Request Withdrawal'; return; }
+                if (!confirm(confirmMsg)) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Request Withdrawal';
+                    return;
+                }
                 const batch = writeBatch(db);
                 const userRef = doc(db, 'users', currentUserId);
                 batch.update(userRef, { availableBalance: increment(-amount), pendingBalance: increment(amount), totalBalance: increment(-amount) });
@@ -752,7 +772,10 @@
                 document.getElementById('withdrawDetails').value = '';
                 loadUserData();
                 loadPendingWithdrawals();
-            } catch (error) { showToast(error.message, true); console.error(error); } finally {
+            } catch (error) {
+                showToast(error.message, true);
+                console.error(error);
+            } finally {
                 btn.disabled = false;
                 btn.innerHTML = 'Request Withdrawal';
             }
