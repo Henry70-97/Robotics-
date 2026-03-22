@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* (styles unchanged – same as previous version) */
         body { font-family: 'DM Sans', sans-serif; background-color: #f9fafb; }
         .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .hover-lift:hover { transform: translateY(-2px); transition: all 0.2s; }
@@ -82,7 +83,7 @@
     </style>
 </head>
 <body>
-    <!-- Floating WhatsApp Icon -->
+    <!-- Floating WhatsApp Icon (unchanged) -->
     <a href="https://wa.me/254794757062" target="_blank" class="whatsapp-float">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.559 1.122 3.648l-1.203 3.841 3.964-1.178c1.033.566 2.2.864 3.4.863 3.18 0 5.766-2.586 5.766-5.767 0-3.18-2.586-5.767-5.766-5.767zm2.651 7.086c-.131.334-.745.65-1.044.724-.31.074-.527.102-.776.102-.249 0-.489-.068-.711-.142-.217-.072-.442-.152-.648-.232-.103-.04-.207-.08-.312-.12-.104-.041-.21-.082-.314-.123-.424-.172-.79-.354-1.112-.606-.316-.247-.605-.532-.852-.851-.246-.319-.439-.678-.563-1.064-.068-.215-.125-.441-.14-.671-.015-.23.028-.46.125-.675.07-.16.177-.304.312-.414.135-.11.297-.193.47-.233.173-.04.358-.021.53.05.172.071.324.188.448.334.124.146.215.325.259.523.043.198.03.404-.038.595-.068.19-.193.356-.357.473-.041.03-.083.059-.126.088.04.064.088.125.139.182.279.331.604.612.968.832.362.219.763.365 1.187.436.215.036.43.032.64-.009.21-.041.411-.13.586-.257.175-.127.31-.303.395-.507.085-.204.121-.428.106-.65-.015-.222-.081-.439-.187-.638-.106-.199-.249-.381-.424-.528-.175-.147-.381-.262-.606-.339-.161-.054-.33-.072-.5-.052-.169.02-.33.08-.47.173.07-.177.178-.337.31-.471.132-.134.287-.238.456-.306.169-.068.35-.099.528-.091.179.008.355.045.52.108.496.194.914.578 1.153 1.079.239.501.274 1.06.097 1.592z"/>
@@ -242,6 +243,15 @@
                     <button onclick="copyReferralLink()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg">Copy</button>
                 </div>
                 <p class="text-sm text-gray-500 mt-2">Share this link with friends. You'll earn 15% of their first package purchase!</p>
+            </div>
+            <!-- WhatsApp Group Button -->
+            <div class="bg-white rounded-xl p-6 shadow-sm mb-6">
+                <h2 class="text-xl font-bold mb-4">Join Our Community</h2>
+                <p class="text-gray-600 mb-3">Connect with other investors and get updates in our WhatsApp group.</p>
+                <a href="https://chat.whatsapp.com/HA2L1MJZNqyEzPslmbyZMg?mode=gi_t" target="_blank" class="inline-flex items-center gap-2 bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.559 1.122 3.648l-1.203 3.841 3.964-1.178c1.033.566 2.2.864 3.4.863 3.18 0 5.766-2.586 5.766-5.767 0-3.18-2.586-5.767-5.766-5.767z"/></svg>
+                    Join WhatsApp Group
+                </a>
             </div>
             <div class="bg-white rounded-xl p-6 shadow-sm">
                 <h2 class="text-xl font-bold mb-4">Your Referral Stats</h2>
@@ -496,7 +506,6 @@
                         </div>
                     `;
                     container.appendChild(card);
-                    // Event listeners...
                     const radios = card.querySelectorAll(`input[name="type_${id}"]`);
                     radios.forEach(radio => {
                         radio.addEventListener('change', function(e) {
@@ -518,7 +527,6 @@
             } catch (error) { container.innerHTML = '<p class="text-center text-red-500">Error loading products</p>'; console.error(error); }
         }
 
-        // Updated hourly ROI tiers: 5-10h = 15%, 11-15h = 20%, 16-24h = 25%
         function updateHourlyROI(productId) {
             const hours = parseInt(document.getElementById(`hours_${productId}`).value) || 5;
             let roi = 15;
@@ -737,7 +745,6 @@
                     btn.innerHTML = 'Request Withdrawal';
                     return;
                 }
-                // Minimum withdrawal check
                 if (amount < 50) {
                     showToast('Minimum withdrawal amount is Ksh 50', true);
                     btn.disabled = false;
@@ -828,7 +835,7 @@
         // Referral
         async function loadReferralInfo() {
             if (!currentUserData) return;
-            // Professional-looking link (display and copy)
+            // Professional-looking link for display
             const professionalLink = `/signup?ref=${currentUserData.referralCode || ''}`;
             document.getElementById('referralLink').value = professionalLink;
             
@@ -865,9 +872,11 @@
             } catch (error) { showToast(error.message, true); console.error(error); }
         };
 
+        // Fixed copy function: copies the full URL (domain + /signup?ref=CODE)
         window.copyReferralLink = function() {
-            const professionalLink = document.getElementById('referralLink').value;
-            navigator.clipboard.writeText(professionalLink);
+            const code = currentUserData?.referralCode || '';
+            const fullUrl = `${window.location.origin}/signup?ref=${code}`;
+            navigator.clipboard.writeText(fullUrl);
             showToast('Referral link copied!');
         };
 
@@ -999,7 +1008,7 @@
                     loadPendingWithdrawals();
                     navigateTo('dashboard');
                 } else if (userDoc.exists() && userDoc.data().role === 'admin') {
-                    window.location.href = 'admin-dashboard.html';
+                    window.location.href = 'admin-dashboards.html';
                 } else {
                     await signOut(auth);
                     window.location.href = 'index.html';
