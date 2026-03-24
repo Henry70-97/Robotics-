@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartHustle AI – Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+  <style>
+    body { background: #0a0e1a; font-family: 'DM Sans', sans-serif; color: #ccd6f6; }
+    .bg-surface { background: #131829; }
+    .text-accent { color: #00e5a0; }
+    .bg-accent { background: #00e5a0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    th { background: #1a1f2e; }
+    .status-badge { padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+    .status-active { background: #00e5a0; color: #0a0e1a; }
+    .status-unverified { background: #f59e0b; color: #0a0e1a; }
+  </style>
+</head>
+<body>
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-midnight/90 backdrop-blur-md border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center"><i data-lucide="zap" style="width:18px;height:18px;color:#0a0e1a;"></i></div><span class="font-heading font-bold text-lg">SmartHustle Admin</span></div>
+      <button onclick="logout()" class="px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">Logout</button>
+    </div>
+  </nav>
+  <div class="pt-20 max-w-6xl mx-auto px-4 pb-8">
+    <h1 class="font-heading text-2xl font-bold mb-6">User Management</h1>
+    <div class="bg-surface rounded-xl overflow-hidden border border-white/10">
+      <table class="w-full">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Role</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDm-PeCeRdlx6TKPEvKNdT93lMqb5D5O20",
+      authDomain: "urbanpay-c5aee.firebaseapp.com",
+      projectId: "urbanpay-c5aee",
+      storageBucket: "urbanpay-c5aee.firebasestorage.app",
+      messagingSenderId: "648155825006",
+      appId: "1:648155825006:web:16d6ea4dfab808920b777f",
+      measurementId: "G-CTKZN6VHPS"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = 'registration.html';
+        return;
+      }
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (!doc.exists || doc.data().role !== 'admin') {
+        await auth.signOut();
+        window.location.href = 'registration.html';
+        return;
+      }
+      loadUsers();
+    });
+
+    async function loadUsers() {
+      const snapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+      snapshot.forEach(doc => {
+        const u = doc.data();
+        const statusClass = u.status === 'active' ? 'status-active' : 'status-unverified';
+        const statusText = u.status === 'active' ? 'Active' : 'Unverified';
+        tbody.innerHTML += `
+          <tr>
+            <td>${u.name || '-'}</td>
+            <td>${u.email}</td>
+            <td>${u.phone || '-'}</td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td>${u.role || 'user'}</td>
+            <td>
+              <button onclick="toggleUserStatus('${doc.id}', '${u.status}')" class="px-3 py-1 rounded-lg bg-accent/10 text-accent text-xs hover:bg-accent/20 transition">
+                ${u.status === 'active' ? 'Deactivate' : 'Activate'}
+              </button>
+              ${u.role !== 'admin' ? `<button onclick="makeAdmin('${doc.id}')" class="ml-2 px-3 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs hover:bg-blue-500/20 transition">Make Admin</button>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    window.toggleUserStatus = async (uid, currentStatus) => {
+      const newStatus = currentStatus === 'active' ? 'unverified' : 'active';
+      await db.collection('users').doc(uid).update({ status: newStatus });
+      loadUsers();
+    };
+
+    window.makeAdmin = async (uid) => {
+      await db.collection('users').doc(uid).update({ role: 'admin' });
+      loadUsers();
+    };
+
+    function logout() { auth.signOut(); }
+    window.logout = logout;
+  </script>
+</body>
+</html>
